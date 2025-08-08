@@ -19,11 +19,11 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       {/* Top Bar */}
-      <div className="bg-orange-400/80 backdrop-blur-sm text-white py-1">
-        <div className="container mx-auto px-4 flex justify-between items-center text-sm">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
+      <div className="bg-orange-400/80 backdrop-blur-sm text-white py-0.5">
+        <div className="container mx-auto px-4 flex justify-between items-center text-xs">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
               <span className="font-sarabun">
                 {new Date().toLocaleDateString('th-TH', { 
                   weekday: 'long', 
@@ -33,21 +33,10 @@ const Header = () => {
                 })}
               </span>
             </div>
-            <div className="hidden md:flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-2">
               <span className="font-sarabun">📞 092-443-4311</span>
               <span className="font-sarabun">✉️ kenginol.ar@gmail.com</span>
             </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-white hover:bg-white/20"
-              onClick={() => window.location.href = '/rss'}
-            >
-              <Rss className="h-4 w-4 mr-2" />
-              RSS Feed
-            </Button>
           </div>
         </div>
       </div>
