@@ -53,7 +53,7 @@ const Header = () => {
       </div>
 
       {/* Main Header */}
-      <div className="container mx-auto px-4 py-4">
+      <div className="container mx-auto px-4 py-4 bg-orange-300/20 backdrop-blur-sm rounded-lg mx-4 mt-2">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-4">
