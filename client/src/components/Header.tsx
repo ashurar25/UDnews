@@ -12,13 +12,14 @@ const Header = () => {
     { name: "การเมือง", href: "/politics" },
     { name: "กีฬา", href: "/sports" },
     { name: "บันเทิง", href: "/entertainment" },
-    { name: "ติดต่อเรา", href: "/contact" }
+    { name: "ติดต่อเรา", href: "/contact" },
+    { name: "แอดมิน", href: "/admin" }
   ];
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       {/* Top Bar */}
-      <div className="bg-orange-500 text-white py-2">
+      <div className="bg-orange-400/80 backdrop-blur-sm text-white py-2">
         <div className="container mx-auto px-4 flex justify-between items-center text-sm">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -56,7 +57,7 @@ const Header = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-4">
-            <div className="bg-orange-500 p-3 rounded-lg shadow-lg">
+            <div className="bg-orange-400/90 p-3 rounded-lg shadow-lg backdrop-blur-sm">
               <span className="text-2xl font-bold text-white">UD</span>
             </div>
             <div>
@@ -99,6 +100,7 @@ const Header = () => {
                 key={index}
                 variant="ghost"
                 className="justify-start md:justify-center font-sarabun hover:bg-accent hover:text-accent-foreground transition-colors"
+                onClick={() => window.location.href = item.href}
               >
                 {item.name}
               </Button>
