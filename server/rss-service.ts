@@ -31,6 +31,7 @@ interface RSSItem {
 export class RSSService {
   private isProcessing = false;
   private lastProcessed = new Map<number, Date>();
+  private intervalId: NodeJS.Timeout | null = null;
 
   // Extract image URL from content
   private extractImageUrl(content: string | undefined, mediaContent?: any, mediaThumbnail?: any): string | undefined {
@@ -124,10 +125,17 @@ export class RSSService {
     try {
       console.log(`Processing RSS feed: ${feedUrl}`);
       
-      const feed = await parser.parseURL(feedUrl);
+      // Add timeout and better error handling
+      const feed = await Promise.race([
+        parser.parseURL(feedUrl),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('RSS fetch timeout')), 15000)
+        )
+      ]) as any;
+
       let addedCount = 0;
 
-      if (!feed.items || feed.items.length === 0) {
+      if (!feed || !feed.items || feed.items.length === 0) {
         console.log(`No items found in feed: ${feedUrl}`);
         return 0;
       }
@@ -139,6 +147,7 @@ export class RSSService {
           addedCount++;
         } catch (error) {
           console.error(`Error processing RSS item from ${feedUrl}:`, error);
+          // Continue processing other items
         }
       }
 
@@ -148,7 +157,26 @@ export class RSSService {
 
     } catch (error) {
       console.error(`Error processing RSS feed ${feedUrl}:`, error);
-      throw error;
+      
+      // Check if it's a parsing error and try alternative approach
+      if (error.message && error.message.includes('Non-whitespace before first tag')) {
+        console.log(`Attempting alternative fetch for ${feedUrl}`);
+        try {
+          const response = await fetch(feedUrl);
+          const text = await response.text();
+          console.log(`Feed content preview: ${text.substring(0, 200)}...`);
+          
+          // If it starts with JSON, it might be a JSON feed
+          if (text.trim().startsWith('{')) {
+            console.log(`Feed ${feedUrl} appears to be JSON format, skipping for now`);
+            return 0;
+          }
+        } catch (fetchError) {
+          console.error(`Alternative fetch also failed for ${feedUrl}:`, fetchError);
+        }
+      }
+      
+      return 0;
     }
   }
 
@@ -272,8 +300,41 @@ export class RSSService {
   getStatus() {
     return {
       isProcessing: this.isProcessing,
-      lastProcessed: Object.fromEntries(this.lastProcessed)
+      lastProcessed: Object.fromEntries(this.lastProcessed),
+      autoProcessingEnabled: this.intervalId !== null
     };
+  }
+
+  // Start automatic RSS processing every 30 minutes
+  startAutoProcessing() {
+    if (this.intervalId) {
+      console.log('Auto RSS processing is already running');
+      return;
+    }
+
+    console.log('Starting automatic RSS processing every 30 minutes...');
+    
+    // Process immediately on start
+    this.processAllFeeds().catch(error => {
+      console.error('Error in initial RSS processing:', error);
+    });
+
+    // Set up interval for every 30 minutes (30 * 60 * 1000 ms)
+    this.intervalId = setInterval(() => {
+      console.log('Starting scheduled RSS processing...');
+      this.processAllFeeds().catch(error => {
+        console.error('Error in scheduled RSS processing:', error);
+      });
+    }, 30 * 60 * 1000);
+  }
+
+  // Stop automatic RSS processing
+  stopAutoProcessing() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+      console.log('Stopped automatic RSS processing');
+    }
   }
 }
 

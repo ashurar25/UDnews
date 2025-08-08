@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,6 +33,7 @@ const RSSManager = () => {
   const [feeds, setFeeds] = useState<RssFeed[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isAutoProcessing, setIsAutoProcessing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingFeed, setEditingFeed] = useState<RssFeed | null>(null);
   const [formData, setFormData] = useState<RssFeedForm>({
@@ -61,6 +61,7 @@ const RSSManager = () => {
 
   useEffect(() => {
     fetchFeeds();
+    checkAutoProcessingStatus();
   }, []);
 
   const fetchFeeds = async () => {
@@ -78,6 +79,18 @@ const RSSManager = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const checkAutoProcessingStatus = async () => {
+    try {
+      const response = await fetch('/api/rss/auto-processing/status');
+      if (response.ok) {
+        const data = await response.json();
+        setIsAutoProcessing(data.isAutoProcessing);
+      }
+    } catch (error) {
+      console.error("Error checking auto-processing status:", error);
     }
   };
 
@@ -306,11 +319,54 @@ const RSSManager = () => {
 
     toast({
       title: "เพิ่มตัวอย่าง RSS Feed สำเร็จ",
-      description: "เพิ่ม RSS Feed จากสำนักข่าวไทยหลักแล้ว 6 รายการ",
+      description: "เพิ่ม RSS Feed จากสำนักข่าวไทยหลักแล้ว 7 รายการ",
     });
 
     fetchFeeds();
   };
+
+  const handleStartAutoProcessing = async () => {
+    try {
+      const response = await fetch('/api/rss/auto-processing/start', { method: 'POST' });
+      if (response.ok) {
+        setIsAutoProcessing(true);
+        toast({
+          title: "เริ่มประมวลผลอัตโนมัติ",
+          description: "RSS Feed จะถูกประมวลผลทุก 30 นาที",
+        });
+      } else {
+        throw new Error('Failed to start auto-processing');
+      }
+    } catch (error) {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถเริ่มประมวลผลอัตโนมัติได้",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleStopAutoProcessing = async () => {
+    try {
+      const response = await fetch('/api/rss/auto-processing/stop', { method: 'POST' });
+      if (response.ok) {
+        setIsAutoProcessing(false);
+        toast({
+          title: "หยุดประมวลผลอัตโนมัติ",
+          description: "RSS Feed จะไม่ถูกประมวลผลอัตโนมัติอีกต่อไป",
+        });
+      } else {
+        throw new Error('Failed to stop auto-processing');
+      }
+    } catch (error) {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถหยุดประมวลผลอัตโนมัติได้",
+        variant: "destructive",
+      });
+    }
+  };
+
 
   return (
     <Card className="hover:shadow-warm transition-shadow">
@@ -319,6 +375,11 @@ const RSSManager = () => {
           <CardTitle className="text-lg font-kanit flex items-center gap-2">
             <Rss className="h-5 w-5 text-primary" />
             จัดการ RSS Feed
+            {isAutoProcessing && (
+              <Badge variant="secondary" className="bg-green-100 text-green-800 font-sarabun">
+                ประมวลผลอัตโนมัติ: เปิด
+              </Badge>
+            )}
           </CardTitle>
           <CardDescription className="font-sarabun">
             เพิ่ม แก้ไข และลบ RSS Feed ของเว็บไซต์ พร้อมประมวลผลข่าวจาก RSS
@@ -326,23 +387,48 @@ const RSSManager = () => {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button 
-            size="sm" 
-            onClick={handleProcessAllFeeds}
+            onClick={handleProcessAllFeeds} 
             disabled={isProcessing || feeds.length === 0}
+            size="sm" 
             className="font-sarabun"
-            variant="default"
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isProcessing ? 'animate-spin' : ''}`} />
-            {isProcessing ? 'กำลังประมวลผล...' : 'ประมวลผลทั้งหมด'}
+            {isProcessing ? (
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <PlayCircle className="h-4 w-4 mr-2" />
+            )}
+            {isProcessing ? "กำลังประมวลผล..." : "ประมวลผลทั้งหมด"}
           </Button>
-          
+
+          {isAutoProcessing ? (
+            <Button 
+              onClick={handleStopAutoProcessing}
+              variant="destructive"
+              size="sm" 
+              className="font-sarabun"
+            >
+              <X className="h-4 w-4 mr-2" />
+              หยุดประมวลผลอัตโนมัติ
+            </Button>
+          ) : (
+            <Button 
+              onClick={handleStartAutoProcessing}
+              variant="outline"
+              size="sm" 
+              className="font-sarabun"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              เริ่มประมวลผลอัตโนมัติ (ทุก 30 นาที)
+            </Button>
+          )}
+
           {feeds.length === 0 && (
             <Button size="sm" onClick={addSampleFeeds} variant="outline" className="font-sarabun">
               <PlayCircle className="h-4 w-4 mr-2" />
               เพิ่มตัวอย่าง RSS
             </Button>
           )}
-          
+
           <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
             <DialogTrigger asChild>
               <Button size="sm" className="font-sarabun">

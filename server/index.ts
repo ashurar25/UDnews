@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { rssService } from "./rss-service";
 
 const app = express();
 app.use(express.json());
@@ -66,5 +67,11 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    
+    // Start automatic RSS processing after server is ready
+    setTimeout(() => {
+      rssService.startAutoProcessing();
+      log('RSS automatic processing started');
+    }, 5000); // Wait 5 seconds for server to be fully ready
   });
 })();

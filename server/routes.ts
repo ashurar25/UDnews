@@ -235,6 +235,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/rss/auto/start", async (req, res) => {
+    try {
+      rssService.startAutoProcessing();
+      res.json({ message: "Automatic RSS processing started (every 30 minutes)" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to start automatic RSS processing" });
+    }
+  });
+
+  app.post("/api/rss/auto/stop", async (req, res) => {
+    try {
+      rssService.stopAutoProcessing();
+      res.json({ message: "Automatic RSS processing stopped" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to stop automatic RSS processing" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
