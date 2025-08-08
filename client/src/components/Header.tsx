@@ -110,12 +110,12 @@ const Header = () => {
 
         {/* Navigation Menu - Desktop */}
         <nav className="hidden md:block mt-6">
-          <div className="flex flex-row gap-8 justify-center">
+          <div className="flex flex-row gap-4 justify-center flex-wrap">
             {menuItems.map((item, index) => (
               <Button
                 key={index}
                 variant="ghost"
-                className="justify-center font-sarabun hover:bg-accent hover:text-accent-foreground transition-colors"
+                className="justify-center font-sarabun hover:bg-orange-100 hover:text-orange-700 transition-colors px-4 py-2 rounded-lg"
                 onClick={() => handleMenuClick(item)}
               >
                 {item.name}
