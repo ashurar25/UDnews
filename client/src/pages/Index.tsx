@@ -3,6 +3,7 @@ import Footer from "@/components/Footer";
 import { ThaiSpecialDayBanner } from "@/components/ThaiSpecialDayBanner";
 import NewsCard from "@/components/NewsCard";
 import SponsorBanner from "@/components/SponsorBanner";
+import SponsorBannerBar from "@/components/SponsorBannerBar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Clock, Calendar } from "lucide-react";
@@ -139,10 +140,10 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      {/* Header Sponsor Banners */}
+      {/* Header Sponsor Banner Bar */}
       <div className="bg-muted/30 py-3">
         <div className="container mx-auto px-4">
-          <SponsorBanner position="header" className="justify-center" />
+          <SponsorBannerBar position="header" className="justify-center" autoPlay={true} showNavigation={true} bannerCount={5} />
         </div>
       </div>
       
@@ -207,9 +208,9 @@ const Index = () => {
             ))}
           </div>
           
-          {/* Between News Sponsor Banner */}
+          {/* Between News Sponsor Banner Bar */}
           <div className="mt-8 mb-4">
-            <SponsorBanner position="between_news" />
+            <SponsorBannerBar position="between_news" autoPlay={true} showNavigation={false} bannerCount={3} />
           </div>
         </section>
 
@@ -233,8 +234,8 @@ const Index = () => {
           {/* Sidebar */}
           <div className="space-y-8">
             
-            {/* Sidebar Sponsor Banners */}
-            <SponsorBanner position="sidebar" />
+            {/* Sidebar Sponsor Banner Bar */}
+            <SponsorBannerBar position="sidebar" autoPlay={true} showNavigation={false} bannerCount={3} />
             
             {/* Popular Today */}
             <div className="bg-card rounded-lg p-6 shadow-news">

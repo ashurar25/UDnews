@@ -2,14 +2,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Facebook, Twitter, Youtube, Mail, Phone, MapPin, Rss } from "lucide-react";
 import SponsorBanner from "./SponsorBanner";
+import SponsorBannerBar from "./SponsorBannerBar";
 
 const Footer = () => {
   return (
     <footer className="bg-gradient-subtle border-t">
-      {/* Footer Sponsor Banners */}
+      {/* Footer Sponsor Banner Bar */}
       <div className="bg-muted/20 border-b">
         <div className="container mx-auto px-4 py-6">
-          <SponsorBanner position="footer" />
+          <SponsorBannerBar position="footer" autoPlay={true} showNavigation={true} bannerCount={4} />
         </div>
       </div>
       
