@@ -19,11 +19,11 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       {/* Top Bar */}
-      <div className="bg-orange-600 backdrop-blur-sm text-white py-4">
-        <div className="container mx-auto px-6 flex justify-between items-center text-base">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3">
-              <Clock className="h-5 w-5" />
+      <div className="bg-orange-600 backdrop-blur-sm text-white py-1">
+        <div className="container mx-auto px-4 flex justify-between items-center text-xs">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
               <span className="font-sarabun">
                 {new Date().toLocaleDateString('th-TH', { 
                   weekday: 'long', 
@@ -33,7 +33,7 @@ const Header = () => {
                 })}
               </span>
             </div>
-            <div className="hidden md:flex items-center gap-6">
+            <div className="hidden md:flex items-center gap-3">
               <span className="font-sarabun">📞 092-443-4311</span>
               <span className="font-sarabun">✉️ kenginol.ar@gmail.com</span>
             </div>
