@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { ExternalLink, Eye } from "lucide-react";
+import { ExternalLink, Eye, Phone } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import axios from "axios";
 import type { SponsorBanner } from "@shared/schema";
 
@@ -30,8 +31,27 @@ const SponsorBannerComponent = ({ position, className = "" }: SponsorBannerProps
     }
   };
 
+  const handleContactSponsor = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Contact information or form for sponsor inquiries
+    alert("ติดต่อสำหรับการสนับสนุนสปอนเซอร์\nโทร: 042-123-456\nอีเมล: sponsor@udnews.com");
+  };
+
   if (isLoading || isError || !Array.isArray(banners) || banners.length === 0) {
-    return null;
+    // Show sponsor contact button even when no banners are available
+    return (
+      <div className={`sponsor-contact-section ${className}`}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleContactSponsor}
+          className="font-sarabun text-xs bg-primary/10 hover:bg-primary/20 border-primary/30"
+        >
+          <Phone className="h-3 w-3 mr-2" />
+          ติดต่อสนับสนุนสปอนเซอร์
+        </Button>
+      </div>
+    );
   }
 
   const getPositionStyles = () => {
@@ -65,45 +85,61 @@ const SponsorBannerComponent = ({ position, className = "" }: SponsorBannerProps
   };
 
   return (
-    <div className={`sponsor-banners ${getPositionStyles()} ${className}`}>
-      {banners.map((banner) => (
-        <Card
-          key={banner.id}
-          className={`relative overflow-hidden cursor-pointer group hover:shadow-lg transition-all duration-300 ${getBannerSize()}`}
-          onClick={() => handleBannerClick(banner)}
+    <div className={`sponsor-banners-container ${className}`}>
+      {/* Sponsor Contact Button */}
+      <div className="flex justify-end mb-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleContactSponsor}
+          className="font-sarabun text-xs bg-primary/10 hover:bg-primary/20 border-primary/30 shadow-sm"
         >
-          <div className="absolute top-2 left-2 z-10">
-            <Badge variant="secondary" className="text-xs font-sarabun bg-black/20 text-white backdrop-blur-sm">
-              สปอนเซอร์
-            </Badge>
-          </div>
-          
-          <div className="absolute top-2 right-2 z-10 flex items-center gap-1 text-white/80 text-xs">
-            <Eye className="h-3 w-3" />
-            <span className="font-sarabun">{banner.clickCount}</span>
-          </div>
-
-          <img
-            src={banner.imageUrl}
-            alt={banner.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDQwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMDAgMTAwTDE2MCA4MEwyMDAgNjBMMjQwIDgwTDIwMCAxMDBaIiBmaWxsPSIjOUI5QkE0Ii8+CjwvZz4KPC9zdmc+';
-            }}
-          />
-
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          
-          <div className="absolute bottom-2 left-2 right-2 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-            <div className="flex items-center justify-between text-white">
-              <span className="text-xs font-kanit font-semibold truncate">
-                {banner.title}
-              </span>
-              <ExternalLink className="h-3 w-3 ml-2 flex-shrink-0" />
+          <Phone className="h-3 w-3 mr-2" />
+          ติดต่อสนับสนุนสปอนเซอร์
+        </Button>
+      </div>
+      
+      {/* Sponsor Banners */}
+      <div className={`sponsor-banners ${getPositionStyles()}`}>
+        {banners.map((banner) => (
+          <Card
+            key={banner.id}
+            className={`relative overflow-hidden cursor-pointer group hover:shadow-lg transition-all duration-300 ${getBannerSize()}`}
+            onClick={() => handleBannerClick(banner)}
+          >
+            <div className="absolute top-2 left-2 z-10">
+              <Badge variant="secondary" className="text-xs font-sarabun bg-black/20 text-white backdrop-blur-sm">
+                สปอนเซอร์
+              </Badge>
             </div>
-          </div>
-        </Card>
-      ))}
+            
+            <div className="absolute top-2 right-2 z-10 flex items-center gap-1 text-white/80 text-xs">
+              <Eye className="h-3 w-3" />
+              <span className="font-sarabun">{banner.clickCount}</span>
+            </div>
+
+            <img
+              src={banner.imageUrl}
+              alt={banner.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDQwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMDAgMTAwTDE2MCA4MEwyMDAgNjBMMjQwIDgwTDIwMCAxMDBaIiBmaWxsPSIjOUI5QkE0Ii8+PC9zdmc+';
+              }}
+            />
+
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            
+            <div className="absolute bottom-2 left-2 right-2 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+              <div className="flex items-center justify-between text-white">
+                <span className="text-xs font-kanit font-semibold truncate">
+                  {banner.title}
+                </span>
+                <ExternalLink className="h-3 w-3 ml-2 flex-shrink-0" />
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 };
