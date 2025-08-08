@@ -12,8 +12,7 @@ const Header = () => {
     { name: "การเมือง", href: "/politics" },
     { name: "กีฬา", href: "/sports" },
     { name: "บันเทิง", href: "/entertainment" },
-    { name: "ติดต่อเรา", href: "/contact" },
-    { name: "แอดมิน", href: "/admin" }
+    { name: "ติดต่อเรา", href: "/contact" }
   ];
 
   return (

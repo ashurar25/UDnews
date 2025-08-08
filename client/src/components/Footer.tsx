@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Facebook, Twitter, Youtube, Mail, Phone, MapPin, Rss } from "lucide-react";
+import { Facebook, Twitter, Youtube, Mail, Phone, MapPin, Rss, Key } from "lucide-react";
 import SponsorBanner from "./SponsorBanner";
 import SponsorBannerBar from "./SponsorBannerBar";
 
@@ -115,12 +115,21 @@ const Footer = () => {
           <p className="text-sm text-muted-foreground font-sarabun">
             © 2024 อัพเดทข่าวอุดร (UD News Update). สงวนลิขสิทธิ์.
           </p>
-          <div className="flex gap-4 mt-4 md:mt-0">
+          <div className="flex gap-4 mt-4 md:mt-0 items-center">
             <Button variant="link" className="text-sm font-sarabun p-0 h-auto">
               นโยบายความเป็นส่วนตัว
             </Button>
             <Button variant="link" className="text-sm font-sarabun p-0 h-auto">
               เงื่อนไขการใช้งาน
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => window.location.href = '/admin'}
+              className="ml-4 text-muted-foreground hover:text-primary"
+              title="แอดมิน"
+            >
+              <Key className="h-4 w-4" />
             </Button>
           </div>
         </div>
