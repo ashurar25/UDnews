@@ -7,6 +7,7 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const menuItems = [
+    { name: "ค้นหาข่าว", href: "/search", icon: Search },
     { name: "หน้าแรก", href: "/" },
     { name: "ข่าวท้องถิ่น", href: "/local" },
     { name: "การเมือง", href: "/politics" },
