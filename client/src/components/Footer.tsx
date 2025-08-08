@@ -19,9 +19,11 @@ const Footer = () => {
           {/* Company Info */}
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <div className="bg-gradient-primary p-2 rounded-lg">
-                <span className="text-lg font-bold text-white">UD</span>
-              </div>
+              <img 
+                src="/logo.jpg" 
+                alt="UD News Update Logo"
+                className="h-12 w-12 object-contain rounded-lg"
+              />
               <div>
                 <h3 className="font-kanit font-bold text-lg">อัพเดทข่าวอุดร</h3>
                 <p className="text-sm text-muted-foreground">UD News Update</p>

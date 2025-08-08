@@ -46,9 +46,11 @@ const Header = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-6">
-            <div className="bg-orange-600/90 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-orange-400/30 shadow-orange-200">
-              <span className="text-3xl font-bold text-white drop-shadow-sm">UD</span>
-            </div>
+            <img 
+              src="/logo.jpg" 
+              alt="UD News Update Logo"
+              className="h-16 w-16 object-contain rounded-lg shadow-lg"
+            />
             <div>
               <h1 className="text-3xl font-bold font-kanit text-foreground">
                 อัพเดทข่าวอุดร
