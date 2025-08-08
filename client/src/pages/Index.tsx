@@ -5,12 +5,47 @@ import NewsCard from "@/components/NewsCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Clock, Calendar } from "lucide-react";
+import { useState } from "react";
 import heroImage from "@/assets/news-hero.jpg";
 import localImage from "@/assets/news-local.jpg";
 import politicsImage from "@/assets/news-politics.jpg";
 import sportsImage from "@/assets/news-sports.jpg";
 
 const Index = () => {
+  const [selectedDay, setSelectedDay] = useState<'yesterday' | 'today' | 'tomorrow'>('today');
+
+  const weatherData = {
+    yesterday: {
+      temp: 30,
+      high: 33,
+      low: 24,
+      condition: 'เมฆบางส่วน',
+      icon: '🌤️',
+      humidity: 72,
+      wind: 8
+    },
+    today: {
+      temp: 32,
+      high: 35,
+      low: 26,
+      condition: 'แจ่มใส',
+      icon: '☀️',
+      humidity: 65,
+      wind: 12
+    },
+    tomorrow: {
+      temp: 28,
+      high: 31,
+      low: 23,
+      condition: 'เมฆมาก',
+      icon: '⛅',
+      humidity: 78,
+      wind: 15
+    }
+  };
+
+  const currentWeather = weatherData[selectedDay];
+
   const breakingNews = [
     "นายกเทศมนตรีอุดรธานีเปิดโครงการพัฒนาเมือง",
     "การประชุมสภาเทศบาลครั้งสำคัญวันนี้",
@@ -194,21 +229,125 @@ const Index = () => {
                 <h3 className="text-xl font-bold font-kanit mb-4 text-foreground">
                   สภาพอากาศอุดรธานี
                 </h3>
-                <div className="text-center">
-                  <div className="text-5xl mb-3 drop-shadow-lg">☀️</div>
-                  <div className="text-3xl font-bold font-kanit text-orange-600 mb-1">32°C</div>
-                  <p className="text-muted-foreground font-sarabun mb-4">แจ่มใส</p>
-                  <div className="flex justify-between mt-4 text-sm font-sarabun bg-white/30 backdrop-blur-sm rounded-lg p-3">
+                
+                {/* Weather Navigation */}
+                <div className="flex justify-center mb-4">
+                  <div className="flex bg-white/20 backdrop-blur-sm rounded-full p-1">
+                    <button 
+                      onClick={() => setSelectedDay('yesterday')}
+                      className={`px-3 py-1 text-xs font-sarabun rounded-full transition-colors ${
+                        selectedDay === 'yesterday' 
+                          ? 'bg-white/50 text-foreground' 
+                          : 'text-muted-foreground hover:bg-white/30'
+                      }`}
+                    >
+                      เมื่อวาน
+                    </button>
+                    <button 
+                      onClick={() => setSelectedDay('today')}
+                      className={`px-3 py-1 text-xs font-sarabun rounded-full transition-colors ${
+                        selectedDay === 'today' 
+                          ? 'bg-white/50 text-foreground' 
+                          : 'text-muted-foreground hover:bg-white/30'
+                      }`}
+                    >
+                      วันนี้
+                    </button>
+                    <button 
+                      onClick={() => setSelectedDay('tomorrow')}
+                      className={`px-3 py-1 text-xs font-sarabun rounded-full transition-colors ${
+                        selectedDay === 'tomorrow' 
+                          ? 'bg-white/50 text-foreground' 
+                          : 'text-muted-foreground hover:bg-white/30'
+                      }`}
+                    >
+                      พรุ่งนี้
+                    </button>
+                  </div>
+                </div>
+
+                {/* Current Weather Display */}
+                <div className="text-center mb-4">
+                  <div className="text-5xl mb-3 drop-shadow-lg">{currentWeather.icon}</div>
+                  <div className="text-3xl font-bold font-kanit text-orange-600 mb-1">{currentWeather.temp}°C</div>
+                  <p className="text-muted-foreground font-sarabun mb-2">{currentWeather.condition}</p>
+                  
+                  {/* High/Low Temps */}
+                  <div className="flex justify-between mt-2 text-sm font-sarabun bg-white/30 backdrop-blur-sm rounded-lg p-3">
                     <div className="text-center">
-                      <span className="text-red-500 font-bold">35°C</span>
+                      <span className="text-red-500 font-bold">{currentWeather.high}°C</span>
                       <p className="text-xs text-muted-foreground">สูงสุด</p>
                     </div>
                     <div className="text-center">
-                      <span className="text-blue-500 font-bold">26°C</span>
+                      <span className="text-blue-500 font-bold">{currentWeather.low}°C</span>
                       <p className="text-xs text-muted-foreground">ต่ำสุด</p>
                     </div>
                   </div>
-                  <div className="mt-4 text-xs text-muted-foreground font-sarabun bg-white/20 backdrop-blur-sm rounded-full px-3 py-1">
+                </div>
+
+                {/* 3-Day Weather Summary */}
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  {/* Yesterday */}
+                  <div 
+                    className={`text-center backdrop-blur-sm rounded-lg p-2 cursor-pointer transition-all ${
+                      selectedDay === 'yesterday' 
+                        ? 'bg-white/40 border-2 border-orange-300/50' 
+                        : 'bg-white/20 hover:bg-white/30'
+                    }`}
+                    onClick={() => setSelectedDay('yesterday')}
+                  >
+                    <p className="text-xs font-sarabun text-muted-foreground mb-1">เมื่อวาน</p>
+                    <div className="text-lg mb-1">{weatherData.yesterday.icon}</div>
+                    <div className="text-sm font-bold font-kanit text-orange-500">{weatherData.yesterday.temp}°C</div>
+                    <p className="text-xs font-sarabun text-muted-foreground">{weatherData.yesterday.condition}</p>
+                  </div>
+                  
+                  {/* Today */}
+                  <div 
+                    className={`text-center backdrop-blur-sm rounded-lg p-2 cursor-pointer transition-all ${
+                      selectedDay === 'today' 
+                        ? 'bg-white/40 border-2 border-orange-300/50' 
+                        : 'bg-white/20 hover:bg-white/30'
+                    }`}
+                    onClick={() => setSelectedDay('today')}
+                  >
+                    <p className={`text-xs font-sarabun mb-1 ${selectedDay === 'today' ? 'text-foreground font-bold' : 'text-muted-foreground'}`}>วันนี้</p>
+                    <div className="text-lg mb-1">{weatherData.today.icon}</div>
+                    <div className="text-sm font-bold font-kanit text-orange-600">{weatherData.today.temp}°C</div>
+                    <p className="text-xs font-sarabun text-muted-foreground">{weatherData.today.condition}</p>
+                  </div>
+                  
+                  {/* Tomorrow */}
+                  <div 
+                    className={`text-center backdrop-blur-sm rounded-lg p-2 cursor-pointer transition-all ${
+                      selectedDay === 'tomorrow' 
+                        ? 'bg-white/40 border-2 border-orange-300/50' 
+                        : 'bg-white/20 hover:bg-white/30'
+                    }`}
+                    onClick={() => setSelectedDay('tomorrow')}
+                  >
+                    <p className="text-xs font-sarabun text-muted-foreground mb-1">พรุ่งนี้</p>
+                    <div className="text-lg mb-1">{weatherData.tomorrow.icon}</div>
+                    <div className="text-sm font-bold font-kanit text-orange-500">{weatherData.tomorrow.temp}°C</div>
+                    <p className="text-xs font-sarabun text-muted-foreground">{weatherData.tomorrow.condition}</p>
+                  </div>
+                </div>
+
+                {/* Additional Weather Info */}
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  <div className="text-center bg-white/20 backdrop-blur-sm rounded-lg p-2">
+                    <p className="text-xs font-sarabun text-muted-foreground">ความชื้น</p>
+                    <p className="text-sm font-bold font-kanit text-blue-600">{currentWeather.humidity}%</p>
+                  </div>
+                  <div className="text-center bg-white/20 backdrop-blur-sm rounded-lg p-2">
+                    <p className="text-xs font-sarabun text-muted-foreground">ลม</p>
+                    <p className="text-sm font-bold font-kanit text-green-600">{currentWeather.wind} km/h</p>
+                  </div>
+                </div>
+
+                {/* Update Time */}
+                <div className="text-center">
+                  <div className="text-xs text-muted-foreground font-sarabun bg-white/20 backdrop-blur-sm rounded-full px-3 py-1">
                     อัพเดทล่าสุด: {new Date().toLocaleTimeString('th-TH')}
                   </div>
                 </div>
