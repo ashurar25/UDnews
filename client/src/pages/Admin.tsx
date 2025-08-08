@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Settings, Users, FileText, BarChart3, Home } from "lucide-react"
 import { Link } from "react-router-dom"
+import RSSManager from "@/components/RSSManager"
 
 const Admin = () => {
   return (
@@ -30,7 +31,12 @@ const Admin = () => {
 
       {/* Admin Content */}
       <main className="container mx-auto px-4 py-8">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* RSS Management Section */}
+        <div className="mb-8">
+          <RSSManager />
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"></div>
           {/* Theme Settings Card */}
           <Card className="hover:shadow-warm transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
