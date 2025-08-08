@@ -58,7 +58,7 @@ export class MemStorage implements IStorage {
   async insertRssFeed(feed: InsertRssFeed): Promise<RssFeed> {
     // In-memory implementation for demonstration
     const id = this.currentId++;
-    const rssFeed: RssFeed = { ...feed, id };
+    const rssFeed: RssFeed = { ...feed, id, description: feed.description ?? null };
     return rssFeed;
   }
 

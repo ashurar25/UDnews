@@ -302,7 +302,7 @@ const Index = () => {
                       <div className="text-3xl font-bold font-kanit text-orange-600 mb-1">{currentWeather.temp}°C</div>
                       <p className="text-muted-foreground font-sarabun mb-2">{currentWeather.conditionThai}</p>
                     </>
-                  )}</div>
+                  )}
                   
                   {/* High/Low Temps */}
                   <div className="flex justify-between mt-2 text-sm font-sarabun bg-white/30 backdrop-blur-sm rounded-lg p-3">
