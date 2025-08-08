@@ -163,7 +163,7 @@ const Index = () => {
           src={heroImage} 
           alt="UD News Hero"
           className="w-full h-full object-cover object-center"
-          style={{ objectPosition: 'center 30%' }}
+          style={{ objectPosition: 'center 60%' }}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent">
           <div className="container mx-auto px-4 h-full flex items-center">
