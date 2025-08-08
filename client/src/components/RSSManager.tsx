@@ -40,19 +40,23 @@ const RSSManager = () => {
     title: "",
     url: "",
     description: "",
-    category: "ทั่วไป",
+    category: "ข่าวทั่วไป",
     isActive: true,
   });
   const { toast } = useToast();
 
   const categories = [
-    "ทั่วไป",
+    "ข่าวทั่วไป",
     "ข่าวท้องถิ่น",
+    "ข่าวราชการ",
     "การเมือง",
     "กีฬา",
     "บันเทิง",
     "เศรษฐกิจ",
-    "เทคโนโลยี"
+    "เทคโนโลยี",
+    "ข่าวต่างประเทศ",
+    "สุขภาพ",
+    "การศึกษา"
   ];
 
   useEffect(() => {
@@ -161,7 +165,7 @@ const RSSManager = () => {
       title: "",
       url: "",
       description: "",
-      category: "ทั่วไป",
+      category: "ข่าวทั่วไป",
       isActive: true,
     });
   };
@@ -238,22 +242,43 @@ const RSSManager = () => {
       {
         title: "มติชน",
         url: "https://www.matichon.co.th/feed",
-        description: "ข่าวสารจากสำนักข่าวมติชน",
+        description: "ข่าวสารจากสำนักข่าวมติชน ข่าวการเมือง สังคม เศรษฐกิจ",
         category: "ข่าวทั่วไป",
         isActive: true
       },
       {
-        title: "ไทยรัฐ",
-        url: "https://www.thairath.co.th/rss/news.xml",
-        description: "ข่าวสารจากไทยรัฐ",
-        category: "ข่าวทั่วไป", 
+        title: "โพสต์ทูเดย์",
+        url: "https://www.posttoday.com/rss/news.xml",
+        description: "ข่าวสารจากโพสต์ทูเดย์ ข่าวการเมือง เศรษฐกิจ สังคม",
+        category: "ข่าวทั่วไป",
         isActive: true
       },
       {
-        title: "BBC Thai",
-        url: "https://feeds.bbci.co.uk/thai/rss.xml",
-        description: "ข่าวสารจาก BBC ภาษาไทย",
-        category: "ข่าวต่างประเทศ",
+        title: "TNN24",
+        url: "https://www.tnn24.com/feed/",
+        description: "ข่าวสารจาก TNN24 ข่าวด่วน การเมือง บันเทิง",
+        category: "ข่าวทั่วไป",
+        isActive: true
+      },
+      {
+        title: "ThaiPBS",
+        url: "https://news.thaipbs.or.th/rss/news.xml",
+        description: "ข่าวสารจากไทยพีบีเอส ข่าวสาธารณะ การศึกษา วัฒนธรรม",
+        category: "ข่าวทั่วไป",
+        isActive: true
+      },
+      {
+        title: "คมชัดลึก",
+        url: "https://www.komchadluek.net/rss/news.xml",
+        description: "ข่าวสารจากคมชัดลึก ข่าวการเมือง สังคม อาชญากรรม",
+        category: "ข่าวทั่วไป",
+        isActive: true
+      },
+      {
+        title: "สำนักข่าวไทย",
+        url: "https://thainews.prd.go.th/rss/news.xml",
+        description: "ข่าวราชการจากสำนักข่าวไทย กรมประชาสัมพันธ์",
+        category: "ข่าวราชการ",
         isActive: true
       }
     ];
@@ -274,7 +299,7 @@ const RSSManager = () => {
 
     toast({
       title: "เพิ่มตัวอย่าง RSS Feed สำเร็จ",
-      description: "เพิ่ม RSS Feed ตัวอย่าง 3 รายการแล้ว",
+      description: "เพิ่ม RSS Feed จากสำนักข่าวไทยหลักแล้ว 6 รายการ",
     });
 
     fetchFeeds();

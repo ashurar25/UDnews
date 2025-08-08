@@ -97,13 +97,22 @@ export class RSSService {
       const category = itemCategories[0].toLowerCase();
       
       // Map common categories to Thai categories
-      if (category.includes('politics') || category.includes('government')) return 'การเมือง';
-      if (category.includes('sport') || category.includes('football') || category.includes('soccer')) return 'กีฬา';
-      if (category.includes('business') || category.includes('economy')) return 'ธุรกิจ';
-      if (category.includes('technology') || category.includes('tech')) return 'เทคโนโลยี';
-      if (category.includes('health') || category.includes('medical')) return 'สุขภาพ';
-      if (category.includes('education') || category.includes('school')) return 'การศึกษา';
-      if (category.includes('entertainment') || category.includes('celebrity')) return 'บันเทิง';
+      if (category.includes('politics') || category.includes('government') || 
+          category.includes('การเมือง') || category.includes('รัฐบาล')) return 'การเมือง';
+      if (category.includes('sport') || category.includes('football') || category.includes('soccer') ||
+          category.includes('กีฬา') || category.includes('ฟุตบอล')) return 'กีฬา';
+      if (category.includes('business') || category.includes('economy') ||
+          category.includes('ธุรกิจ') || category.includes('เศรษฐกิจ')) return 'เศรษฐกิจ';
+      if (category.includes('technology') || category.includes('tech') ||
+          category.includes('เทคโนโลยี') || category.includes('ไอที')) return 'เทคโนโลยี';
+      if (category.includes('health') || category.includes('medical') ||
+          category.includes('สุขภาพ') || category.includes('การแพทย์')) return 'สุขภาพ';
+      if (category.includes('education') || category.includes('school') ||
+          category.includes('การศึกษา') || category.includes('โรงเรียน')) return 'การศึกษา';
+      if (category.includes('entertainment') || category.includes('celebrity') ||
+          category.includes('บันเทิง') || category.includes('ดารา')) return 'บันเทิง';
+      if (category.includes('local') || category.includes('ท้องถิ่น') ||
+          category.includes('จังหวัด') || category.includes('อุดรธานี')) return 'ข่าวท้องถิ่น';
     }
 
     // Fall back to feed category
@@ -206,9 +215,11 @@ export class RSSService {
   // Determine if news is breaking based on title keywords
   private isBreakingNews(title: string): boolean {
     const breakingKeywords = [
-      'ด่วน', 'เร่งด่วน', 'แบบเร่งด่วน', 'เหตุการณ์ด่วน',
-      'สำคัญ', 'เหตุการณ์สำคัญ', 'ประกาศ', 'แจ้งข่าว',
-      'เกิดเหตุ', 'อุบัติเหตุ', 'เพลิงไหม้', 'น้ำท่วม'
+      'ด่วน', 'เร่งด่วน', 'แบบเร่งด่วน', 'เหตุการณ์ด่วน', 'ข่าวด่วน',
+      'สำคัญ', 'เหตุการณ์สำคัญ', 'ประกาศ', 'แจ้งข่าว', 'breaking',
+      'เกิดเหตุ', 'อุบัติเหตุ', 'เพลิงไหม้', 'น้ำท่วม', 'แผ่นดินไหว',
+      'วิกฤต', 'ฉุกเฉิน', 'เตือน', 'อันตราย', 'urgent',
+      'ลาออก', 'ตาย', 'เสียชีวิต', 'จับกุม', 'ตร.', 'ชนเผ่า'
     ];
 
     return breakingKeywords.some(keyword => 
