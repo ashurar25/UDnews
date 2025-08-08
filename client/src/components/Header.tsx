@@ -7,12 +7,12 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const menuItems = [
-    { name: "หน้าแรก", href: "/" },
-    { name: "ข่าวท้องถิ่น", href: "/local" },
-    { name: "การเมือง", href: "/politics" },
-    { name: "กีฬา", href: "/sports" },
-    { name: "บันเทิง", href: "/entertainment" },
-    { name: "ติดต่อเรา", href: "/contact" },
+    { name: "บทความทั้งหมด", href: "/articles" },
+    { name: "บทความข่าวท้องถิ่น", href: "/articles/local" },
+    { name: "บทความการเมือง", href: "/articles/politics" },
+    { name: "บทความกีฬา", href: "/articles/sports" },
+    { name: "บทความบันเทิง", href: "/articles/entertainment" },
+    { name: "บทความเศรษฐกิจ", href: "/articles/business" },
     { name: "แอดมิน", href: "/admin" }
   ];
 

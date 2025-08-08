@@ -160,7 +160,7 @@ export class RSSService {
 
     // Check if this article already exists (by link)
     const existingNews = await storage.getAllNews();
-    const exists = existingNews.some(news => 
+    const exists = existingNews.some((news: any) => 
       news.title === item.title || 
       (item.link && news.content.includes(item.link))
     );
@@ -256,7 +256,7 @@ export class RSSService {
           // Add delay between feeds to be respectful
           await new Promise(resolve => setTimeout(resolve, 2000));
         } catch (error) {
-          console.error(`Failed to process feed ${feed.title}:`, error);
+          console.error(`Failed to process feed ${(feed as any).title}:`, error);
         }
       }
 

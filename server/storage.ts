@@ -3,6 +3,7 @@ import { Pool, neonConfig } from "@neondatabase/serverless";
 import { users, rssFeeds, newsArticles, sponsorBanners, type InsertUser, type User, type InsertRssFeed, type RssFeed, type InsertNews, type NewsArticle, type InsertSponsorBanner, type SponsorBanner } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import ws from "ws";
+import { db } from "./db";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -253,4 +254,140 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async getAllRssFeeds(): Promise<RssFeed[]> {
+    return await db.select().from(rssFeeds);
+  }
+
+  async getRssFeedById(id: number): Promise<RssFeed | null> {
+    const [feed] = await db.select().from(rssFeeds).where(eq(rssFeeds.id, id));
+    return feed || null;
+  }
+
+  async insertRssFeed(feed: InsertRssFeed): Promise<RssFeed> {
+    const [inserted] = await db
+      .insert(rssFeeds)
+      .values(feed)
+      .returning();
+    return inserted;
+  }
+
+  async updateRssFeed(id: number, feed: Partial<InsertRssFeed>): Promise<RssFeed | null> {
+    const [updated] = await db
+      .update(rssFeeds)
+      .set(feed)
+      .where(eq(rssFeeds.id, id))
+      .returning();
+    return updated || null;
+  }
+
+  async deleteRssFeed(id: number): Promise<boolean> {
+    const result = await db
+      .delete(rssFeeds)
+      .where(eq(rssFeeds.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getAllNews(): Promise<NewsArticle[]> {
+    return await db.select().from(newsArticles).orderBy(newsArticles.createdAt);
+  }
+
+  async getNewsById(id: number): Promise<NewsArticle | null> {
+    const [article] = await db.select().from(newsArticles).where(eq(newsArticles.id, id));
+    return article || null;
+  }
+
+  async insertNews(newsData: InsertNews): Promise<NewsArticle> {
+    const [inserted] = await db
+      .insert(newsArticles)
+      .values(newsData)
+      .returning();
+    return inserted;
+  }
+
+  async updateNews(id: number, newsData: Partial<InsertNews>): Promise<NewsArticle | null> {
+    const [updated] = await db
+      .update(newsArticles)
+      .set(newsData)
+      .where(eq(newsArticles.id, id))
+      .returning();
+    return updated || null;
+  }
+
+  async deleteNews(id: number): Promise<boolean> {
+    const result = await db
+      .delete(newsArticles)
+      .where(eq(newsArticles.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getAllSponsorBanners(): Promise<SponsorBanner[]> {
+    return await db.select().from(sponsorBanners).where(eq(sponsorBanners.isActive, true));
+  }
+
+  async getSponsorBannersByPosition(position: string): Promise<SponsorBanner[]> {
+    return await db.select().from(sponsorBanners)
+      .where(eq(sponsorBanners.position, position));
+  }
+
+  async getSponsorBannerById(id: number): Promise<SponsorBanner | null> {
+    const [banner] = await db.select().from(sponsorBanners).where(eq(sponsorBanners.id, id));
+    return banner || null;
+  }
+
+  async insertSponsorBanner(bannerData: InsertSponsorBanner): Promise<SponsorBanner> {
+    const [inserted] = await db
+      .insert(sponsorBanners)
+      .values(bannerData)
+      .returning();
+    return inserted;
+  }
+
+  async updateSponsorBanner(id: number, bannerData: Partial<InsertSponsorBanner>): Promise<SponsorBanner | null> {
+    const [updated] = await db
+      .update(sponsorBanners)
+      .set(bannerData)
+      .where(eq(sponsorBanners.id, id))
+      .returning();
+    return updated || null;
+  }
+
+  async deleteSponsorBanner(id: number): Promise<boolean> {
+    const result = await db
+      .delete(sponsorBanners)
+      .where(eq(sponsorBanners.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async incrementBannerClick(id: number): Promise<boolean> {
+    const banner = await this.getSponsorBannerById(id);
+    if (!banner) return false;
+    
+    const result = await db
+      .update(sponsorBanners)
+      .set({ clickCount: banner.clickCount + 1 })
+      .where(eq(sponsorBanners.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+}
+
+// Use DatabaseStorage when DATABASE_URL is available, fallback to MemStorage
+export const storage = process.env.DATABASE_URL ? new DatabaseStorage() : new MemStorage();
