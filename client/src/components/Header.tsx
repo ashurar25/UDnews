@@ -42,7 +42,7 @@ const Header = () => {
       </div>
 
       {/* Main Header */}
-      <div className="container mx-auto px-6 py-6 bg-orange-500/40 backdrop-blur-sm rounded-lg mx-6 mt-3">
+      <div className="container mx-auto px-6 py-6 bg-orange-500/40 backdrop-blur-sm">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-6">
