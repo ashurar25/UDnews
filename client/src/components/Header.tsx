@@ -18,18 +18,24 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       {/* Top Bar */}
-      <div className="bg-gradient-warm text-white py-2">
+      <div className="bg-orange-500 text-white py-2">
         <div className="container mx-auto px-4 flex justify-between items-center text-sm">
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            <span className="font-sarabun">
-              {new Date().toLocaleDateString('th-TH', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
-            </span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span className="font-sarabun">
+                {new Date().toLocaleDateString('th-TH', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </span>
+            </div>
+            <div className="hidden md:flex items-center gap-4">
+              <span className="font-sarabun">📞 092-443-4311</span>
+              <span className="font-sarabun">✉️ kenginol.ar@gmail.com</span>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <Button 
@@ -50,7 +56,7 @@ const Header = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-4">
-            <div className="bg-gradient-primary p-3 rounded-lg shadow-warm">
+            <div className="bg-orange-500 p-3 rounded-lg shadow-lg">
               <span className="text-2xl font-bold text-white">UD</span>
             </div>
             <div>
