@@ -174,13 +174,15 @@ const RSSManager = () => {
 
   return (
     <Card className="hover:shadow-warm transition-shadow">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div>
-          <CardTitle className="text-lg font-kanit flex items-center gap-2">
-            <Rss className="h-5 w-5 text-primary" />
+          <CardTitle className="text-base font-kanit flex items-center gap-2">
+            <div className="bg-orange-500/80 p-1.5 rounded backdrop-blur-sm">
+              <Rss className="h-4 w-4 text-white" />
+            </div>
             จัดการ RSS Feed
           </CardTitle>
-          <CardDescription className="font-sarabun">
+          <CardDescription className="font-sarabun text-sm">
             เพิ่ม แก้ไข และลบ RSS Feed ของเว็บไซต์
           </CardDescription>
         </div>

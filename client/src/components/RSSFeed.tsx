@@ -57,18 +57,18 @@ const RSSFeed = () => {
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-6">
       <div className="max-w-4xl mx-auto">
         
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="bg-gradient-primary p-3 rounded-lg">
-              <Rss className="h-8 w-8 text-white" />
+        <div className="text-center mb-6">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <div className="bg-orange-500/80 p-2 rounded-lg backdrop-blur-sm">
+              <Rss className="h-6 w-6 text-white" />
             </div>
-            <h1 className="text-3xl font-bold font-kanit">RSS Feed</h1>
+            <h1 className="text-2xl font-bold font-kanit">RSS Feed</h1>
           </div>
-          <p className="text-lg text-muted-foreground font-sarabun">
+          <p className="text-base text-muted-foreground font-sarabun">
             ติดตามข่าวสารล่าสุดผ่าน RSS Feed
           </p>
         </div>
