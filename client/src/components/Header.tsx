@@ -19,11 +19,11 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       {/* Top Bar */}
-      <div className="bg-orange-600 backdrop-blur-sm text-white py-2">
-        <div className="container mx-auto px-4 flex justify-between items-center text-sm">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <Clock className="h-4 w-4" />
+      <div className="bg-orange-600 backdrop-blur-sm text-white py-4">
+        <div className="container mx-auto px-6 flex justify-between items-center text-base">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <Clock className="h-5 w-5" />
               <span className="font-sarabun">
                 {new Date().toLocaleDateString('th-TH', { 
                   weekday: 'long', 
@@ -33,7 +33,7 @@ const Header = () => {
                 })}
               </span>
             </div>
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-6">
               <span className="font-sarabun">📞 092-443-4311</span>
               <span className="font-sarabun">✉️ kenginol.ar@gmail.com</span>
             </div>
@@ -42,25 +42,25 @@ const Header = () => {
       </div>
 
       {/* Main Header */}
-      <div className="container mx-auto px-4 py-4 bg-orange-500/40 backdrop-blur-sm rounded-lg mx-4 mt-2">
+      <div className="container mx-auto px-6 py-6 bg-orange-500/40 backdrop-blur-sm rounded-lg mx-6 mt-3">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center gap-4">
-            <div className="bg-orange-600 p-3 rounded-lg shadow-lg backdrop-blur-sm">
-              <span className="text-2xl font-bold text-white">UD</span>
+          <div className="flex items-center gap-6">
+            <div className="bg-orange-600 p-4 rounded-xl shadow-lg backdrop-blur-sm">
+              <span className="text-3xl font-bold text-white">UD</span>
             </div>
             <div>
-              <h1 className="text-2xl font-bold font-kanit text-foreground">
+              <h1 className="text-3xl font-bold font-kanit text-foreground">
                 อัพเดทข่าวอุดร
               </h1>
-              <p className="text-sm text-muted-foreground font-sarabun">
+              <p className="text-base text-muted-foreground font-sarabun">
                 UD News Update
               </p>
             </div>
           </div>
 
           {/* Search Bar - Desktop */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input 
@@ -82,8 +82,8 @@ const Header = () => {
         </div>
 
         {/* Navigation Menu */}
-        <nav className={`mt-4 ${isMenuOpen ? 'block' : 'hidden md:block'}`}>
-          <div className="flex flex-col md:flex-row gap-2 md:gap-6">
+        <nav className={`mt-6 ${isMenuOpen ? 'block' : 'hidden md:block'}`}>
+          <div className="flex flex-col md:flex-row gap-3 md:gap-8">
             {menuItems.map((item, index) => (
               <Button
                 key={index}
@@ -98,7 +98,7 @@ const Header = () => {
         </nav>
 
         {/* Mobile Search */}
-        <div className={`mt-4 ${isMenuOpen ? 'block md:hidden' : 'hidden'}`}>
+        <div className={`mt-6 ${isMenuOpen ? 'block md:hidden' : 'hidden'}`}>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input 
