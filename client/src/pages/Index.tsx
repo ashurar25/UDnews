@@ -188,17 +188,29 @@ const Index = () => {
             </div>
 
             {/* Weather Widget */}
-            <div className="bg-gradient-subtle rounded-lg p-6 shadow-news">
-              <h3 className="text-xl font-bold font-kanit mb-4">
-                สภาพอากาศอุดรธานี
-              </h3>
-              <div className="text-center">
-                <div className="text-4xl mb-2">☀️</div>
-                <div className="text-2xl font-bold font-kanit">32°C</div>
-                <p className="text-muted-foreground font-sarabun">แจ่มใส</p>
-                <div className="flex justify-between mt-4 text-sm font-sarabun">
-                  <span>สูงสุด: 35°C</span>
-                  <span>ต่ำสุด: 26°C</span>
+            <div className="relative rounded-lg p-6 shadow-news overflow-hidden bg-gradient-to-br from-orange-200/40 via-yellow-100/30 to-blue-200/40 backdrop-blur-sm border border-white/20">
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-300/20 via-transparent to-blue-300/20"></div>
+              <div className="relative z-10">
+                <h3 className="text-xl font-bold font-kanit mb-4 text-foreground">
+                  สภาพอากาศอุดรธานี
+                </h3>
+                <div className="text-center">
+                  <div className="text-5xl mb-3 drop-shadow-lg">☀️</div>
+                  <div className="text-3xl font-bold font-kanit text-orange-600 mb-1">32°C</div>
+                  <p className="text-muted-foreground font-sarabun mb-4">แจ่มใส</p>
+                  <div className="flex justify-between mt-4 text-sm font-sarabun bg-white/30 backdrop-blur-sm rounded-lg p-3">
+                    <div className="text-center">
+                      <span className="text-red-500 font-bold">35°C</span>
+                      <p className="text-xs text-muted-foreground">สูงสุด</p>
+                    </div>
+                    <div className="text-center">
+                      <span className="text-blue-500 font-bold">26°C</span>
+                      <p className="text-xs text-muted-foreground">ต่ำสุด</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 text-xs text-muted-foreground font-sarabun bg-white/20 backdrop-blur-sm rounded-full px-3 py-1">
+                    อัพเดทล่าสุด: {new Date().toLocaleTimeString('th-TH')}
+                  </div>
                 </div>
               </div>
             </div>
