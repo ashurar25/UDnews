@@ -5,46 +5,68 @@ import NewsCard from "@/components/NewsCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Clock, Calendar } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getWeatherForecast } from "@/lib/weather-api";
 import heroImage from "@/assets/news-hero.jpg";
 import localImage from "@/assets/news-local.jpg";
 import politicsImage from "@/assets/news-politics.jpg";
 import sportsImage from "@/assets/news-sports.jpg";
 
+interface WeatherData {
+  temp: number;
+  high: number;
+  low: number;
+  condition: string;
+  conditionThai: string;
+  icon: string;
+  humidity: number;
+  wind: number;
+  city: string;
+}
+
+interface ForecastData {
+  yesterday: WeatherData;
+  today: WeatherData;
+  tomorrow: WeatherData;
+}
+
 const Index = () => {
   const [selectedDay, setSelectedDay] = useState<'yesterday' | 'today' | 'tomorrow'>('today');
+  const [weatherData, setWeatherData] = useState<ForecastData | null>(null);
+  const [isLoadingWeather, setIsLoadingWeather] = useState(true);
 
-  const weatherData = {
-    yesterday: {
-      temp: 30,
-      high: 33,
-      low: 24,
-      condition: 'เมฆบางส่วน',
-      icon: '🌤️',
-      humidity: 72,
-      wind: 8
-    },
-    today: {
-      temp: 32,
-      high: 35,
-      low: 26,
-      condition: 'แจ่มใส',
-      icon: '☀️',
-      humidity: 65,
-      wind: 12
-    },
-    tomorrow: {
-      temp: 28,
-      high: 31,
-      low: 23,
-      condition: 'เมฆมาก',
-      icon: '⛅',
-      humidity: 78,
-      wind: 15
-    }
+  // Load weather data when component mounts
+  useEffect(() => {
+    const loadWeather = async () => {
+      try {
+        setIsLoadingWeather(true);
+        const forecast = await getWeatherForecast();
+        setWeatherData(forecast);
+      } catch (error) {
+        console.error('Failed to load weather data:', error);
+      } finally {
+        setIsLoadingWeather(false);
+      }
+    };
+
+    loadWeather();
+    
+    // Refresh weather data every 30 minutes
+    const interval = setInterval(loadWeather, 30 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const currentWeather = weatherData?.[selectedDay] || {
+    temp: 0,
+    high: 0,
+    low: 0,
+    condition: '',
+    conditionThai: 'กำลังโหลด...',
+    icon: '🌡️',
+    humidity: 0,
+    wind: 0,
+    city: 'อุดรธานี'
   };
-
-  const currentWeather = weatherData[selectedDay];
 
   const breakingNews = [
     "นายกเทศมนตรีอุดรธานีเปิดโครงการพัฒนาเมือง",
@@ -268,9 +290,19 @@ const Index = () => {
 
                 {/* Current Weather Display */}
                 <div className="text-center mb-4">
-                  <div className="text-5xl mb-3 drop-shadow-lg">{currentWeather.icon}</div>
-                  <div className="text-3xl font-bold font-kanit text-orange-600 mb-1">{currentWeather.temp}°C</div>
-                  <p className="text-muted-foreground font-sarabun mb-2">{currentWeather.condition}</p>
+                  {isLoadingWeather ? (
+                    <div className="animate-pulse">
+                      <div className="text-5xl mb-3">🌡️</div>
+                      <div className="text-3xl font-bold font-kanit text-orange-600 mb-1">--°C</div>
+                      <p className="text-muted-foreground font-sarabun mb-2">กำลังโหลด...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-5xl mb-3 drop-shadow-lg">{currentWeather.icon}</div>
+                      <div className="text-3xl font-bold font-kanit text-orange-600 mb-1">{currentWeather.temp}°C</div>
+                      <p className="text-muted-foreground font-sarabun mb-2">{currentWeather.conditionThai}</p>
+                    </>
+                  )}</div>
                   
                   {/* High/Low Temps */}
                   <div className="flex justify-between mt-2 text-sm font-sarabun bg-white/30 backdrop-blur-sm rounded-lg p-3">
@@ -287,50 +319,58 @@ const Index = () => {
 
                 {/* 3-Day Weather Summary */}
                 <div className="grid grid-cols-3 gap-2 mb-4">
-                  {/* Yesterday */}
-                  <div 
-                    className={`text-center backdrop-blur-sm rounded-lg p-2 cursor-pointer transition-all ${
-                      selectedDay === 'yesterday' 
-                        ? 'bg-white/40 border-2 border-orange-300/50' 
-                        : 'bg-white/20 hover:bg-white/30'
-                    }`}
-                    onClick={() => setSelectedDay('yesterday')}
-                  >
-                    <p className="text-xs font-sarabun text-muted-foreground mb-1">เมื่อวาน</p>
-                    <div className="text-lg mb-1">{weatherData.yesterday.icon}</div>
-                    <div className="text-sm font-bold font-kanit text-orange-500">{weatherData.yesterday.temp}°C</div>
-                    <p className="text-xs font-sarabun text-muted-foreground">{weatherData.yesterday.condition}</p>
-                  </div>
-                  
-                  {/* Today */}
-                  <div 
-                    className={`text-center backdrop-blur-sm rounded-lg p-2 cursor-pointer transition-all ${
-                      selectedDay === 'today' 
-                        ? 'bg-white/40 border-2 border-orange-300/50' 
-                        : 'bg-white/20 hover:bg-white/30'
-                    }`}
-                    onClick={() => setSelectedDay('today')}
-                  >
-                    <p className={`text-xs font-sarabun mb-1 ${selectedDay === 'today' ? 'text-foreground font-bold' : 'text-muted-foreground'}`}>วันนี้</p>
-                    <div className="text-lg mb-1">{weatherData.today.icon}</div>
-                    <div className="text-sm font-bold font-kanit text-orange-600">{weatherData.today.temp}°C</div>
-                    <p className="text-xs font-sarabun text-muted-foreground">{weatherData.today.condition}</p>
-                  </div>
-                  
-                  {/* Tomorrow */}
-                  <div 
-                    className={`text-center backdrop-blur-sm rounded-lg p-2 cursor-pointer transition-all ${
-                      selectedDay === 'tomorrow' 
-                        ? 'bg-white/40 border-2 border-orange-300/50' 
-                        : 'bg-white/20 hover:bg-white/30'
-                    }`}
-                    onClick={() => setSelectedDay('tomorrow')}
-                  >
-                    <p className="text-xs font-sarabun text-muted-foreground mb-1">พรุ่งนี้</p>
-                    <div className="text-lg mb-1">{weatherData.tomorrow.icon}</div>
-                    <div className="text-sm font-bold font-kanit text-orange-500">{weatherData.tomorrow.temp}°C</div>
-                    <p className="text-xs font-sarabun text-muted-foreground">{weatherData.tomorrow.condition}</p>
-                  </div>
+                  {weatherData ? (
+                    <>
+                      {/* Yesterday */}
+                      <div 
+                        className={`text-center backdrop-blur-sm rounded-lg p-2 cursor-pointer transition-all ${
+                          selectedDay === 'yesterday' 
+                            ? 'bg-white/40 border-2 border-orange-300/50' 
+                            : 'bg-white/20 hover:bg-white/30'
+                        }`}
+                        onClick={() => setSelectedDay('yesterday')}
+                      >
+                        <p className="text-xs font-sarabun text-muted-foreground mb-1">เมื่อวาน</p>
+                        <div className="text-lg mb-1">{weatherData.yesterday.icon}</div>
+                        <div className="text-sm font-bold font-kanit text-orange-500">{weatherData.yesterday.temp}°C</div>
+                        <p className="text-xs font-sarabun text-muted-foreground">{weatherData.yesterday.conditionThai}</p>
+                      </div>
+                      
+                      {/* Today */}
+                      <div 
+                        className={`text-center backdrop-blur-sm rounded-lg p-2 cursor-pointer transition-all ${
+                          selectedDay === 'today' 
+                            ? 'bg-white/40 border-2 border-orange-300/50' 
+                            : 'bg-white/20 hover:bg-white/30'
+                        }`}
+                        onClick={() => setSelectedDay('today')}
+                      >
+                        <p className={`text-xs font-sarabun mb-1 ${selectedDay === 'today' ? 'text-foreground font-bold' : 'text-muted-foreground'}`}>วันนี้</p>
+                        <div className="text-lg mb-1">{weatherData.today.icon}</div>
+                        <div className="text-sm font-bold font-kanit text-orange-600">{weatherData.today.temp}°C</div>
+                        <p className="text-xs font-sarabun text-muted-foreground">{weatherData.today.conditionThai}</p>
+                      </div>
+                      
+                      {/* Tomorrow */}
+                      <div 
+                        className={`text-center backdrop-blur-sm rounded-lg p-2 cursor-pointer transition-all ${
+                          selectedDay === 'tomorrow' 
+                            ? 'bg-white/40 border-2 border-orange-300/50' 
+                            : 'bg-white/20 hover:bg-white/30'
+                        }`}
+                        onClick={() => setSelectedDay('tomorrow')}
+                      >
+                        <p className="text-xs font-sarabun text-muted-foreground mb-1">พรุ่งนี้</p>
+                        <div className="text-lg mb-1">{weatherData.tomorrow.icon}</div>
+                        <div className="text-sm font-bold font-kanit text-orange-500">{weatherData.tomorrow.temp}°C</div>
+                        <p className="text-xs font-sarabun text-muted-foreground">{weatherData.tomorrow.conditionThai}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="col-span-3 text-center text-muted-foreground font-sarabun">
+                      กำลังโหลดข้อมูลพยากรณ์อากาศ...
+                    </div>
+                  )}
                 </div>
 
                 {/* Additional Weather Info */}
