@@ -150,10 +150,10 @@ const Index = () => {
       <ThaiSpecialDayBanner />
       
       {/* Breaking News Ticker */}
-      <div className="bg-news-urgent text-white py-2 overflow-hidden">
+      <div className="bg-red-600 text-white py-2 overflow-hidden">
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-4">
-            <Badge className="bg-white text-news-urgent whitespace-nowrap font-kanit">
+            <Badge className="bg-white text-red-600 whitespace-nowrap font-kanit">
               ข่าวด่วน
             </Badge>
             <div className="flex animate-slide-up">
