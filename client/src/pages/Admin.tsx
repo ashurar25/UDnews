@@ -6,6 +6,7 @@ import { Settings, Users, FileText, BarChart3, Home } from "lucide-react"
 import { Link } from "react-router-dom"
 import RSSManager from "@/components/RSSManager"
 import NewsManager from "@/components/NewsManager"
+import SponsorManager from "@/components/SponsorManager"
 
 const Admin = () => {
   return (
@@ -40,6 +41,11 @@ const Admin = () => {
         {/* RSS Management Section */}
         <div className="mb-8">
           <RSSManager />
+        </div>
+        
+        {/* Sponsor Banner Management Section */}
+        <div className="mb-8">
+          <SponsorManager />
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

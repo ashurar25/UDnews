@@ -1,10 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Facebook, Twitter, Youtube, Mail, Phone, MapPin, Rss } from "lucide-react";
+import SponsorBanner from "./SponsorBanner";
 
 const Footer = () => {
   return (
     <footer className="bg-gradient-subtle border-t">
+      {/* Footer Sponsor Banners */}
+      <div className="bg-muted/20 border-b">
+        <div className="container mx-auto px-4 py-6">
+          <SponsorBanner position="footer" />
+        </div>
+      </div>
+      
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}

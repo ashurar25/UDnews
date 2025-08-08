@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { ThaiSpecialDayBanner } from "@/components/ThaiSpecialDayBanner";
 import NewsCard from "@/components/NewsCard";
+import SponsorBanner from "@/components/SponsorBanner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Clock, Calendar } from "lucide-react";
@@ -137,6 +138,14 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
+      
+      {/* Header Sponsor Banners */}
+      <div className="bg-muted/30 py-3">
+        <div className="container mx-auto px-4">
+          <SponsorBanner position="header" className="justify-center" />
+        </div>
+      </div>
+      
       <ThaiSpecialDayBanner />
       
       {/* Breaking News Ticker */}
@@ -197,6 +206,11 @@ const Index = () => {
               <NewsCard key={index} {...news} />
             ))}
           </div>
+          
+          {/* Between News Sponsor Banner */}
+          <div className="mt-8 mb-4">
+            <SponsorBanner position="between_news" />
+          </div>
         </section>
 
         {/* Latest News Section */}
@@ -218,6 +232,9 @@ const Index = () => {
 
           {/* Sidebar */}
           <div className="space-y-8">
+            
+            {/* Sidebar Sponsor Banners */}
+            <SponsorBanner position="sidebar" />
             
             {/* Popular Today */}
             <div className="bg-card rounded-lg p-6 shadow-news">

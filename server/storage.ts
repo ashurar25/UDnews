@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { Pool, neonConfig } from "@neondatabase/serverless";
-import { users, rssFeeds, newsArticles, type InsertUser, type User, type InsertRssFeed, type RssFeed, type InsertNews, type NewsArticle } from "@shared/schema";
+import { users, rssFeeds, newsArticles, sponsorBanners, type InsertUser, type User, type InsertRssFeed, type RssFeed, type InsertNews, type NewsArticle, type InsertSponsorBanner, type SponsorBanner } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import ws from "ws";
 
@@ -21,18 +21,27 @@ export interface IStorage {
   insertNews(news: InsertNews): Promise<NewsArticle>;
   updateNews(id: number, news: Partial<InsertNews>): Promise<NewsArticle | null>;
   deleteNews(id: number): Promise<boolean>;
+  getAllSponsorBanners(): Promise<SponsorBanner[]>;
+  getSponsorBannersByPosition(position: string): Promise<SponsorBanner[]>;
+  getSponsorBannerById(id: number): Promise<SponsorBanner | null>;
+  insertSponsorBanner(banner: InsertSponsorBanner): Promise<SponsorBanner>;
+  updateSponsorBanner(id: number, banner: Partial<InsertSponsorBanner>): Promise<SponsorBanner | null>;
+  deleteSponsorBanner(id: number): Promise<boolean>;
+  incrementBannerClick(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private rssFeeds: Map<number, RssFeed>;
   private news: Map<number, NewsArticle>;
+  private sponsorBanners: Map<number, SponsorBanner>;
   currentId: number;
 
   constructor() {
     this.users = new Map();
     this.rssFeeds = new Map();
     this.news = new Map();
+    this.sponsorBanners = new Map();
     this.currentId = 1;
   }
 
@@ -127,6 +136,74 @@ export class MemStorage implements IStorage {
 
   async deleteNews(id: number): Promise<boolean> {
     return this.news.delete(id);
+  }
+
+  // Sponsor Banner methods
+  async getAllSponsorBanners(): Promise<SponsorBanner[]> {
+    return Array.from(this.sponsorBanners.values())
+      .filter(banner => banner.isActive)
+      .filter(banner => {
+        if (!banner.endDate) return true;
+        return new Date() <= new Date(banner.endDate);
+      })
+      .sort((a, b) => a.displayOrder - b.displayOrder);
+  }
+
+  async getSponsorBannersByPosition(position: string): Promise<SponsorBanner[]> {
+    return Array.from(this.sponsorBanners.values())
+      .filter(banner => banner.position === position && banner.isActive)
+      .filter(banner => {
+        if (!banner.endDate) return true;
+        return new Date() <= new Date(banner.endDate);
+      })
+      .sort((a, b) => a.displayOrder - b.displayOrder);
+  }
+
+  async getSponsorBannerById(id: number): Promise<SponsorBanner | null> {
+    return this.sponsorBanners.get(id) || null;
+  }
+
+  async insertSponsorBanner(bannerData: InsertSponsorBanner): Promise<SponsorBanner> {
+    const id = this.currentId++;
+    const now = new Date();
+    const banner: SponsorBanner = {
+      ...bannerData,
+      id,
+      isActive: bannerData.isActive ?? true,
+      displayOrder: bannerData.displayOrder ?? 0,
+      startDate: bannerData.startDate ?? now,
+      endDate: bannerData.endDate || null,
+      clickCount: 0,
+      createdAt: now,
+      updatedAt: now
+    };
+    this.sponsorBanners.set(id, banner);
+    return banner;
+  }
+
+  async updateSponsorBanner(id: number, bannerData: Partial<InsertSponsorBanner>): Promise<SponsorBanner | null> {
+    const existing = this.sponsorBanners.get(id);
+    if (!existing) return null;
+    const updated = {
+      ...existing,
+      ...bannerData,
+      endDate: bannerData.endDate === undefined ? existing.endDate : bannerData.endDate,
+      updatedAt: new Date()
+    };
+    this.sponsorBanners.set(id, updated);
+    return updated;
+  }
+
+  async deleteSponsorBanner(id: number): Promise<boolean> {
+    return this.sponsorBanners.delete(id);
+  }
+
+  async incrementBannerClick(id: number): Promise<boolean> {
+    const banner = this.sponsorBanners.get(id);
+    if (!banner) return false;
+    banner.clickCount++;
+    this.sponsorBanners.set(id, banner);
+    return true;
   }
 }
 

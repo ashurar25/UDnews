@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertRssFeedSchema, insertNewsSchema } from "@shared/schema";
+import { insertRssFeedSchema, insertNewsSchema, insertSponsorBannerSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // RSS Feeds routes
@@ -121,6 +121,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ error: "Failed to delete news article" });
+    }
+  });
+
+  // Sponsor Banner routes
+  app.get("/api/sponsor-banners", async (req, res) => {
+    try {
+      const position = req.query.position as string;
+      const banners = position 
+        ? await storage.getSponsorBannersByPosition(position)
+        : await storage.getAllSponsorBanners();
+      res.json(banners);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch sponsor banners" });
+    }
+  });
+
+  app.get("/api/sponsor-banners/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const banner = await storage.getSponsorBannerById(id);
+      if (!banner) {
+        return res.status(404).json({ error: "Sponsor banner not found" });
+      }
+      res.json(banner);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch sponsor banner" });
+    }
+  });
+
+  app.post("/api/sponsor-banners", async (req, res) => {
+    try {
+      const validatedData = insertSponsorBannerSchema.parse(req.body);
+      const banner = await storage.insertSponsorBanner(validatedData);
+      res.status(201).json(banner);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid sponsor banner data" });
+    }
+  });
+
+  app.put("/api/sponsor-banners/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertSponsorBannerSchema.partial().parse(req.body);
+      const banner = await storage.updateSponsorBanner(id, validatedData);
+      if (!banner) {
+        return res.status(404).json({ error: "Sponsor banner not found" });
+      }
+      res.json(banner);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid sponsor banner data" });
+    }
+  });
+
+  app.delete("/api/sponsor-banners/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteSponsorBanner(id);
+      if (!success) {
+        return res.status(404).json({ error: "Sponsor banner not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete sponsor banner" });
+    }
+  });
+
+  app.post("/api/sponsor-banners/:id/click", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.incrementBannerClick(id);
+      if (!success) {
+        return res.status(404).json({ error: "Sponsor banner not found" });
+      }
+      res.status(200).json({ message: "Click recorded" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to record click" });
     }
   });
 
