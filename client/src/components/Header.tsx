@@ -96,12 +96,12 @@ const Header = () => {
 
         {/* Navigation Menu */}
         <nav className={`mt-6 ${isMenuOpen ? 'block' : 'hidden md:block'}`}>
-          <div className="flex flex-col md:flex-row gap-3 md:gap-8">
+          <div className="flex flex-col md:flex-row gap-2 md:gap-4">
             {menuItems.map((item, index) => (
               <Button
                 key={index}
                 variant="ghost"
-                className="justify-start md:justify-center font-sarabun hover:bg-accent hover:text-accent-foreground transition-colors"
+                className="justify-start md:justify-center font-sarabun px-4 py-2 rounded-lg bg-white/80 hover:bg-orange-100 hover:text-orange-700 transition-all duration-200 shadow-sm hover:shadow-md border border-orange-200/50 hover:border-orange-300"
                 onClick={() => window.location.href = item.href}
               >
                 {item.name}
