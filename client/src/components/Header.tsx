@@ -73,35 +73,37 @@ const Header = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            <Menu className="h-6 w-6" />
-          </Button>
+          <div className="md:hidden">
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="relative z-50"
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
-        {/* Mobile Search */}
-        <div className={`mt-4 ${isMenuOpen ? 'block md:hidden' : 'hidden'}`}>
+        {/* Search Bar - Mobile */}
+        <div className="md:hidden mt-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input 
               placeholder="ค้นหาข่าว..." 
-              className="pl-10 w-full font-sarabun"
+              className="pl-10 font-sarabun"
             />
           </div>
         </div>
 
-        {/* Navigation Menu */}
-        <nav className={`mt-6 ${isMenuOpen ? 'block' : 'hidden md:block'}`}>
-          <div className="flex flex-col md:flex-row gap-3 md:gap-8">
+        {/* Navigation Menu - Desktop */}
+        <nav className="hidden md:block mt-6">
+          <div className="flex flex-row gap-8 justify-center">
             {menuItems.map((item, index) => (
               <Button
                 key={index}
                 variant="ghost"
-                className="justify-start md:justify-center font-sarabun hover:bg-accent hover:text-accent-foreground transition-colors"
+                className="justify-center font-sarabun hover:bg-accent hover:text-accent-foreground transition-colors"
                 onClick={() => window.location.href = item.href}
               >
                 {item.name}
@@ -109,6 +111,41 @@ const Header = () => {
             ))}
           </div>
         </nav>
+
+        {/* Mobile Hamburger Menu */}
+        {isMenuOpen && (
+          <div className="md:hidden fixed inset-0 z-40 bg-black bg-opacity-50" onClick={() => setIsMenuOpen(false)}>
+            <div className="fixed top-0 left-0 w-80 h-full bg-white shadow-xl transform transition-transform duration-300 ease-in-out">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-bold font-kanit text-orange-600">เมนูหลัก</h2>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    ✕
+                  </Button>
+                </div>
+                <nav className="space-y-3">
+                  {menuItems.map((item, index) => (
+                    <Button
+                      key={index}
+                      variant="ghost"
+                      className="w-full justify-start font-sarabun hover:bg-orange-50 hover:text-orange-600 transition-colors text-left"
+                      onClick={() => {
+                        window.location.href = item.href;
+                        setIsMenuOpen(false);
+                      }}
+                    >
+                      {item.name}
+                    </Button>
+                  ))}
+                </nav>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </header>
