@@ -7,7 +7,6 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const menuItems = [
-    { name: "ค้นหาข่าว", href: "/search", icon: Search },
     { name: "หน้าแรก", href: "/" },
     { name: "ข่าวท้องถิ่น", href: "/local" },
     { name: "การเมือง", href: "/politics" },
@@ -82,6 +81,17 @@ const Header = () => {
           </Button>
         </div>
 
+        {/* Mobile Search */}
+        <div className={`mt-4 ${isMenuOpen ? 'block md:hidden' : 'hidden'}`}>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input 
+              placeholder="ค้นหาข่าว..." 
+              className="pl-10 w-full font-sarabun"
+            />
+          </div>
+        </div>
+
         {/* Navigation Menu */}
         <nav className={`mt-6 ${isMenuOpen ? 'block' : 'hidden md:block'}`}>
           <div className="flex flex-col md:flex-row gap-3 md:gap-8">
@@ -98,16 +108,6 @@ const Header = () => {
           </div>
         </nav>
 
-        {/* Mobile Search */}
-        <div className={`mt-6 ${isMenuOpen ? 'block md:hidden' : 'hidden'}`}>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input 
-              placeholder="ค้นหาข่าว..." 
-              className="pl-10 w-full font-sarabun"
-            />
-          </div>
-        </div>
       </div>
     </header>
   );
