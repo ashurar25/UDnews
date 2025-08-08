@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -30,7 +30,30 @@ export const insertRssFeedSchema = createInsertSchema(rssFeeds).pick({
   isActive: true,
 });
 
+export const newsArticles = pgTable("news_articles", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  summary: text("summary").notNull(),
+  content: text("content").notNull(),
+  category: text("category").notNull(),
+  imageUrl: text("image_url"),
+  isBreaking: boolean("is_breaking").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertNewsSchema = createInsertSchema(newsArticles).pick({
+  title: true,
+  summary: true,
+  content: true,
+  category: true,
+  imageUrl: true,
+  isBreaking: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertRssFeed = z.infer<typeof insertRssFeedSchema>;
 export type RssFeed = typeof rssFeeds.$inferSelect;
+export type InsertNews = z.infer<typeof insertNewsSchema>;
+export type NewsArticle = typeof newsArticles.$inferSelect;

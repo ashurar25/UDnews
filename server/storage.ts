@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { Pool, neonConfig } from "@neondatabase/serverless";
-import { users, rssFeeds, type InsertUser, type User, type InsertRssFeed, type RssFeed } from "@shared/schema";
+import { users, rssFeeds, newsArticles, type InsertUser, type User, type InsertRssFeed, type RssFeed, type InsertNews, type NewsArticle } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import ws from "ws";
 
@@ -16,14 +16,23 @@ export interface IStorage {
   insertRssFeed(feed: InsertRssFeed): Promise<RssFeed>;
   updateRssFeed(id: number, feed: Partial<InsertRssFeed>): Promise<RssFeed | null>;
   deleteRssFeed(id: number): Promise<boolean>;
+  getAllNews(): Promise<NewsArticle[]>;
+  getNewsById(id: number): Promise<NewsArticle | null>;
+  insertNews(news: InsertNews): Promise<NewsArticle>;
+  updateNews(id: number, news: Partial<InsertNews>): Promise<NewsArticle | null>;
+  deleteNews(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
+  private rssFeeds: Map<number, RssFeed>;
+  private news: Map<number, NewsArticle>;
   currentId: number;
 
   constructor() {
     this.users = new Map();
+    this.rssFeeds = new Map();
+    this.news = new Map();
     this.currentId = 1;
   }
 
@@ -46,30 +55,78 @@ export class MemStorage implements IStorage {
 
   // RSS Feeds methods
   async getAllRssFeeds(): Promise<RssFeed[]> {
-    // In-memory implementation for demonstration
-    return [];
+    return Array.from(this.rssFeeds.values());
   }
 
   async getRssFeedById(id: number): Promise<RssFeed | null> {
-    // In-memory implementation for demonstration
-    return null;
+    return this.rssFeeds.get(id) || null;
   }
 
   async insertRssFeed(feed: InsertRssFeed): Promise<RssFeed> {
-    // In-memory implementation for demonstration
     const id = this.currentId++;
-    const rssFeed: RssFeed = { ...feed, id, description: feed.description ?? null };
+    const rssFeed: RssFeed = { 
+      ...feed, 
+      id, 
+      description: feed.description ?? null,
+      isActive: feed.isActive ?? true
+    };
+    this.rssFeeds.set(id, rssFeed);
     return rssFeed;
   }
 
   async updateRssFeed(id: number, feed: Partial<InsertRssFeed>): Promise<RssFeed | null> {
-    // In-memory implementation for demonstration
-    return null;
+    const existing = this.rssFeeds.get(id);
+    if (!existing) return null;
+    const updated = { ...existing, ...feed, description: feed.description ?? existing.description };
+    this.rssFeeds.set(id, updated);
+    return updated;
   }
 
   async deleteRssFeed(id: number): Promise<boolean> {
-    // In-memory implementation for demonstration
-    return false;
+    return this.rssFeeds.delete(id);
+  }
+
+  // News methods
+  async getAllNews(): Promise<NewsArticle[]> {
+    return Array.from(this.news.values()).sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
+
+  async getNewsById(id: number): Promise<NewsArticle | null> {
+    return this.news.get(id) || null;
+  }
+
+  async insertNews(newsData: InsertNews): Promise<NewsArticle> {
+    const id = this.currentId++;
+    const now = new Date();
+    const newsArticle: NewsArticle = { 
+      ...newsData, 
+      id, 
+      imageUrl: newsData.imageUrl || null,
+      isBreaking: newsData.isBreaking ?? false,
+      createdAt: now,
+      updatedAt: now
+    };
+    this.news.set(id, newsArticle);
+    return newsArticle;
+  }
+
+  async updateNews(id: number, newsData: Partial<InsertNews>): Promise<NewsArticle | null> {
+    const existing = this.news.get(id);
+    if (!existing) return null;
+    const updated = { 
+      ...existing, 
+      ...newsData, 
+      imageUrl: newsData.imageUrl ?? existing.imageUrl,
+      updatedAt: new Date()
+    };
+    this.news.set(id, updated);
+    return updated;
+  }
+
+  async deleteNews(id: number): Promise<boolean> {
+    return this.news.delete(id);
   }
 }
 

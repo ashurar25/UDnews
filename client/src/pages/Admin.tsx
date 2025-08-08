@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Settings, Users, FileText, BarChart3, Home } from "lucide-react"
 import { Link } from "react-router-dom"
 import RSSManager from "@/components/RSSManager"
+import NewsManager from "@/components/NewsManager"
 
 const Admin = () => {
   return (
@@ -31,6 +32,11 @@ const Admin = () => {
 
       {/* Admin Content */}
       <main className="container mx-auto px-4 py-8">
+        {/* News Management Section */}
+        <div className="mb-8">
+          <NewsManager />
+        </div>
+        
         {/* RSS Management Section */}
         <div className="mb-8">
           <RSSManager />
@@ -54,19 +60,25 @@ const Admin = () => {
             </CardContent>
           </Card>
 
-          {/* News Management Card */}
+          {/* Quick Stats Card */}
           <Card className="hover:shadow-warm transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-lg font-kanit">จัดการข่าว</CardTitle>
+              <CardTitle className="text-lg font-kanit">สถิติด่วน</CardTitle>
               <FileText className="h-5 w-5 text-primary" />
             </CardHeader>
             <CardContent>
               <CardDescription className="font-sarabun mb-4">
-                เพิ่ม แก้ไข และลบข่าวสาร
+                ข้อมูลสรุปของระบบ
               </CardDescription>
-              <div className="space-y-2">
-                <Button size="sm" className="w-full font-sarabun">เพิ่มข่าวใหม่</Button>
-                <Button variant="outline" size="sm" className="w-full font-sarabun">แก้ไขข่าว</Button>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-sarabun">ข่าวทั้งหมด:</span>
+                  <Badge className="font-sarabun">0</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-sarabun">RSS Feeds:</span>
+                  <Badge variant="outline" className="font-sarabun">0</Badge>
+                </div>
               </div>
             </CardContent>
           </Card>
