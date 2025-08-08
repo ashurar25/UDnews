@@ -55,7 +55,7 @@ const Header = () => {
               <h1 className="text-3xl font-bold font-kanit text-white">
                 อัพเดทข่าวอุดร
               </h1>
-              <p className="text-xl text-muted-foreground font-sarabun font-bold">
+              <p className="text-xl textcolor-gray-text-muted-foreground font-sarabun font-bold">
                 UD News Update
               </p>
             </div>
