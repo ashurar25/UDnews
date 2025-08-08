@@ -17,9 +17,9 @@ const Header = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/20 backdrop-blur-md supports-[backdrop-filter]:bg-background/10">
+    <header className="sticky top-0 z-50 w-full border-b bg-orange-50/40 backdrop-blur-md supports-[backdrop-filter]:bg-orange-100/20">
       {/* Top Bar */}
-      <div className="bg-orange-600/30 backdrop-blur-md text-white py-1 border-b border-white/10">
+      <div className="bg-orange-600/60 backdrop-blur-md text-white py-1 border-b border-orange-300/20">
         <div className="container mx-auto px-4 flex justify-between items-center text-xs">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1">
@@ -42,11 +42,11 @@ const Header = () => {
       </div>
 
       {/* Main Header */}
-      <div className="container mx-auto px-6 py-6 bg-orange-500/10 backdrop-blur-md">
+      <div className="container mx-auto px-6 py-6 bg-orange-500/25 backdrop-blur-md border-b border-orange-200/30">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-6">
-            <div className="bg-orange-600/70 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-white/20">
+            <div className="bg-orange-600/90 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-orange-400/30 shadow-orange-200">
               <span className="text-3xl font-bold text-white drop-shadow-sm">UD</span>
             </div>
             <div>
