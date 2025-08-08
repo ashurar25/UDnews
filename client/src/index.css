@@ -17,11 +17,11 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 20 14.3% 4.1%;
 
-    /* Orange primary theme */
-    --primary: 24 95% 53%;
+    /* Orange primary theme - สีส้มสดใหม่ */
+    --primary: 20 100% 55%;
     --primary-foreground: 0 0% 98%;
-    --primary-light: 33 100% 65%;
-    --primary-dark: 16 84% 44%;
+    --primary-light: 30 100% 65%;
+    --primary-dark: 15 95% 45%;
 
     /* Yellow secondary theme */
     --secondary: 48 96% 53%;
@@ -48,7 +48,7 @@ All colors MUST be HSL.
 
     /* News specific colors */
     --news-urgent: 0 84% 60%;
-    --news-breaking: 24 95% 53%;
+    --news-breaking: 20 100% 55%;
     --news-sport: 142 76% 36%;
     --news-politics: 221 83% 53%;
 
