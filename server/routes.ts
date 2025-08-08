@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertRssFeedSchema, insertNewsSchema, insertSponsorBannerSchema } from "@shared/schema";
+import { rssService } from "./rss-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // RSS Feeds routes
@@ -197,6 +198,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(200).json({ message: "Click recorded" });
     } catch (error) {
       res.status(500).json({ error: "Failed to record click" });
+    }
+  });
+
+  // RSS Processing routes
+  app.post("/api/rss/process", async (req, res) => {
+    try {
+      await rssService.processAllFeeds();
+      res.json({ message: "RSS processing started" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to start RSS processing" });
+    }
+  });
+
+  app.post("/api/rss/process/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const feed = await storage.getRssFeedById(id);
+      if (!feed) {
+        return res.status(404).json({ error: "RSS feed not found" });
+      }
+      
+      const count = await rssService.processFeed(id, feed.url, feed.category);
+      res.json({ message: `Processed ${count} articles from ${feed.title}` });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to process RSS feed" });
+    }
+  });
+
+  app.get("/api/rss/status", async (req, res) => {
+    try {
+      const status = rssService.getStatus();
+      res.json(status);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get RSS status" });
     }
   });
 
