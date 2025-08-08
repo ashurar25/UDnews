@@ -10,6 +10,7 @@ const Header = () => {
     { name: "หน้าแรก", href: "/" },
     { name: "ข่าวท้องถิ่น", href: "/local" },
     { name: "การเมือง", href: "/politics" },
+    { name: "อาชญากรรม", href: "/crime" },
     { name: "กีฬา", href: "/sports" },
     { name: "บันเทิง", href: "/entertainment" },
     { name: "ติดต่อเรา", href: "/contact" }
