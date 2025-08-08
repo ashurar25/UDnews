@@ -7,14 +7,26 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const menuItems = [
-    { name: "บทความทั้งหมด", href: "/articles" },
-    { name: "บทความข่าวท้องถิ่น", href: "/articles/local" },
-    { name: "บทความการเมือง", href: "/articles/politics" },
-    { name: "บทความกีฬา", href: "/articles/sports" },
-    { name: "บทความบันเทิง", href: "/articles/entertainment" },
-    { name: "บทความเศรษฐกิจ", href: "/articles/business" },
+    { name: "ข่าวทั้งหมด", category: "all" },
+    { name: "ข่าวท้องถิ่น", category: "local" },
+    { name: "ข่าวการเมือง", category: "politics" },
+    { name: "ข่าวกีฬา", category: "sports" },
+    { name: "ข่าวบันเทิง", category: "entertainment" },
+    { name: "ข่าวเศรษฐกิจ", category: "business" },
     { name: "แอดมิน", href: "/admin" }
   ];
+
+  const handleMenuClick = (item: any) => {
+    if (item.href) {
+      window.location.href = item.href;
+    } else if (item.category) {
+      // Dispatch custom event to filter news by category
+      window.dispatchEvent(new CustomEvent('filterNews', { 
+        detail: { category: item.category } 
+      }));
+    }
+    setIsMenuOpen(false);
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-orange-50/40 backdrop-blur-md supports-[backdrop-filter]:bg-orange-100/20">
@@ -104,7 +116,7 @@ const Header = () => {
                 key={index}
                 variant="ghost"
                 className="justify-center font-sarabun hover:bg-accent hover:text-accent-foreground transition-colors"
-                onClick={() => window.location.href = item.href}
+                onClick={() => handleMenuClick(item)}
               >
                 {item.name}
               </Button>
@@ -133,10 +145,7 @@ const Header = () => {
                       key={index}
                       variant="ghost"
                       className="w-full justify-start font-sarabun hover:bg-orange-50 hover:text-orange-600 transition-colors text-left"
-                      onClick={() => {
-                        window.location.href = item.href;
-                        setIsMenuOpen(false);
-                      }}
+                      onClick={() => handleMenuClick(item)}
                     >
                       {item.name}
                     </Button>

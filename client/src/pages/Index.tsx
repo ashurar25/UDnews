@@ -36,6 +36,7 @@ const Index = () => {
   const [selectedDay, setSelectedDay] = useState<'yesterday' | 'today' | 'tomorrow'>('today');
   const [weatherData, setWeatherData] = useState<ForecastData | null>(null);
   const [isLoadingWeather, setIsLoadingWeather] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   // Load weather data when component mounts
   useEffect(() => {
@@ -56,6 +57,16 @@ const Index = () => {
     // Refresh weather data every 30 minutes
     const interval = setInterval(loadWeather, 30 * 60 * 1000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Listen for category filter events from header menu
+  useEffect(() => {
+    const handleFilterNews = (event: any) => {
+      setSelectedCategory(event.detail.category);
+    };
+
+    window.addEventListener('filterNews', handleFilterNews);
+    return () => window.removeEventListener('filterNews', handleFilterNews);
   }, []);
 
   const currentWeather = weatherData?.[selectedDay] || {
@@ -81,6 +92,7 @@ const Index = () => {
       title: "อุดรธานีเตรียมจัดเทศกาลประจำปี 2024 คาดมีนักท่องเที่ยวแห่เที่ยวชม",
       summary: "เทศบาลเมืองอุดรธานีเตรียมจัดงานเทศกาลประจำปีครั้งใหญ่ คาดว่าจะมีนักท่องเที่ยวทั้งในและต่างประเทศมาร่วมงาน พร้อมกิจกรรมหลากหลายตลอด 7 วัน",
       category: "ข่าวท้องถิ่น",
+      categoryKey: "local",
       time: "2 ชั่วโมงที่แล้ว",
       views: "2.5K",
       image: localImage,
@@ -88,11 +100,12 @@ const Index = () => {
     }
   ];
 
-  const latestNews = [
+  const allLatestNews = [
     {
       title: "รัฐบาลประกาศมาตรการช่วยเหลือเกษตรกรภาคอีสาน",
       summary: "การประกาศมาตรการใหม่เพื่อช่วยเหลือเกษตรกรในภาคอีสาน โดยเฉพาะในจังหวัดอุดรธานี",
       category: "การเมือง",
+      categoryKey: "politics",
       time: "4 ชั่วโมงที่แล้ว",
       views: "1.8K",
       image: politicsImage,
@@ -102,6 +115,7 @@ const Index = () => {
       title: "ทีมฟุตบอลอุดรธานีเฮ! คว้าชัยชนะนัดสำคัญ",
       summary: "ความสำเร็จของทีมฟุตบอลท้องถิ่นในการแข่งขันลีกระดับภูมิภาค",
       category: "กีฬา",
+      categoryKey: "sports",
       time: "6 ชั่วโมงที่แล้ว",
       views: "3.2K",
       image: sportsImage
@@ -110,6 +124,7 @@ const Index = () => {
       title: "ราคาข้าวในตลาดสดอุดรธานีปรับตัวลง",
       summary: "สถานการณ์ราคาสินค้าอุปโภคบริโภคในตลาดท้องถิ่นสัปดาห์นี้",
       category: "เศรษฐกิจ",
+      categoryKey: "business",
       time: "8 ชั่วโมงที่แล้ว",
       views: "1.2K"
     },
@@ -117,6 +132,7 @@ const Index = () => {
       title: "งานแสดงดนตรีท้องถิ่นที่ศูนย์วัฒนธรรม",
       summary: "การจัดงานแสดงดนตรีพื้นบ้านอีสานในสุดสัปดาห์นี้",
       category: "บันเทิง",
+      categoryKey: "entertainment",
       time: "10 ชั่วโมงที่แล้ว",
       views: "950"
     },
@@ -124,6 +140,7 @@ const Index = () => {
       title: "โครงการปรับปรุงถนนสายหลักเริ่มแล้ว",
       summary: "การดำเนินโครงการปรับปรุงโครงสร้างพื้นฐานของเมือง",
       category: "ข่าวท้องถิ่น",
+      categoryKey: "local",
       time: "12 ชั่วโมงที่แล้ว",
       views: "1.5K"
     },
@@ -131,10 +148,22 @@ const Index = () => {
       title: "มหาวิทยาลัยอุดรธานีเปิดรับสมัครนักศึกษาใหม่",
       summary: "ข้อมูลการรับสมัครและทุนการศึกษาสำหรับปีการศึกษาใหม่",
       category: "การศึกษา",
+      categoryKey: "local",
       time: "1 วันที่แล้ว",
       views: "2.1K"
     }
   ];
+
+  // Filter news based on selected category
+  const filteredLatestNews = selectedCategory === 'all' 
+    ? allLatestNews 
+    : allLatestNews.filter(news => news.categoryKey === selectedCategory);
+  
+  const filteredFeaturedNews = selectedCategory === 'all' 
+    ? featuredNews 
+    : featuredNews.filter(news => news.categoryKey === selectedCategory);
+
+  const latestNews = filteredLatestNews;
 
   return (
     <div className="min-h-screen bg-background">
@@ -203,7 +232,7 @@ const Index = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredNews.map((news, index) => (
+            {filteredFeaturedNews.map((news, index) => (
               <NewsCard key={index} {...news} />
             ))}
           </div>
@@ -221,7 +250,14 @@ const Index = () => {
           <div className="lg:col-span-2">
             <div className="flex items-center gap-2 mb-6">
               <Clock className="h-6 w-6 text-primary" />
-              <h2 className="text-2xl font-bold font-kanit">ข่าวล่าสุด</h2>
+              <h2 className="text-2xl font-bold font-kanit">
+                {selectedCategory === 'all' ? 'ข่าวล่าสุด' : 
+                 selectedCategory === 'local' ? 'ข่าวท้องถิ่น' :
+                 selectedCategory === 'politics' ? 'ข่าวการเมือง' :
+                 selectedCategory === 'sports' ? 'ข่าวกีฬา' :
+                 selectedCategory === 'entertainment' ? 'ข่าวบันเทิง' :
+                 selectedCategory === 'business' ? 'ข่าวเศรษฐกิจ' : 'ข่าวล่าสุด'}
+              </h2>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
