@@ -77,16 +77,16 @@ const Footer = () => {
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4 text-primary" />
                 <span className="font-sarabun">
-                  อุดรธานี, ประเทศไทย 41000
+                  อุดรธานี, ประเทศไทย 41250
                 </span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Phone className="h-4 w-4 text-primary" />
-                <span className="font-sarabun">042-123-456</span>
+                <span className="font-sarabun">092-443-4311</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Mail className="h-4 w-4 text-primary" />
-                <span className="font-sarabun">news@udnews.com</span>
+                <span className="font-sarabun">kenginol.ar@gmail.com</span>
               </div>
             </div>
           </div>
