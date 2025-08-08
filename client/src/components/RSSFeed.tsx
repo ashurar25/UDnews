@@ -53,6 +53,12 @@ const RSSFeed = () => {
       url: "/rss/sports.xml",
       description: "ข่าวกีฬาและการแข่งขัน",
       count: "กีฬา"
+    },
+    {
+      title: "มติชน",
+      url: "https://www.matichon.co.th/feed",
+      description: "ข่าวสารจากสำนักข่าวมติชน",
+      count: "มติชน"
     }
   ];
 
