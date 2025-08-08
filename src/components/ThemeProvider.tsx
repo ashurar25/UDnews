@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react"
+import { getCurrentThaiSpecialDay, getThaiSpecialDayTheme } from "@/lib/thai-special-days"
 
-type Theme = "dark" | "light" | "system"
+type Theme = "dark" | "light" | "system" | "thai-special"
 
 type ThemeProviderProps = {
   children: React.ReactNode
@@ -11,11 +12,13 @@ type ThemeProviderProps = {
 type ThemeProviderState = {
   theme: Theme
   setTheme: (theme: Theme) => void
+  specialDay: any
 }
 
 const initialState: ThemeProviderState = {
   theme: "system",
   setTheme: () => null,
+  specialDay: null,
 }
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
@@ -26,14 +29,37 @@ export function ThemeProvider({
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-  )
+  const [theme, setTheme] = useState<Theme>(() => {
+    const specialDay = getCurrentThaiSpecialDay()
+    if (specialDay) return "thai-special"
+    return (localStorage.getItem(storageKey) as Theme) || defaultTheme
+  })
+
+  const [specialDay, setSpecialDay] = useState(getCurrentThaiSpecialDay())
 
   useEffect(() => {
     const root = window.document.documentElement
 
-    root.classList.remove("light", "dark")
+    root.classList.remove("light", "dark", "thai-special")
+    
+    // Remove any existing Thai special day classes
+    root.classList.remove(
+      "royal-yellow", "mothers-blue", "fathers-yellow", 
+      "national-tricolor", "constitution-gold", "buddhist-saffron", "songkran-blue"
+    )
+
+    if (theme === "thai-special") {
+      const currentSpecialDay = getCurrentThaiSpecialDay()
+      if (currentSpecialDay) {
+        root.classList.add("thai-special", currentSpecialDay.theme)
+        // Apply special day colors to CSS variables
+        const style = root.style
+        style.setProperty('--primary', currentSpecialDay.colors.primary)
+        style.setProperty('--secondary', currentSpecialDay.colors.secondary)
+        style.setProperty('--accent', currentSpecialDay.colors.accent)
+      }
+      return
+    }
 
     if (theme === "system") {
       const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
@@ -48,8 +74,30 @@ export function ThemeProvider({
     root.classList.add(theme)
   }, [theme])
 
+  // Check for Thai special days every hour
+  useEffect(() => {
+    const checkSpecialDay = () => {
+      const currentSpecialDay = getCurrentThaiSpecialDay()
+      setSpecialDay(currentSpecialDay)
+      
+      // Auto-switch to special theme if it's a special day and user hasn't manually set theme
+      if (currentSpecialDay && theme !== "thai-special") {
+        const userTheme = localStorage.getItem(storageKey)
+        if (!userTheme || userTheme === "system") {
+          setTheme("thai-special")
+        }
+      }
+    }
+
+    checkSpecialDay()
+    const interval = setInterval(checkSpecialDay, 60 * 60 * 1000) // Check every hour
+    
+    return () => clearInterval(interval)
+  }, [theme, storageKey])
+
   const value = {
     theme,
+    specialDay,
     setTheme: (theme: Theme) => {
       localStorage.setItem(storageKey, theme)
       setTheme(theme)

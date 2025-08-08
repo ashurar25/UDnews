@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { ThaiSpecialDayBanner } from "@/components/ThaiSpecialDayBanner";
 import NewsCard from "@/components/NewsCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -79,6 +80,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
+      <ThaiSpecialDayBanner />
       
       {/* Breaking News Ticker */}
       <div className="bg-news-urgent text-white py-2 overflow-hidden">
