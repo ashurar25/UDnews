@@ -7,26 +7,14 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const menuItems = [
-    { name: "ข่าวทั้งหมด", category: "all" },
-    { name: "ข่าวท้องถิ่น", category: "local" },
-    { name: "ข่าวการเมือง", category: "politics" },
-    { name: "ข่าวกีฬา", category: "sports" },
-    { name: "ข่าวบันเทิง", category: "entertainment" },
-    { name: "ข่าวเศรษฐกิจ", category: "business" },
+    { name: "หน้าแรก", href: "/" },
+    { name: "ข่าวท้องถิ่น", href: "/local" },
+    { name: "การเมือง", href: "/politics" },
+    { name: "กีฬา", href: "/sports" },
+    { name: "บันเทิง", href: "/entertainment" },
+    { name: "ติดต่อเรา", href: "/contact" },
     { name: "แอดมิน", href: "/admin" }
   ];
-
-  const handleMenuClick = (item: any) => {
-    if (item.href) {
-      window.location.href = item.href;
-    } else if (item.category) {
-      // Dispatch custom event to filter news by category
-      window.dispatchEvent(new CustomEvent('filterNews', { 
-        detail: { category: item.category } 
-      }));
-    }
-    setIsMenuOpen(false);
-  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-orange-50/40 backdrop-blur-md supports-[backdrop-filter]:bg-orange-100/20">
@@ -84,63 +72,43 @@ const Header = () => {
             </div>
           </div>
 
-          
+          {/* Mobile Menu Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="md:hidden"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            <Menu className="h-6 w-6" />
+          </Button>
         </div>
 
-        {/* Search Bar - Mobile */}
-        <div className="md:hidden mt-4">
+        {/* Mobile Search */}
+        <div className={`mt-4 ${isMenuOpen ? 'block md:hidden' : 'hidden'}`}>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input 
               placeholder="ค้นหาข่าว..." 
-              className="pl-10 font-sarabun"
+              className="pl-10 w-full font-sarabun"
             />
           </div>
         </div>
 
-        {/* Navigation Menu Button */}
-        <div className="mt-6 flex justify-center">
-          <Button 
-            variant="outline" 
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="flex items-center gap-2 px-6 py-3 bg-orange-500/20 hover:bg-orange-500/30 border-orange-300 text-orange-800 font-sarabun font-semibold"
-          >
-            <Menu className="h-5 w-5" />
-            เมนูหลัก
-          </Button>
-        </div>
-
-        {/* Hamburger Menu */}
-        {isMenuOpen && (
-          <div className="fixed inset-0 z-40 bg-black bg-opacity-50" onClick={() => setIsMenuOpen(false)}>
-            <div className="fixed top-0 left-0 w-80 h-full bg-white shadow-xl transform transition-transform duration-300 ease-in-out">
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-bold font-kanit text-orange-600">เมนูหลัก</h2>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    ✕
-                  </Button>
-                </div>
-                <nav className="space-y-3">
-                  {menuItems.map((item, index) => (
-                    <Button
-                      key={index}
-                      variant="ghost"
-                      className="w-full justify-start font-sarabun hover:bg-orange-50 hover:text-orange-600 transition-colors text-left py-3 text-base"
-                      onClick={() => handleMenuClick(item)}
-                    >
-                      {item.name}
-                    </Button>
-                  ))}
-                </nav>
-              </div>
-            </div>
+        {/* Navigation Menu */}
+        <nav className={`mt-6 ${isMenuOpen ? 'block' : 'hidden md:block'}`}>
+          <div className="flex flex-col md:flex-row gap-3 md:gap-8">
+            {menuItems.map((item, index) => (
+              <Button
+                key={index}
+                variant="ghost"
+                className="justify-start md:justify-center font-sarabun hover:bg-accent hover:text-accent-foreground transition-colors"
+                onClick={() => window.location.href = item.href}
+              >
+                {item.name}
+              </Button>
+            ))}
           </div>
-        )}
+        </nav>
 
       </div>
     </header>
