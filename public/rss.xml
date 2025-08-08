@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>อัพเดทข่าวอุดร - UD News Update</title>
+    <description>ข่าวสารอุดรธานีอัพเดทตลอด 24 ชั่วโมง ข่าวท้องถิ่น การเมือง กีฬา บันเทิง และข่าวสดจากอุดรธานี</description>
+    <link>https://udnews.com</link>
+    <atom:link href="https://udnews.com/rss.xml" rel="self" type="application/rss+xml"/>
+    <language>th-TH</language>
+    <copyright>Copyright 2024 อัพเดทข่าวอุดร (UD News Update)</copyright>
+    <managingEditor>news@udnews.com (UD News Update)</managingEditor>
+    <webMaster>admin@udnews.com (UD News Update)</webMaster>
+    <pubDate>Thu, 08 Aug 2024 10:00:00 +0700</pubDate>
+    <lastBuildDate>Thu, 08 Aug 2024 10:00:00 +0700</lastBuildDate>
+    <ttl>60</ttl>
+    
+    <item>
+      <title>รัฐบาลประกาศมาตรการช่วยเหลือเกษตรกรภาคอีสาน</title>
+      <description>การประกาศมาตรการใหม่เพื่อช่วยเหลือเกษตรกรในภาคอีสาน โดยเฉพาะในจังหวัดอุดรธานี เพื่อช่วยเหลือด้านราคาสินค้าเกษตรและเงินทุนหมุนเวียน</description>
+      <link>https://udnews.com/news/politics/government-aid-farmers</link>
+      <guid>https://udnews.com/news/politics/government-aid-farmers</guid>
+      <category>การเมือง</category>
+      <pubDate>Thu, 08 Aug 2024 06:00:00 +0700</pubDate>
+    </item>
+    
+    <item>
+      <title>อุดรธานีเตรียมจัดเทศกาลประจำปี 2024 คาดมีนักท่องเที่ยวแห่เที่ยวชม</title>
+      <description>เทศบาลเมืองอุดรธานีเตรียมจัดงานเทศกาลประจำปีครั้งใหญ่ คาดว่าจะมีนักท่องเที่ยวทั้งในและต่างประเทศมาร่วมงาน พร้อมกิจกรรมหลากหลายตลอด 7 วัน</description>
+      <link>https://udnews.com/news/local/udon-festival-2024</link>
+      <guid>https://udnews.com/news/local/udon-festival-2024</guid>
+      <category>ข่าวท้องถิ่น</category>
+      <pubDate>Thu, 08 Aug 2024 08:00:00 +0700</pubDate>
+    </item>
+    
+    <item>
+      <title>ทีมฟุตบอลอุดรธานีเฮ! คว้าชัยชนะนัดสำคัญ</title>
+      <description>ความสำเร็จของทีมฟุตบอลท้องถิ่นในการแข่งขันลีกระดับภูมิภาค ด้วยสกอร์ 2-1 ในเกมที่แฟนบอลต่างคาดหวัง</description>
+      <link>https://udnews.com/news/sports/udon-football-victory</link>
+      <guid>https://udnews.com/news/sports/udon-football-victory</guid>
+      <category>กีฬา</category>
+      <pubDate>Thu, 08 Aug 2024 04:00:00 +0700</pubDate>
+    </item>
+    
+    <item>
+      <title>ราคาข้าวในตลาดสดอุดรธานีปรับตัวลง</title>
+      <description>สถานการณ์ราคาสินค้าอุปโภคบริโภคในตลาดท้องถิ่นสัปดาห์นี้ โดยเฉพาะราคาข้าวที่มีแนวโน้มลดลงจากสัปดาห์ก่อน</description>
+      <link>https://udnews.com/news/economy/rice-price-down</link>
+      <guid>https://udnews.com/news/economy/rice-price-down</guid>
+      <category>เศรษฐกิจ</category>
+      <pubDate>Thu, 08 Aug 2024 02:00:00 +0700</pubDate>
+    </item>
+    
+    <item>
+      <title>งานแสดงดนตรีท้องถิ่นที่ศูนย์วัฒนธรรม</title>
+      <description>การจัดงานแสดงดนตรีพื้นบ้านอีสานในสุดสัปดาห์นี้ ที่ศูนย์วัฒนธรรมจังหวัดอุดรธานี พร้อมศิลปินท้องถิ่นมากมาย</description>
+      <link>https://udnews.com/news/entertainment/local-music-show</link>
+      <guid>https://udnews.com/news/entertainment/local-music-show</guid>
+      <category>บันเทิง</category>
+      <pubDate>Wed, 07 Aug 2024 22:00:00 +0700</pubDate>
+    </item>
+    
+  </channel>
+</rss>
