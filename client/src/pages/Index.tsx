@@ -168,7 +168,7 @@ const Index = () => {
       </div>
 
       {/* Hero Section */}
-      <section className="relative h-96 overflow-hidden -mt-6">
+      <section className="relative h-96 overflow-hidden">
         <img 
           src={heroImage} 
           alt="UD News Hero"
