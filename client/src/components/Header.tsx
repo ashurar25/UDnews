@@ -52,10 +52,10 @@ const Header = () => {
               className="h-16 w-16 object-contain rounded-lg shadow-lg hover:scale-105 hover:shadow-xl transition-all duration-300 cursor-pointer"
             />
             <div>
-              <h1 className="text-3xl font-bold font-kanit text-white">
+              <h1 className="text-3xl font-bold font-kanit text-yellow-400">
                 อัพเดทข่าวอุดร
               </h1>
-              <p className="text-xl text-muted-foreground font-sarabun font-bold">
+              <p className="text-xl text-black font-sarabun font-bold">
                 UD News Update
               </p>
             </div>
