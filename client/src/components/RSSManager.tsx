@@ -280,6 +280,13 @@ const RSSManager = () => {
         description: "ข่าวราชการจากสำนักข่าวไทย กรมประชาสัมพันธ์",
         category: "ข่าวราชการ",
         isActive: true
+      },
+      {
+        title: "TNN Thailand",
+        url: "https://www.tnnthailand.com/feed/",
+        description: "ข่าวสารจาก TNN Thailand ข่าวทั่วไป การเมือง สังคม",
+        category: "ข่าวทั่วไป",
+        isActive: true
       }
     ];
 
