@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Clock, Calendar } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getWeatherForecast } from "@/lib/weather-api";
+import { useQuery } from "@tanstack/react-query";
 import heroImage from "@/assets/news-hero.jpg";
 import localImage from "@/assets/news-local.jpg";
 import politicsImage from "@/assets/news-politics.jpg";
@@ -37,6 +38,31 @@ const Index = () => {
   const [weatherData, setWeatherData] = useState<ForecastData | null>(null);
   const [isLoadingWeather, setIsLoadingWeather] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
+  // Fetch news from database with explicit queryFn
+  const { data: newsData = [], isLoading: newsLoading } = useQuery({
+    queryKey: ['/api/news'],
+    queryFn: async () => {
+      const response = await fetch('/api/news');
+      if (!response.ok) {
+        throw new Error('Failed to fetch news');
+      }
+      return response.json();
+    },
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  // Fetch RSS feeds
+  const { data: rssFeeds = [] } = useQuery({
+    queryKey: ['/api/rss-feeds'],
+    queryFn: async () => {
+      const response = await fetch('/api/rss-feeds');
+      if (!response.ok) {
+        throw new Error('Failed to fetch RSS feeds');
+      }
+      return response.json();
+    },
+  });
 
   // Load weather data when component mounts
   useEffect(() => {
@@ -100,70 +126,37 @@ const Index = () => {
     }
   ];
 
-  const allLatestNews = [
-    {
-      title: "รัฐบาลประกาศมาตรการช่วยเหลือเกษตรกรภาคอีสาน",
-      summary: "การประกาศมาตรการใหม่เพื่อช่วยเหลือเกษตรกรในภาคอีสาน โดยเฉพาะในจังหวัดอุดรธานี",
-      category: "การเมือง",
-      categoryKey: "politics",
-      time: "4 ชั่วโมงที่แล้ว",
-      views: "1.8K",
-      image: politicsImage,
-      isBreaking: true
-    },
-    {
-      title: "ทีมฟุตบอลอุดรธานีเฮ! คว้าชัยชนะนัดสำคัญ",
-      summary: "ความสำเร็จของทีมฟุตบอลท้องถิ่นในการแข่งขันลีกระดับภูมิภาค",
-      category: "กีฬา",
-      categoryKey: "sports",
-      time: "6 ชั่วโมงที่แล้ว",
-      views: "3.2K",
-      image: sportsImage
-    },
-    {
-      title: "ราคาข้าวในตลาดสดอุดรธานีปรับตัวลง",
-      summary: "สถานการณ์ราคาสินค้าอุปโภคบริโภคในตลาดท้องถิ่นสัปดาห์นี้",
-      category: "เศรษฐกิจ",
-      categoryKey: "business",
-      time: "8 ชั่วโมงที่แล้ว",
-      views: "1.2K"
-    },
-    {
-      title: "งานแสดงดนตรีท้องถิ่นที่ศูนย์วัฒนธรรม",
-      summary: "การจัดงานแสดงดนตรีพื้นบ้านอีสานในสุดสัปดาห์นี้",
-      category: "บันเทิง",
-      categoryKey: "entertainment",
-      time: "10 ชั่วโมงที่แล้ว",
-      views: "950"
-    },
-    {
-      title: "โครงการปรับปรุงถนนสายหลักเริ่มแล้ว",
-      summary: "การดำเนินโครงการปรับปรุงโครงสร้างพื้นฐานของเมือง",
-      category: "ข่าวท้องถิ่น",
-      categoryKey: "local",
-      time: "12 ชั่วโมงที่แล้ว",
-      views: "1.5K"
-    },
-    {
-      title: "มหาวิทยาลัยอุดรธานีเปิดรับสมัครนักศึกษาใหม่",
-      summary: "ข้อมูลการรับสมัครและทุนการศึกษาสำหรับปีการศึกษาใหม่",
-      category: "การศึกษา",
-      categoryKey: "local",
-      time: "1 วันที่แล้ว",
-      views: "2.1K"
-    }
-  ];
+  // Transform database news to match UI format and filter by category
+  const allNews = Array.isArray(newsData) ? newsData.map((article: any) => ({
+    title: article.title || 'ไม่มีชื่อข่าว',
+    summary: (article.content || '').substring(0, 150) + '...',
+    category: article.category || 'ข่าวท้องถิ่น',
+    categoryKey: (article.category || 'local').toLowerCase(),
+    time: article.createdAt ? new Date(article.createdAt).toLocaleDateString('th-TH', {
+      hour: '2-digit',
+      minute: '2-digit',
+      day: 'numeric',
+      month: 'short'
+    }) : 'ไม่ทราบเวลา',
+    views: Math.floor(Math.random() * 5000) + "K",
+    image: (article.category || '').includes('การเมือง') ? politicsImage :
+           (article.category || '').includes('กีฬา') ? sportsImage :
+           (article.category || '').includes('ท้องถิ่น') ? localImage : heroImage,
+    isBreaking: Math.random() > 0.8
+  })) : [];
 
   // Filter news based on selected category
-  const filteredLatestNews = selectedCategory === 'all' 
-    ? allLatestNews 
-    : allLatestNews.filter(news => news.categoryKey === selectedCategory);
+  const filteredNews = selectedCategory === 'all' 
+    ? allNews 
+    : allNews.filter(news => news.categoryKey === selectedCategory);
   
-  const filteredFeaturedNews = selectedCategory === 'all' 
-    ? featuredNews 
-    : featuredNews.filter(news => news.categoryKey === selectedCategory);
+  // Split into featured and latest
+  const featuredNewsFromDB = filteredNews.slice(0, 3);
+  const latestNewsFromDB = filteredNews.slice(3);
 
-  const latestNews = filteredLatestNews;
+  // Use database news if available, fallback to static news
+  const displayFeaturedNews = featuredNewsFromDB.length > 0 ? featuredNewsFromDB : featuredNews;
+  const displayLatestNews = latestNewsFromDB.length > 0 ? latestNewsFromDB : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -232,9 +225,15 @@ const Index = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredFeaturedNews.map((news, index) => (
-              <NewsCard key={index} {...news} />
-            ))}
+            {newsLoading ? (
+              <div className="col-span-3 text-center py-8">
+                <div className="animate-pulse">กำลังโหลดข่าว...</div>
+              </div>
+            ) : (
+              displayFeaturedNews.map((news, index) => (
+                <NewsCard key={index} {...news} />
+              ))
+            )}
           </div>
           
           {/* Between News Sponsor Banner Bar */}
@@ -261,9 +260,15 @@ const Index = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {latestNews.map((news, index) => (
-                <NewsCard key={index} {...news} />
-              ))}
+              {newsLoading ? (
+                <div className="col-span-2 text-center py-8">
+                  <div className="animate-pulse">กำลังโหลดข่าว...</div>
+                </div>
+              ) : (
+                displayLatestNews.map((news, index) => (
+                  <NewsCard key={index} {...news} />
+                ))
+              )}
             </div>
           </div>
 
@@ -280,7 +285,7 @@ const Index = () => {
                 ยอดนิยมวันนี้
               </h3>
               <div className="space-y-4">
-                {latestNews.slice(0, 5).map((news, index) => (
+                {displayLatestNews.slice(0, 5).map((news, index) => (
                   <div key={index} className="flex gap-3 p-3 rounded hover:bg-accent transition-colors cursor-pointer">
                     <span className="text-primary font-bold font-kanit text-lg">
                       {index + 1}
