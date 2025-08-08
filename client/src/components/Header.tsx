@@ -84,17 +84,7 @@ const Header = () => {
             </div>
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="md:hidden">
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="relative z-50"
-            >
-              <Menu className="h-4 w-4" />
-            </Button>
-          </div>
+          
         </div>
 
         {/* Search Bar - Mobile */}
@@ -108,25 +98,21 @@ const Header = () => {
           </div>
         </div>
 
-        {/* Navigation Menu - Desktop */}
-        <nav className="hidden md:block mt-6">
-          <div className="flex flex-row gap-4 justify-center flex-wrap">
-            {menuItems.map((item, index) => (
-              <Button
-                key={index}
-                variant="ghost"
-                className="justify-center font-sarabun hover:bg-orange-100 hover:text-orange-700 transition-colors px-4 py-2 rounded-lg"
-                onClick={() => handleMenuClick(item)}
-              >
-                {item.name}
-              </Button>
-            ))}
-          </div>
-        </nav>
+        {/* Navigation Menu Button */}
+        <div className="mt-6 flex justify-center">
+          <Button 
+            variant="outline" 
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="flex items-center gap-2 px-6 py-3 bg-orange-500/20 hover:bg-orange-500/30 border-orange-300 text-orange-800 font-sarabun font-semibold"
+          >
+            <Menu className="h-5 w-5" />
+            เมนูหลัก
+          </Button>
+        </div>
 
-        {/* Mobile Hamburger Menu */}
+        {/* Hamburger Menu */}
         {isMenuOpen && (
-          <div className="md:hidden fixed inset-0 z-40 bg-black bg-opacity-50" onClick={() => setIsMenuOpen(false)}>
+          <div className="fixed inset-0 z-40 bg-black bg-opacity-50" onClick={() => setIsMenuOpen(false)}>
             <div className="fixed top-0 left-0 w-80 h-full bg-white shadow-xl transform transition-transform duration-300 ease-in-out">
               <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
@@ -144,7 +130,7 @@ const Header = () => {
                     <Button
                       key={index}
                       variant="ghost"
-                      className="w-full justify-start font-sarabun hover:bg-orange-50 hover:text-orange-600 transition-colors text-left"
+                      className="w-full justify-start font-sarabun hover:bg-orange-50 hover:text-orange-600 transition-colors text-left py-3 text-base"
                       onClick={() => handleMenuClick(item)}
                     >
                       {item.name}
