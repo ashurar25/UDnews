@@ -1,10 +1,19 @@
-// Apply Replit Vite fix for allowedHosts
+// Apply comprehensive Replit fixes for allowedHosts and CORS
 if (process.env.NODE_ENV === 'development') {
+  // Load Vite configuration override
   try {
-    require('../replit-vite-fix.js');
+    require('../override-vite-config.js')();
   } catch (e: any) {
-    console.log('Vite fix not applied:', e?.message || 'Unknown error');
+    console.log('Vite override error:', e?.message);
   }
+  
+  // Set environment variables to disable host checking
+  process.env.DANGEROUSLY_DISABLE_HOST_CHECK = 'true';
+  process.env.WDS_SOCKET_HOST = '0.0.0.0';
+  process.env.WDS_SOCKET_PORT = '443';
+  process.env.CHOKIDAR_USEPOLLING = 'true';
+  
+  console.log('✓ Comprehensive Replit development environment configured');
 }
 
 import express, { type Request, Response, NextFunction } from "express";
@@ -13,6 +22,30 @@ import { setupVite, serveStatic, log } from "./vite";
 import { rssService } from "./rss-service";
 
 const app = express();
+
+// CORS configuration for Replit domains
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const host = req.headers.host;
+  
+  // Allow all Replit domains and localhost
+  if (origin && (origin.includes('.replit.dev') || origin.includes('.replit.app') || origin.includes('localhost'))) {
+    res.header('Access-Control-Allow-Origin', origin);
+  } else {
+    res.header('Access-Control-Allow-Origin', '*');
+  }
+  
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
