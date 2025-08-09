@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Clock, Calendar } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { getWeatherForecast } from "@/lib/weather-api";
 import heroImage from "@/assets/news-hero.jpg";
 import localImage from "@/assets/news-local.jpg";
@@ -70,71 +71,54 @@ const Index = () => {
     city: 'อุดรธานี'
   };
 
-  const breakingNews = [
-    "นายกเทศมนตรีอุดรธานีเปิดโครงการพัฒนาเมือง",
-    "การประชุมสภาเทศบาลครั้งสำคัญวันนี้",
-    "เทศกาลดอกบัวแดงอุดรธานีปีนี้คึกคัก"
-  ];
-
-  const featuredNews = [
-    {
-      title: "อุดรธานีเตรียมจัดเทศกาลประจำปี 2024 คาดมีนักท่องเที่ยวแห่เที่ยวชม",
-      summary: "เทศบาลเมืองอุดรธานีเตรียมจัดงานเทศกาลประจำปีครั้งใหญ่ คาดว่าจะมีนักท่องเที่ยวทั้งในและต่างประเทศมาร่วมงาน พร้อมกิจกรรมหลากหลายตลอด 7 วัน",
-      category: "ข่าวท้องถิ่น",
-      time: "2 ชั่วโมงที่แล้ว",
-      views: "2.5K",
-      image: localImage,
-      size: "large" as const
+  // Fetch real news data from API
+  const { data: newsData, isLoading: isLoadingNews } = useQuery({
+    queryKey: ['/api/news'],
+    queryFn: async () => {
+      const response = await fetch('/api/news');
+      if (!response.ok) throw new Error('Failed to fetch news');
+      return response.json();
     }
-  ];
+  });
 
-  const latestNews = [
-    {
-      title: "รัฐบาลประกาศมาตรการช่วยเหลือเกษตรกรภาคอีสาน",
-      summary: "การประกาศมาตรการใหม่เพื่อช่วยเหลือเกษตรกรในภาคอีสาน โดยเฉพาะในจังหวัดอุดรธานี",
-      category: "การเมือง",
-      time: "4 ชั่วโมงที่แล้ว",
-      views: "1.8K",
-      image: politicsImage,
-      isBreaking: true
-    },
-    {
-      title: "ทีมฟุตบอลอุดรธานีเฮ! คว้าชัยชนะนัดสำคัญ",
-      summary: "ความสำเร็จของทีมฟุตบอลท้องถิ่นในการแข่งขันลีกระดับภูมิภาค",
-      category: "กีฬา",
-      time: "6 ชั่วโมงที่แล้ว",
-      views: "3.2K",
-      image: sportsImage
-    },
-    {
-      title: "ราคาข้าวในตลาดสดอุดรธานีปรับตัวลง",
-      summary: "สถานการณ์ราคาสินค้าอุปโภคบริโภคในตลาดท้องถิ่นสัปดาห์นี้",
-      category: "เศรษฐกิจ",
-      time: "8 ชั่วโมงที่แล้ว",
-      views: "1.2K"
-    },
-    {
-      title: "งานแสดงดนตรีท้องถิ่นที่ศูนย์วัฒนธรรม",
-      summary: "การจัดงานแสดงดนตรีพื้นบ้านอีสานในสุดสัปดาห์นี้",
-      category: "บันเทิง",
-      time: "10 ชั่วโมงที่แล้ว",
-      views: "950"
-    },
-    {
-      title: "โครงการปรับปรุงถนนสายหลักเริ่มแล้ว",
-      summary: "การดำเนินโครงการปรับปรุงโครงสร้างพื้นฐานของเมือง",
-      category: "ข่าวท้องถิ่น",
-      time: "12 ชั่วโมงที่แล้ว",
-      views: "1.5K"
-    },
-    {
-      title: "มหาวิทยาลัยอุดรธานีเปิดรับสมัครนักศึกษาใหม่",
-      summary: "ข้อมูลการรับสมัครและทุนการศึกษาสำหรับปีการศึกษาใหม่",
-      category: "การศึกษา",
-      time: "1 วันที่แล้ว",
-      views: "2.1K"
-    }
-  ];
+  // Helper function to calculate time ago
+  const getTimeAgo = (dateString: string) => {
+    const now = new Date();
+    const created = new Date(dateString);
+    const diffInHours = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'เมื่อสักครู่';
+    if (diffInHours === 1) return '1 ชั่วโมงที่แล้ว';
+    if (diffInHours < 24) return `${diffInHours} ชั่วโมงที่แล้ว`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays === 1) return '1 วันที่แล้ว';
+    return `${diffInDays} วันที่แล้ว`;
+  };
+
+  // Process news data
+  const allNews = newsData || [];
+  const breakingNews = allNews.filter((news: any) => news.isBreaking).map((news: any) => news.title);
+  const featuredNews = allNews.slice(0, 1).map((news: any) => ({
+    title: news.title,
+    summary: news.summary,
+    category: news.category,
+    time: getTimeAgo(news.createdAt),
+    views: `${Math.floor(Math.random() * 5000 + 1000)}`, // Random views for demo
+    image: news.imageUrl || localImage,
+    isBreaking: news.isBreaking,
+    size: "large" as const
+  }));
+  
+  const latestNews = allNews.slice(1, 9).map((news: any, index: number) => ({
+    title: news.title,
+    summary: news.summary,
+    category: news.category,
+    time: getTimeAgo(news.createdAt),
+    views: `${Math.floor(Math.random() * 3000 + 500)}`, // Random views for demo
+    image: news.imageUrl || (index % 4 === 0 ? politicsImage : index % 4 === 1 ? sportsImage : index % 4 === 2 ? localImage : undefined),
+    isBreaking: news.isBreaking
+  }));
 
   return (
     <div className="min-h-screen bg-background">
