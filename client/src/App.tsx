@@ -13,6 +13,8 @@ import Contact from "./pages/Contact";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
 import NewsDetail from "./pages/NewsDetail";
+import AllNews from "./pages/AllNews";
+import CategoryNews from "./pages/CategoryNews";
 import NotFound from "./pages/NotFound";
 import RSSFeed from "./components/RSSFeed";
 
@@ -34,7 +36,9 @@ const App = () => (
           <Route path="/sports" element={<Sports />} />
           <Route path="/entertainment" element={<Entertainment />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/news" element={<AllNews />} />
           <Route path="/news/:id" element={<NewsDetail />} />
+          <Route path="/category/:category" element={<CategoryNews />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

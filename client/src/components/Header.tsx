@@ -2,17 +2,19 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, Search, Rss, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Link, useLocation } from "react-router-dom";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
 
   const menuItems = [
     { name: "หน้าแรก", href: "/" },
-    { name: "ข่าวท้องถิ่น", href: "/local" },
-    { name: "การเมือง", href: "/politics" },
-    { name: "อาชญากรรม", href: "/crime" },
-    { name: "กีฬา", href: "/sports" },
-    { name: "บันเทิง", href: "/entertainment" },
+    { name: "ข่าวทั้งหมด", href: "/news" },
+    { name: "ข่าวท้องถิ่น", href: "/category/local" },
+    { name: "การเมือง", href: "/category/politics" },
+    { name: "กีฬา", href: "/category/sports" },
+    { name: "บันเทิง", href: "/category/entertainment" },
     { name: "ติดต่อเรา", href: "/contact" }
   ];
 
@@ -45,7 +47,7 @@ const Header = () => {
       <div className="container mx-auto px-6 py-6 bg-orange-500/25 backdrop-blur-md border-b border-orange-200/30">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center gap-6">
+          <Link to="/" className="flex items-center gap-6 hover:opacity-90 transition-opacity">
             <img 
               src="/logo.jpg" 
               alt="UD News Update Logo"
@@ -59,7 +61,7 @@ const Header = () => {
                 UD News Update
               </p>
             </div>
-          </div>
+          </Link>
 
           {/* Search Bar - Desktop */}
           <div className="hidden md:flex items-center gap-6">
@@ -98,14 +100,19 @@ const Header = () => {
         <nav className={`mt-6 ${isMenuOpen ? 'block' : 'hidden md:block'}`}>
           <div className="flex flex-col md:flex-row gap-2 md:gap-4">
             {menuItems.map((item, index) => (
-              <Button
-                key={index}
-                variant="ghost"
-                className="justify-start md:justify-center font-sarabun px-4 py-2 rounded-lg bg-white/80 hover:bg-orange-100 hover:text-orange-700 transition-all duration-200 shadow-sm hover:shadow-md border border-orange-200/50 hover:border-orange-300"
-                onClick={() => window.location.href = item.href}
-              >
-                {item.name}
-              </Button>
+              <Link key={index} to={item.href}>
+                <Button
+                  variant="ghost"
+                  className={`w-full md:w-auto justify-start md:justify-center font-sarabun px-4 py-2 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md border border-orange-200/50 hover:border-orange-300 ${
+                    location.pathname === item.href
+                      ? "bg-orange-200 text-orange-800 border-orange-300"
+                      : "bg-white/80 hover:bg-orange-100 hover:text-orange-700"
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item.name}
+                </Button>
+              </Link>
             ))}
           </div>
         </nav>

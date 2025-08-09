@@ -8,6 +8,16 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes (ล่าสุด)
 
+## News Reading and Navigation System (9 มกราคม 2567)
+- ✅ Added full news article reading capability with detailed pages
+- ✅ Implemented React Router-based navigation system
+- ✅ Created comprehensive "All News" page with search and filtering
+- ✅ Added category-based news browsing (/category/local, /category/politics, etc.)
+- ✅ Enhanced header navigation with React Router integration
+- ✅ All news cards are now clickable leading to full article pages
+- ✅ Added news sharing functionality and external source links
+- ✅ Implemented related news sections and enhanced news detail layout
+
 ## RSS System Enhancement (9 มกราคม 2567)
 - ✅ Enhanced RSS feed processing with real data fetching
 - ✅ Added image extraction from RSS feeds (รูปภาพจาก RSS)
