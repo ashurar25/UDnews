@@ -3,10 +3,39 @@ import { Button } from "@/components/ui/button";
 import { Menu, Search, Rss, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Link, useLocation } from "wouter";
+import { useTheme } from "next-themes";
+import { getCurrentThaiSpecialDay } from "@/lib/thai-special-days";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [location] = useLocation();
+  const { theme } = useTheme();
+  const specialDay = getCurrentThaiSpecialDay();
+  
+  // Dynamic theme classes based on current theme
+  const getThemeClasses = () => {
+    if (specialDay && theme === "thai-special") {
+      return {
+        topBar: `bg-${specialDay.colors.primary}/60 backdrop-blur-md text-white py-1 border-b border-${specialDay.colors.secondary}/20`,
+        mainHeader: `container mx-auto px-6 py-6 bg-${specialDay.colors.primary}/25 backdrop-blur-md border-b border-${specialDay.colors.secondary}/30`,
+        title: `text-3xl font-bold font-kanit text-${specialDay.colors.accent}`
+      }
+    }
+    if (theme === "dark") {
+      return {
+        topBar: "bg-gray-800/60 backdrop-blur-md text-white py-1 border-b border-gray-700/20",
+        mainHeader: "container mx-auto px-6 py-6 bg-gray-900/25 backdrop-blur-md border-b border-gray-800/30",
+        title: "text-3xl font-bold font-kanit text-blue-400"
+      }
+    }
+    return {
+      topBar: "bg-orange-600/60 backdrop-blur-md text-white py-1 border-b border-orange-300/20",
+      mainHeader: "container mx-auto px-6 py-6 bg-orange-500/25 backdrop-blur-md border-b border-orange-200/30",
+      title: "text-3xl font-bold font-kanit text-yellow-400"
+    }
+  }
+  
+  const themeClasses = getThemeClasses();
 
   const menuItems = [
     { name: "หน้าแรก", href: "/" },
@@ -19,9 +48,9 @@ const Header = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-orange-50/40 backdrop-blur-md supports-[backdrop-filter]:bg-orange-100/20">
+    <header className="sticky top-0 z-50 w-full border-b bg-orange-50/40 dark:bg-gray-900/40 backdrop-blur-md supports-[backdrop-filter]:bg-orange-100/20 dark:supports-[backdrop-filter]:bg-gray-800/20">
       {/* Top Bar */}
-      <div className="bg-orange-600/60 backdrop-blur-md text-white py-1 border-b border-orange-300/20">
+      <div className={themeClasses.topBar}>
         <div className="container mx-auto px-4 flex justify-between items-center text-xs">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1">
@@ -44,7 +73,7 @@ const Header = () => {
       </div>
 
       {/* Main Header */}
-      <div className="container mx-auto px-6 py-6 bg-orange-500/25 backdrop-blur-md border-b border-orange-200/30">
+      <div className={themeClasses.mainHeader}>
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-6 hover:opacity-90 transition-opacity">
@@ -54,10 +83,10 @@ const Header = () => {
               className="h-16 w-16 object-contain rounded-lg shadow-lg hover:scale-105 hover:shadow-xl transition-all duration-300 cursor-pointer"
             />
             <div>
-              <h1 className="text-3xl font-bold font-kanit text-yellow-400">
-                อัพเดทข่าวอุดร
+              <h1 className={themeClasses.title}>
+                {specialDay ? specialDay.name || "อัพเดทข่าวอุดร" : "อัพเดทข่าวอุดร"}
               </h1>
-              <p className="text-xl text-black font-sarabun font-bold">
+              <p className="text-xl text-black dark:text-white font-sarabun font-bold">
                 UD News Update
               </p>
             </div>

@@ -26,9 +26,27 @@ import RSSManager from "@/components/RSSManager"
 import NewsManager from "@/components/NewsManager"
 import SponsorManager from "@/components/SponsorManager"
 import { useTheme } from "next-themes"
+import { useQuery } from "@tanstack/react-query"
 
 const Admin = () => {
   const { setTheme } = useTheme()
+  
+  // Fetch real database stats
+  const { data: newsData } = useQuery({
+    queryKey: ['/api/news']
+  })
+  
+  const { data: rssFeedsData } = useQuery({
+    queryKey: ['/api/rss-feeds']
+  })
+  
+  const { data: sponsorBannersData } = useQuery({
+    queryKey: ['/api/sponsor-banners']
+  })
+  
+  const newsStats = Array.isArray(newsData) ? newsData.length : 0
+  const rssFeeds = Array.isArray(rssFeedsData) ? rssFeedsData.length : 0
+  const sponsorBanners = Array.isArray(sponsorBannersData) ? sponsorBannersData.length : 0
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-yellow-50">
@@ -67,7 +85,7 @@ const Admin = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-2xl font-bold">127</p>
+                    <p className="text-2xl font-bold">{newsStats}</p>
                     <p className="text-sm opacity-90">ข่าวทั้งหมด</p>
                   </div>
                   <Newspaper className="h-8 w-8 opacity-80" />
@@ -91,7 +109,7 @@ const Admin = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-2xl font-bold">8</p>
+                    <p className="text-2xl font-bold">{rssFeeds}</p>
                     <p className="text-sm opacity-90">RSS Feeds</p>
                   </div>
                   <Rss className="h-8 w-8 opacity-80" />
