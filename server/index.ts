@@ -1,3 +1,12 @@
+// Apply Replit Vite fix for allowedHosts
+if (process.env.NODE_ENV === 'development') {
+  try {
+    require('../replit-vite-fix.js');
+  } catch (e: any) {
+    console.log('Vite fix not applied:', e?.message || 'Unknown error');
+  }
+}
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
