@@ -137,7 +137,7 @@ export async function getWeatherForecast(): Promise<ForecastData> {
       wind: Math.max(5, today.wind + Math.floor(Math.random() * 6) - 3)
     };
 
-    const tomorrow = tomorrowData 
+    const tomorrow = tomorrowData
       ? convertToWeatherData(tomorrowData, 'forecast')
       : {
           ...today,
