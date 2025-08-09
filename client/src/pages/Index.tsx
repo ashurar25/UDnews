@@ -100,6 +100,7 @@ const Index = () => {
   const allNews = newsData || [];
   const breakingNews = allNews.filter((news: any) => news.isBreaking).map((news: any) => news.title);
   const featuredNews = allNews.slice(0, 1).map((news: any) => ({
+    id: news.id,
     title: news.title,
     summary: news.summary,
     category: news.category,
@@ -111,6 +112,7 @@ const Index = () => {
   }));
   
   const latestNews = allNews.slice(1, 9).map((news: any, index: number) => ({
+    id: news.id,
     title: news.title,
     summary: news.summary,
     category: news.category,

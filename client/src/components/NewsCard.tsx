@@ -1,8 +1,10 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Eye } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface NewsCardProps {
+  id?: number;
   title: string;
   summary: string;
   category: string;
@@ -14,6 +16,7 @@ interface NewsCardProps {
 }
 
 const NewsCard = ({ 
+  id,
   title, 
   summary, 
   category, 
@@ -23,6 +26,7 @@ const NewsCard = ({
   isBreaking = false,
   size = "medium" 
 }: NewsCardProps) => {
+  const navigate = useNavigate();
   const getCategoryColor = (cat: string) => {
     switch (cat.toLowerCase()) {
       case 'ข่าวด่วน': return 'bg-news-urgent text-white';
@@ -39,8 +43,17 @@ const NewsCard = ({
     ? "md:col-span-1" 
     : "md:col-span-1";
 
+  const handleClick = () => {
+    if (id) {
+      navigate(`/news/${id}`);
+    }
+  };
+
   return (
-    <Card className={`group cursor-pointer transition-all duration-300 hover:shadow-news hover:-translate-y-1 animate-fade-in ${cardClass}`}>
+    <Card 
+      className={`group cursor-pointer transition-all duration-300 hover:shadow-news hover:-translate-y-1 animate-fade-in ${cardClass}`}
+      onClick={handleClick}
+    >
       {image && (
         <div className="relative overflow-hidden">
           <img 
