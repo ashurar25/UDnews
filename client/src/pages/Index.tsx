@@ -33,6 +33,19 @@ interface ForecastData {
   tomorrow: WeatherData;
 }
 
+interface NewsItem {
+  id: number;
+  title: string;
+  summary: string;
+  content: string;
+  category: string;
+  imageUrl?: string;
+  sourceUrl?: string;
+  isBreaking: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const Index = () => {
   const [selectedDay, setSelectedDay] = useState<'yesterday' | 'today' | 'tomorrow'>('today');
   const [weatherData, setWeatherData] = useState<ForecastData | null>(null);
@@ -74,7 +87,7 @@ const Index = () => {
   // Fetch real news data from API
   const { data: newsData, isLoading: isLoadingNews } = useQuery({
     queryKey: ['/api/news'],
-    queryFn: async () => {
+    queryFn: async (): Promise<NewsItem[]> => {
       const response = await fetch('/api/news');
       if (!response.ok) throw new Error('Failed to fetch news');
       return response.json();
@@ -98,8 +111,8 @@ const Index = () => {
 
   // Process news data
   const allNews = newsData || [];
-  const breakingNews = allNews.filter((news: any) => news.isBreaking).map((news: any) => news.title);
-  const featuredNews = allNews.slice(0, 1).map((news: any) => ({
+  const breakingNews = allNews.filter((news: NewsItem) => news.isBreaking).map((news: NewsItem) => news.title);
+  const featuredNews = allNews.slice(0, 1).map((news: NewsItem) => ({
     id: news.id,
     title: news.title,
     summary: news.summary,
@@ -111,7 +124,7 @@ const Index = () => {
     size: "large" as const
   }));
   
-  const latestNews = allNews.slice(1, 9).map((news: any, index: number) => ({
+  const latestNews = allNews.slice(1, 9).map((news: NewsItem, index: number) => ({
     id: news.id,
     title: news.title,
     summary: news.summary,
