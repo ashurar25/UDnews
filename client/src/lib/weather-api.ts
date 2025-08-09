@@ -19,7 +19,7 @@ interface ForecastData {
 }
 
 // OpenWeatherMap API configuration
-const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY || 'demo_key';
+const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY || '549bd92b3ea0b8be7984b49f5926988c';
 const BASE_URL = 'https://api.openweathermap.org/data/2.5';
 const CITY = 'Udon Thani';
 const COUNTRY_CODE = 'TH';
