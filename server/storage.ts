@@ -1,8 +1,6 @@
-import { drizzle } from "drizzle-orm/neon-serverless";
-import { Pool, neonConfig } from "@neondatabase/serverless";
 import { users, rssFeeds, newsArticles, sponsorBanners, rssProcessingHistory, type InsertUser, type User, type InsertRssFeed, type RssFeed, type InsertNews, type NewsArticle, type InsertSponsorBanner, type SponsorBanner, type InsertRssHistory, type RssProcessingHistory } from "@shared/schema";
-import { eq } from "drizzle-orm";
-import ws from "ws";
+import { eq, sql } from "drizzle-orm";
+import { db } from "./db";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -332,6 +330,9 @@ export class MemStorage implements IStorage {
       ...historyData,
       id,
       processedAt: now,
+      articlesProcessed: historyData.articlesProcessed ?? 0,
+      articlesAdded: historyData.articlesAdded ?? 0,
+      success: historyData.success ?? true,
       errorMessage: historyData.errorMessage || null
     };
     this.rssHistory.set(id, history);
@@ -350,4 +351,157 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async getAllRssFeeds(): Promise<RssFeed[]> {
+    return await db.select().from(rssFeeds);
+  }
+
+  async getRssFeedById(id: number): Promise<RssFeed | null> {
+    const [feed] = await db.select().from(rssFeeds).where(eq(rssFeeds.id, id));
+    return feed || null;
+  }
+
+  async insertRssFeed(feed: InsertRssFeed): Promise<RssFeed> {
+    const [newFeed] = await db
+      .insert(rssFeeds)
+      .values(feed)
+      .returning();
+    return newFeed;
+  }
+
+  async updateRssFeed(id: number, feed: Partial<InsertRssFeed>): Promise<RssFeed | null> {
+    const [updated] = await db
+      .update(rssFeeds)
+      .set({ ...feed, updatedAt: new Date() })
+      .where(eq(rssFeeds.id, id))
+      .returning();
+    return updated || null;
+  }
+
+  async updateRssFeedLastProcessed(id: number): Promise<boolean> {
+    const result = await db
+      .update(rssFeeds)
+      .set({ lastProcessed: new Date(), updatedAt: new Date() })
+      .where(eq(rssFeeds.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async deleteRssFeed(id: number): Promise<boolean> {
+    const result = await db.delete(rssFeeds).where(eq(rssFeeds.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getAllNews(): Promise<NewsArticle[]> {
+    return await db.select().from(newsArticles).orderBy(newsArticles.createdAt);
+  }
+
+  async getNewsById(id: number): Promise<NewsArticle | null> {
+    const [article] = await db.select().from(newsArticles).where(eq(newsArticles.id, id));
+    return article || null;
+  }
+
+  async insertNews(news: InsertNews): Promise<NewsArticle> {
+    const [newArticle] = await db
+      .insert(newsArticles)
+      .values(news)
+      .returning();
+    return newArticle;
+  }
+
+  async updateNews(id: number, news: Partial<InsertNews>): Promise<NewsArticle | null> {
+    const [updated] = await db
+      .update(newsArticles)
+      .set({ ...news, updatedAt: new Date() })
+      .where(eq(newsArticles.id, id))
+      .returning();
+    return updated || null;
+  }
+
+  async deleteNews(id: number): Promise<boolean> {
+    const result = await db.delete(newsArticles).where(eq(newsArticles.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getAllSponsorBanners(): Promise<SponsorBanner[]> {
+    return await db.select().from(sponsorBanners).where(eq(sponsorBanners.isActive, true));
+  }
+
+  async getSponsorBannersByPosition(position: string): Promise<SponsorBanner[]> {
+    return await db.select().from(sponsorBanners)
+      .where(eq(sponsorBanners.position, position as any))
+      .orderBy(sponsorBanners.displayOrder);
+  }
+
+  async getSponsorBannerById(id: number): Promise<SponsorBanner | null> {
+    const [banner] = await db.select().from(sponsorBanners).where(eq(sponsorBanners.id, id));
+    return banner || null;
+  }
+
+  async insertSponsorBanner(banner: InsertSponsorBanner): Promise<SponsorBanner> {
+    const [newBanner] = await db
+      .insert(sponsorBanners)
+      .values(banner)
+      .returning();
+    return newBanner;
+  }
+
+  async updateSponsorBanner(id: number, banner: Partial<InsertSponsorBanner>): Promise<SponsorBanner | null> {
+    const [updated] = await db
+      .update(sponsorBanners)
+      .set({ ...banner, updatedAt: new Date() })
+      .where(eq(sponsorBanners.id, id))
+      .returning();
+    return updated || null;
+  }
+
+  async deleteSponsorBanner(id: number): Promise<boolean> {
+    const result = await db.delete(sponsorBanners).where(eq(sponsorBanners.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async incrementBannerClick(id: number): Promise<boolean> {
+    const result = await db
+      .update(sponsorBanners)
+      .set({ clickCount: sql`${sponsorBanners.clickCount} + 1` })
+      .where(eq(sponsorBanners.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async insertRssHistory(history: InsertRssHistory): Promise<RssProcessingHistory> {
+    const [newHistory] = await db
+      .insert(rssProcessingHistory)
+      .values(history)
+      .returning();
+    return newHistory;
+  }
+
+  async getRssHistoryByFeedId(feedId: number): Promise<RssProcessingHistory[]> {
+    return await db.select().from(rssProcessingHistory)
+      .where(eq(rssProcessingHistory.rssFeedId, feedId))
+      .orderBy(rssProcessingHistory.processedAt);
+  }
+
+  async getAllRssHistory(): Promise<RssProcessingHistory[]> {
+    return await db.select().from(rssProcessingHistory).orderBy(rssProcessingHistory.processedAt);
+  }
+}
+
+export const storage = new DatabaseStorage();
