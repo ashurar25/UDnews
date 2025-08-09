@@ -253,6 +253,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // RSS Processing History routes
+  app.get("/api/rss/history", async (req, res) => {
+    try {
+      const history = await storage.getAllRssHistory();
+      res.json(history);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch RSS history" });
+    }
+  });
+
+  app.get("/api/rss/history/:feedId", async (req, res) => {
+    try {
+      const feedId = parseInt(req.params.feedId);
+      const history = await storage.getRssHistoryByFeedId(feedId);
+      res.json(history);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch RSS history for feed" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

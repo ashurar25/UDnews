@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { Pool, neonConfig } from "@neondatabase/serverless";
-import { users, rssFeeds, newsArticles, sponsorBanners, type InsertUser, type User, type InsertRssFeed, type RssFeed, type InsertNews, type NewsArticle, type InsertSponsorBanner, type SponsorBanner } from "@shared/schema";
+import { users, rssFeeds, newsArticles, sponsorBanners, rssProcessingHistory, type InsertUser, type User, type InsertRssFeed, type RssFeed, type InsertNews, type NewsArticle, type InsertSponsorBanner, type SponsorBanner, type InsertRssHistory, type RssProcessingHistory } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import ws from "ws";
 
@@ -15,6 +15,7 @@ export interface IStorage {
   getRssFeedById(id: number): Promise<RssFeed | null>;
   insertRssFeed(feed: InsertRssFeed): Promise<RssFeed>;
   updateRssFeed(id: number, feed: Partial<InsertRssFeed>): Promise<RssFeed | null>;
+  updateRssFeedLastProcessed(id: number): Promise<boolean>;
   deleteRssFeed(id: number): Promise<boolean>;
   getAllNews(): Promise<NewsArticle[]>;
   getNewsById(id: number): Promise<NewsArticle | null>;
@@ -28,6 +29,9 @@ export interface IStorage {
   updateSponsorBanner(id: number, banner: Partial<InsertSponsorBanner>): Promise<SponsorBanner | null>;
   deleteSponsorBanner(id: number): Promise<boolean>;
   incrementBannerClick(id: number): Promise<boolean>;
+  insertRssHistory(history: InsertRssHistory): Promise<RssProcessingHistory>;
+  getRssHistoryByFeedId(feedId: number): Promise<RssProcessingHistory[]>;
+  getAllRssHistory(): Promise<RssProcessingHistory[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -35,6 +39,7 @@ export class MemStorage implements IStorage {
   private rssFeeds: Map<number, RssFeed>;
   private news: Map<number, NewsArticle>;
   private sponsorBanners: Map<number, SponsorBanner>;
+  private rssHistory: Map<number, RssProcessingHistory>;
   currentId: number;
 
   constructor() {
@@ -42,13 +47,53 @@ export class MemStorage implements IStorage {
     this.rssFeeds = new Map();
     this.news = new Map();
     this.sponsorBanners = new Map();
+    this.rssHistory = new Map();
     this.currentId = 1;
     
-    // Add some sample news articles for demonstration
+    // Add some sample data for demonstration
     this.initializeSampleData();
   }
 
   private initializeSampleData() {
+    // Add sample RSS feeds
+    const sampleRssFeeds = [
+      {
+        title: "BBC Thai",
+        url: "https://feeds.bbci.co.uk/thai/rss.xml",
+        description: "ข่าวจาก BBC ภาษาไทย",
+        category: "ข่าวทั่วไป",
+        isActive: true
+      },
+      {
+        title: "Voice TV",
+        url: "https://www.voicetv.co.th/rss/news.xml",
+        description: "ข่าวจาก Voice TV",
+        category: "ข่าวทั่วไป", 
+        isActive: true
+      },
+      {
+        title: "Manager Online",
+        url: "https://www.manager.co.th/RSS/AllRSS.aspx",
+        description: "ข่าวจาก Manager Online",
+        category: "ข่าวทั่วไป",
+        isActive: true
+      }
+    ];
+
+    sampleRssFeeds.forEach((feed) => {
+      const id = this.currentId++;
+      const now = new Date();
+      const rssFeed = {
+        ...feed,
+        id,
+        description: feed.description || null,
+        lastProcessed: null,
+        createdAt: now,
+        updatedAt: now
+      };
+      this.rssFeeds.set(id, rssFeed);
+    });
+
     // Add sample news articles
     const sampleNews = [
       {
@@ -84,6 +129,8 @@ export class MemStorage implements IStorage {
         ...article,
         id,
         imageUrl: article.imageUrl || null,
+        sourceUrl: null,
+        rssFeedId: null,
         createdAt: new Date(now.getTime() - (index * 1000 * 60 * 60)), // Spread over hours
         updatedAt: new Date(now.getTime() - (index * 1000 * 60 * 60))
       };
@@ -119,11 +166,15 @@ export class MemStorage implements IStorage {
 
   async insertRssFeed(feed: InsertRssFeed): Promise<RssFeed> {
     const id = this.currentId++;
+    const now = new Date();
     const rssFeed: RssFeed = { 
       ...feed, 
       id, 
       description: feed.description ?? null,
-      isActive: feed.isActive ?? true
+      isActive: feed.isActive ?? true,
+      lastProcessed: null,
+      createdAt: now,
+      updatedAt: now
     };
     this.rssFeeds.set(id, rssFeed);
     return rssFeed;
@@ -132,9 +183,26 @@ export class MemStorage implements IStorage {
   async updateRssFeed(id: number, feed: Partial<InsertRssFeed>): Promise<RssFeed | null> {
     const existing = this.rssFeeds.get(id);
     if (!existing) return null;
-    const updated = { ...existing, ...feed, description: feed.description ?? existing.description };
+    const updated = { 
+      ...existing, 
+      ...feed, 
+      description: feed.description ?? existing.description,
+      updatedAt: new Date()
+    };
     this.rssFeeds.set(id, updated);
     return updated;
+  }
+
+  async updateRssFeedLastProcessed(id: number): Promise<boolean> {
+    const existing = this.rssFeeds.get(id);
+    if (!existing) return false;
+    const updated = {
+      ...existing,
+      lastProcessed: new Date(),
+      updatedAt: new Date()
+    };
+    this.rssFeeds.set(id, updated);
+    return true;
   }
 
   async deleteRssFeed(id: number): Promise<boolean> {
@@ -159,6 +227,8 @@ export class MemStorage implements IStorage {
       ...newsData, 
       id, 
       imageUrl: newsData.imageUrl || null,
+      sourceUrl: newsData.sourceUrl || null,
+      rssFeedId: newsData.rssFeedId || null,
       isBreaking: newsData.isBreaking ?? false,
       createdAt: now,
       updatedAt: now
@@ -174,6 +244,8 @@ export class MemStorage implements IStorage {
       ...existing, 
       ...newsData, 
       imageUrl: newsData.imageUrl ?? existing.imageUrl,
+      sourceUrl: newsData.sourceUrl ?? existing.sourceUrl,
+      rssFeedId: newsData.rssFeedId ?? existing.rssFeedId,
       updatedAt: new Date()
     };
     this.news.set(id, updated);
@@ -250,6 +322,31 @@ export class MemStorage implements IStorage {
     banner.clickCount++;
     this.sponsorBanners.set(id, banner);
     return true;
+  }
+
+  // RSS History methods
+  async insertRssHistory(historyData: InsertRssHistory): Promise<RssProcessingHistory> {
+    const id = this.currentId++;
+    const now = new Date();
+    const history: RssProcessingHistory = {
+      ...historyData,
+      id,
+      processedAt: now,
+      errorMessage: historyData.errorMessage || null
+    };
+    this.rssHistory.set(id, history);
+    return history;
+  }
+
+  async getRssHistoryByFeedId(feedId: number): Promise<RssProcessingHistory[]> {
+    return Array.from(this.rssHistory.values())
+      .filter(h => h.rssFeedId === feedId)
+      .sort((a, b) => new Date(b.processedAt).getTime() - new Date(a.processedAt).getTime());
+  }
+
+  async getAllRssHistory(): Promise<RssProcessingHistory[]> {
+    return Array.from(this.rssHistory.values())
+      .sort((a, b) => new Date(b.processedAt).getTime() - new Date(a.processedAt).getTime());
   }
 }
 

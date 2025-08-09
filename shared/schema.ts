@@ -20,6 +20,9 @@ export const rssFeeds = pgTable("rss_feeds", {
   description: text("description"),
   category: text("category").notNull(),
   isActive: boolean("is_active").notNull().default(true),
+  lastProcessed: timestamp("last_processed"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export const insertRssFeedSchema = createInsertSchema(rssFeeds).pick({
@@ -37,6 +40,8 @@ export const newsArticles = pgTable("news_articles", {
   content: text("content").notNull(),
   category: text("category").notNull(),
   imageUrl: text("image_url"),
+  sourceUrl: text("source_url"), // Original RSS item link
+  rssFeedId: integer("rss_feed_id"), // Reference to RSS feed source
   isBreaking: boolean("is_breaking").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -48,6 +53,8 @@ export const insertNewsSchema = createInsertSchema(newsArticles).pick({
   content: true,
   category: true,
   imageUrl: true,
+  sourceUrl: true,
+  rssFeedId: true,
   isBreaking: true,
 });
 
@@ -78,6 +85,25 @@ export const insertSponsorBannerSchema = createInsertSchema(sponsorBanners).pick
   endDate: true,
 });
 
+// RSS Processing History Table
+export const rssProcessingHistory = pgTable("rss_processing_history", {
+  id: serial("id").primaryKey(),
+  rssFeedId: integer("rss_feed_id").notNull(),
+  processedAt: timestamp("processed_at").notNull().defaultNow(),
+  articlesProcessed: integer("articles_processed").notNull().default(0),
+  articlesAdded: integer("articles_added").notNull().default(0),
+  success: boolean("success").notNull().default(true),
+  errorMessage: text("error_message"),
+});
+
+export const insertRssHistorySchema = createInsertSchema(rssProcessingHistory).pick({
+  rssFeedId: true,
+  articlesProcessed: true,
+  articlesAdded: true,
+  success: true,
+  errorMessage: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertRssFeed = z.infer<typeof insertRssFeedSchema>;
@@ -86,3 +112,5 @@ export type InsertNews = z.infer<typeof insertNewsSchema>;
 export type NewsArticle = typeof newsArticles.$inferSelect;
 export type InsertSponsorBanner = z.infer<typeof insertSponsorBannerSchema>;
 export type SponsorBanner = typeof sponsorBanners.$inferSelect;
+export type InsertRssHistory = z.infer<typeof insertRssHistorySchema>;
+export type RssProcessingHistory = typeof rssProcessingHistory.$inferSelect;

@@ -6,6 +6,17 @@ This is a full-stack news website application called "UD News" (อัพเด�
 
 Preferred communication style: Simple, everyday language.
 
+# Recent Changes (ล่าสุด)
+
+## RSS System Enhancement (9 มกราคม 2567)
+- ✅ Enhanced RSS feed processing with real data fetching
+- ✅ Added image extraction from RSS feeds (รูปภาพจาก RSS)
+- ✅ Implemented RSS processing history tracking (ประวัติการดึงข่าว)
+- ✅ Added sample RSS feeds: BBC Thai, Voice TV, Manager Online
+- ✅ Successfully processed 64 articles from RSS feeds
+- ✅ Added API endpoints for RSS history tracking
+- ✅ Improved error handling and processing status tracking
+
 # System Architecture
 
 ## Frontend Architecture

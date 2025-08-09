@@ -122,6 +122,11 @@ export class RSSService {
 
   // Process a single RSS feed
   async processFeed(feedId: number, feedUrl: string, category: string): Promise<number> {
+    let articlesProcessed = 0;
+    let articlesAdded = 0;
+    let success = true;
+    let errorMessage: string | null = null;
+
     try {
       console.log(`Processing RSS feed: ${feedUrl}`);
       
@@ -133,33 +138,45 @@ export class RSSService {
         )
       ]) as any;
 
-      let addedCount = 0;
-
       if (!feed || !feed.items || feed.items.length === 0) {
         console.log(`No items found in feed: ${feedUrl}`);
+        await this.recordProcessingHistory(feedId, 0, 0, true, 'No items found in feed');
         return 0;
       }
+
+      articlesProcessed = feed.items.length;
 
       // Process each item in the feed
       for (const item of feed.items) {
         try {
-          await this.processRSSItem(item as RSSItem, category, feedId);
-          addedCount++;
+          const wasAdded = await this.processRSSItem(item as RSSItem, category, feedId);
+          if (wasAdded) articlesAdded++;
         } catch (error) {
           console.error(`Error processing RSS item from ${feedUrl}:`, error);
           // Continue processing other items
         }
       }
 
+      // Update feed last processed time
+      await storage.updateRssFeedLastProcessed(feedId);
+      
+      // Record processing history
+      await this.recordProcessingHistory(feedId, articlesProcessed, articlesAdded, true, null);
+      
       this.lastProcessed.set(feedId, new Date());
-      console.log(`Successfully processed ${addedCount} items from ${feedUrl}`);
-      return addedCount;
+      console.log(`Successfully processed ${articlesAdded}/${articlesProcessed} items from ${feedUrl}`);
+      return articlesAdded;
 
     } catch (error) {
+      success = false;
+      errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error(`Error processing RSS feed ${feedUrl}:`, error);
       
+      // Record failed processing
+      await this.recordProcessingHistory(feedId, articlesProcessed, articlesAdded, false, errorMessage);
+      
       // Check if it's a parsing error and try alternative approach
-      if (error.message && error.message.includes('Non-whitespace before first tag')) {
+      if (error instanceof Error && error.message && error.message.includes('Non-whitespace before first tag')) {
         console.log(`Attempting alternative fetch for ${feedUrl}`);
         try {
           const response = await fetch(feedUrl);
@@ -180,21 +197,36 @@ export class RSSService {
     }
   }
 
+  // Record RSS processing history
+  private async recordProcessingHistory(feedId: number, processed: number, added: number, success: boolean, errorMessage: string | null): Promise<void> {
+    try {
+      await storage.insertRssHistory({
+        rssFeedId: feedId,
+        articlesProcessed: processed,
+        articlesAdded: added,
+        success: success,
+        errorMessage: errorMessage
+      });
+    } catch (error) {
+      console.error('Failed to record RSS processing history:', error);
+    }
+  }
+
   // Process a single RSS item
-  private async processRSSItem(item: RSSItem, feedCategory: string, feedId: number): Promise<void> {
+  private async processRSSItem(item: RSSItem, feedCategory: string, feedId: number): Promise<boolean> {
     if (!item.title || !item.link) {
-      return; // Skip items without title or link
+      return false; // Skip items without title or link
     }
 
-    // Check if this article already exists (by link)
+    // Check if this article already exists (by title or sourceUrl)
     const existingNews = await storage.getAllNews();
     const exists = existingNews.some(news => 
       news.title === item.title || 
-      (item.link && news.content.includes(item.link))
+      (item.link && news.sourceUrl === item.link)
     );
 
     if (exists) {
-      return; // Skip duplicate articles
+      return false; // Skip duplicate articles
     }
 
     const imageUrl = this.extractImageUrl(
@@ -212,10 +244,13 @@ export class RSSService {
       content: cleanedContent || 'เนื้อหาจาก RSS Feed',
       category: this.determineCategory(feedCategory, item.categories),
       imageUrl: imageUrl || null,
+      sourceUrl: item.link || null,
+      rssFeedId: feedId,
       isBreaking: this.isBreakingNews(item.title)
     };
 
     await storage.insertNews(newsData);
+    return true; // Article was added
   }
 
   // Generate a summary from content
