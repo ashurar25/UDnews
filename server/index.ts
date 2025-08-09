@@ -1,19 +1,12 @@
-// Apply comprehensive Replit fixes for allowedHosts and CORS
+// Apply Replit environment configuration
 if (process.env.NODE_ENV === 'development') {
-  // Load Vite configuration override
-  try {
-    require('../override-vite-config.js')();
-  } catch (e: any) {
-    console.log('Vite override error:', e?.message);
-  }
-  
-  // Set environment variables to disable host checking
+  // Set environment variables for Replit compatibility
   process.env.DANGEROUSLY_DISABLE_HOST_CHECK = 'true';
   process.env.WDS_SOCKET_HOST = '0.0.0.0';
   process.env.WDS_SOCKET_PORT = '443';
   process.env.CHOKIDAR_USEPOLLING = 'true';
   
-  console.log('✓ Comprehensive Replit development environment configured');
+  console.log('✓ Replit development environment configured');
 }
 
 import express, { type Request, Response, NextFunction } from "express";

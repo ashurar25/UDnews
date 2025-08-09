@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
+// Replit-specific Vite configuration that allows all hosts
 export default defineConfig({
   plugins: [
     react(),
@@ -27,5 +28,17 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+  },
+  server: {
+    host: "0.0.0.0",
+    allowedHosts: true, // Allow all hosts including Replit domains
+    hmr: {
+      clientPort: 443,
+      host: "0.0.0.0",
+    },
+  },
+  preview: {
+    host: "0.0.0.0",
+    allowedHosts: true, // Also for preview mode
   },
 });
