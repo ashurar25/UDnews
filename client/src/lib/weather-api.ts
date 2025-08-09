@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 interface WeatherData {
@@ -20,7 +19,7 @@ interface ForecastData {
 }
 
 // OpenWeatherMap API configuration
-const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY || '549bd92b3ea0b8be7984b49f5926988c';
+const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY || 'demo_key';
 const BASE_URL = 'https://api.openweathermap.org/data/2.5';
 const CITY = 'Udon Thani';
 const COUNTRY_CODE = 'TH';
@@ -51,9 +50,9 @@ function convertToWeatherData(data: any, type: 'current' | 'forecast' = 'current
   const description = data.weather?.[0]?.description || '';
   const windSpeed = Math.round((data.wind?.speed || 0) * 3.6); // Convert m/s to km/h
   const humidity = data.main?.humidity || data.humidity || 0;
-  
+
   const condition = getWeatherCondition(description);
-  
+
   return {
     temp,
     high,
@@ -77,7 +76,7 @@ export async function getCurrentWeather(): Promise<WeatherData> {
         lang: 'en'
       }
     });
-    
+
     return convertToWeatherData(response.data);
   } catch (error) {
     console.error('Error fetching current weather:', error);
@@ -119,7 +118,7 @@ export async function getWeatherForecast(): Promise<ForecastData> {
     });
 
     const today = convertToWeatherData(currentResponse.data);
-    
+
     // Get tomorrow's data (24 hours from now)
     const tomorrowData = forecastResponse.data.list.find((item: any) => {
       const itemDate = new Date(item.dt * 1000);
