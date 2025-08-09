@@ -1,4 +1,3 @@
-
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -17,14 +16,20 @@ import {
   Palette,
   Monitor,
   UserCog,
-  Database
+  Database,
+  Sun,
+  Moon,
+  Clock
 } from "lucide-react"
 import { Link } from "wouter"
 import RSSManager from "@/components/RSSManager"
 import NewsManager from "@/components/NewsManager"
 import SponsorManager from "@/components/SponsorManager"
+import { useTheme } from "next-themes"
 
 const Admin = () => {
+  const { setTheme } = useTheme()
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-yellow-50">
       {/* Admin Header */}
@@ -69,7 +74,7 @@ const Admin = () => {
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
@@ -81,7 +86,7 @@ const Admin = () => {
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
@@ -93,7 +98,7 @@ const Admin = () => {
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
@@ -141,7 +146,7 @@ const Admin = () => {
             <TabsContent value="content">
               <div className="space-y-6">
                 <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการเนื้อหาและข้อมูล</h3>
-                
+
                 {/* News Management */}
                 <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
                   <CardHeader className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-t-xl">
@@ -157,7 +162,7 @@ const Admin = () => {
                     <NewsManager />
                   </CardContent>
                 </Card>
-                
+
                 {/* RSS Management */}
                 <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
                   <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-t-xl">
@@ -173,7 +178,7 @@ const Admin = () => {
                     <RSSManager />
                   </CardContent>
                 </Card>
-                
+
                 {/* Sponsor Management */}
                 <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
                   <CardHeader className="bg-gradient-to-r from-green-50 to-teal-50 rounded-t-xl">
@@ -196,7 +201,7 @@ const Admin = () => {
             <TabsContent value="appearance">
               <div className="space-y-6">
                 <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">การตั้งค่ารูปลักษณ์</h3>
-                
+
                 <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
                   <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-t-xl">
                     <CardTitle className="flex items-center gap-2 font-kanit text-pink-700">
@@ -209,14 +214,56 @@ const Admin = () => {
                   </CardHeader>
                   <CardContent className="p-6">
                     <div className="space-y-6">
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div>
-                          <h4 className="font-semibold font-kanit text-gray-700">สลับธีมปัจจุบัน</h4>
-                          <p className="text-sm text-gray-600 font-sarabun">เปลี่ยนระหว่างธีมสว่างและมืด</p>
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="text-lg font-semibold">ธีมปัจจุบัน</h3>
+                            <p className="text-sm text-muted-foreground">
+                              เปลี่ยนธีมของเว็บไซต์ - รองรับโหมดอัตโนมัติตามเวลา
+                            </p>
+                          </div>
+                          <ThemeToggle />
                         </div>
-                        <ThemeToggle />
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <Button
+                            variant="outline"
+                            onClick={() => setTheme("light")}
+                            className="p-4 h-auto flex-col gap-2"
+                          >
+                            <Sun className="h-8 w-8" />
+                            <span>โหมดสว่าง</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => setTheme("dark")}
+                            className="p-4 h-auto flex-col gap-2"
+                          >
+                            <Moon className="h-8 w-8" />
+                            <span>โหมดมืด</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => setTheme("auto")}
+                            className="p-4 h-auto flex-col gap-2 relative"
+                          >
+                            <Clock className="h-8 w-8" />
+                            <span>อัตโนมัติ</span>
+                            <div className="text-xs text-muted-foreground">
+                              18:00-06:00
+                            </div>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => setTheme("system")}
+                            className="p-4 h-auto flex-col gap-2"
+                          >
+                            <Monitor className="h-8 w-8" />
+                            <span>ตามระบบ</span>
+                          </Button>
+                        </div>
                       </div>
-                      
+
                       {/* Thai Special Day Theme Testing */}
                       <div className="border-t pt-6">
                         <h4 className="text-lg font-semibold font-kanit text-orange-700 mb-4">ทดสอบธีมวันสำคัญ</h4>
@@ -239,7 +286,7 @@ const Admin = () => {
                             <div className="w-4 h-4 bg-yellow-400 rounded-full mb-1"></div>
                             วันเฉลิมพระชนมพรรษา
                           </Button>
-                          
+
                           <Button 
                             size="sm" 
                             variant="outline" 
@@ -257,7 +304,7 @@ const Admin = () => {
                             <div className="w-4 h-4 bg-blue-500 rounded-full mb-1"></div>
                             วันแม่แห่งชาติ
                           </Button>
-                          
+
                           <Button 
                             size="sm" 
                             variant="outline" 
@@ -275,7 +322,7 @@ const Admin = () => {
                             <div className="w-4 h-4 bg-yellow-400 rounded-full mb-1"></div>
                             วันพ่อแห่งชาติ
                           </Button>
-                          
+
                           <Button 
                             size="sm" 
                             variant="outline" 
@@ -297,7 +344,7 @@ const Admin = () => {
                             </div>
                             วันชาติ
                           </Button>
-                          
+
                           <Button 
                             size="sm" 
                             variant="outline" 
@@ -315,7 +362,7 @@ const Admin = () => {
                             <div className="w-4 h-4 bg-orange-400 rounded-full mb-1"></div>
                             วันรัฐธรรมนูญ
                           </Button>
-                          
+
                           <Button 
                             size="sm" 
                             variant="outline" 
@@ -331,9 +378,9 @@ const Admin = () => {
                             }}
                           >
                             <div className="w-4 h-4 bg-amber-500 rounded-full mb-1"></div>
-                            วันมาघบูชา
+                            วันมาฆบูชา
                           </Button>
-                          
+
                           <Button 
                             size="sm" 
                             variant="outline" 
@@ -351,7 +398,7 @@ const Admin = () => {
                             <div className="w-4 h-4 bg-cyan-400 rounded-full mb-1"></div>
                             วันสงกรานต์
                           </Button>
-                          
+
                           <Button 
                             size="sm" 
                             variant="outline" 
@@ -381,7 +428,7 @@ const Admin = () => {
             <TabsContent value="system">
               <div className="space-y-6">
                 <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">การจัดการระบบ</h3>
-                
+
                 <div className="grid gap-6 md:grid-cols-2">
                   {/* User Management Card */}
                   <Card className="bg-white rounded-xl shadow-lg border border-orange-100">

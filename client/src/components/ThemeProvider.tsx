@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react"
 import { getCurrentThaiSpecialDay, getThaiSpecialDayTheme } from "@/lib/thai-special-days"
 
-type Theme = "dark" | "light" | "system" | "thai-special"
+type Theme = "dark" | "light" | "system" | "thai-special" | "auto"
 
 type ThemeProviderProps = {
   children: React.ReactNode
@@ -13,12 +13,14 @@ type ThemeProviderState = {
   theme: Theme
   setTheme: (theme: Theme) => void
   specialDay: any
+  isAutoMode: boolean
 }
 
 const initialState: ThemeProviderState = {
   theme: "system",
   setTheme: () => null,
   specialDay: null,
+  isAutoMode: false,
 }
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
@@ -36,6 +38,35 @@ export function ThemeProvider({
   })
 
   const [specialDay, setSpecialDay] = useState(getCurrentThaiSpecialDay())
+  const [isAutoMode, setIsAutoMode] = useState(theme === "auto")
+
+  // Auto dark mode based on time (6 PM - 6 AM = dark mode)
+  const getAutoTheme = () => {
+    const hour = new Date().getHours()
+    return (hour >= 18 || hour < 6) ? "dark" : "light"
+  }
+
+  useEffect(() => {
+    if (theme === "auto") {
+      const autoTheme = getAutoTheme()
+      const root = window.document.documentElement
+      root.classList.remove("light", "dark", "thai-special")
+      root.classList.add(autoTheme)
+      
+      // Check every hour for auto theme changes
+      const autoInterval = setInterval(() => {
+        const newAutoTheme = getAutoTheme()
+        const currentClasses = root.classList
+        if ((newAutoTheme === "dark" && !currentClasses.contains("dark")) ||
+            (newAutoTheme === "light" && !currentClasses.contains("light"))) {
+          root.classList.remove("light", "dark")
+          root.classList.add(newAutoTheme)
+        }
+      }, 60 * 60 * 1000) // Check every hour
+      
+      return () => clearInterval(autoInterval)
+    }
+  }, [theme])
 
   useEffect(() => {
     const root = window.document.documentElement
@@ -71,6 +102,11 @@ export function ThemeProvider({
       return
     }
 
+    if (theme === "auto") {
+      // Auto theme is handled in separate useEffect
+      return
+    }
+
     root.classList.add(theme)
   }, [theme])
 
@@ -98,9 +134,11 @@ export function ThemeProvider({
   const value = {
     theme,
     specialDay,
+    isAutoMode: theme === "auto",
     setTheme: (theme: Theme) => {
       localStorage.setItem(storageKey, theme)
       setTheme(theme)
+      setIsAutoMode(theme === "auto")
     },
   }
 
