@@ -148,11 +148,155 @@ const Admin = () => {
               </CardHeader>
               <CardContent>
                 <CardDescription className="font-sarabun mb-4">
-                  เปลี่ยนธีมสีของเว็บไซต์ระหว่าง Light และ Dark mode
+                  เปลี่ยนธีมสีของเว็บไซต์ และทดสอบธีมวันสำคัญ
                 </CardDescription>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-sarabun">สลับธีม:</span>
-                  <ThemeToggle />
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-sarabun">สลับธีม:</span>
+                    <ThemeToggle />
+                  </div>
+                  
+                  {/* Thai Special Day Theme Testing */}
+                  <div className="border-t pt-4">
+                    <h4 className="text-sm font-semibold font-kanit text-orange-700 mb-3">ทดสอบธีมวันสำคัญ</h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="text-xs font-sarabun border-yellow-300 text-yellow-700 hover:bg-yellow-50"
+                        onClick={() => {
+                          const root = document.documentElement;
+                          root.classList.remove("light", "dark", "royal-yellow", "mothers-blue", "fathers-yellow", "national-tricolor", "constitution-gold", "buddhist-saffron", "songkran-blue");
+                          root.classList.add("thai-special", "royal-yellow");
+                          const style = root.style;
+                          style.setProperty('--primary', '45 93% 58%');
+                          style.setProperty('--secondary', '43 74% 66%');
+                          style.setProperty('--accent', '38 92% 50%');
+                        }}
+                      >
+                        วันเฉลิมพระชนมพรรษา
+                      </Button>
+                      
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="text-xs font-sarabun border-blue-300 text-blue-700 hover:bg-blue-50"
+                        onClick={() => {
+                          const root = document.documentElement;
+                          root.classList.remove("light", "dark", "royal-yellow", "mothers-blue", "fathers-yellow", "national-tricolor", "constitution-gold", "buddhist-saffron", "songkran-blue");
+                          root.classList.add("thai-special", "mothers-blue");
+                          const style = root.style;
+                          style.setProperty('--primary', '214 100% 59%');
+                          style.setProperty('--secondary', '213 94% 68%');
+                          style.setProperty('--accent', '212 100% 45%');
+                        }}
+                      >
+                        วันแม่แห่งชาติ
+                      </Button>
+                      
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="text-xs font-sarabun border-yellow-300 text-yellow-700 hover:bg-yellow-50"
+                        onClick={() => {
+                          const root = document.documentElement;
+                          root.classList.remove("light", "dark", "royal-yellow", "mothers-blue", "fathers-yellow", "national-tricolor", "constitution-gold", "buddhist-saffron", "songkran-blue");
+                          root.classList.add("thai-special", "fathers-yellow");
+                          const style = root.style;
+                          style.setProperty('--primary', '45 93% 58%');
+                          style.setProperty('--secondary', '43 74% 66%');
+                          style.setProperty('--accent', '38 92% 50%');
+                        }}
+                      >
+                        วันพ่อแห่งชาติ
+                      </Button>
+                      
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="text-xs font-sarabun border-red-300 text-red-700 hover:bg-red-50"
+                        onClick={() => {
+                          const root = document.documentElement;
+                          root.classList.remove("light", "dark", "royal-yellow", "mothers-blue", "fathers-yellow", "national-tricolor", "constitution-gold", "buddhist-saffron", "songkran-blue");
+                          root.classList.add("thai-special", "national-tricolor");
+                          const style = root.style;
+                          style.setProperty('--primary', '0 72% 51%');
+                          style.setProperty('--secondary', '220 100% 50%');
+                          style.setProperty('--accent', '0 0% 100%');
+                        }}
+                      >
+                        วันชาติ
+                      </Button>
+                      
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="text-xs font-sarabun border-orange-300 text-orange-700 hover:bg-orange-50"
+                        onClick={() => {
+                          const root = document.documentElement;
+                          root.classList.remove("light", "dark", "royal-yellow", "mothers-blue", "fathers-yellow", "national-tricolor", "constitution-gold", "buddhist-saffron", "songkran-blue");
+                          root.classList.add("thai-special", "constitution-gold");
+                          const style = root.style;
+                          style.setProperty('--primary', '38 92% 50%');
+                          style.setProperty('--secondary', '45 93% 58%');
+                          style.setProperty('--accent', '0 0% 95%');
+                        }}
+                      >
+                        วันรัฐธรรมนูญ
+                      </Button>
+                      
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="text-xs font-sarabun border-orange-400 text-orange-800 hover:bg-orange-50"
+                        onClick={() => {
+                          const root = document.documentElement;
+                          root.classList.remove("light", "dark", "royal-yellow", "mothers-blue", "fathers-yellow", "national-tricolor", "constitution-gold", "buddhist-saffron", "songkran-blue");
+                          root.classList.add("thai-special", "buddhist-saffron");
+                          const style = root.style;
+                          style.setProperty('--primary', '33 100% 50%');
+                          style.setProperty('--secondary', '35 85% 60%');
+                          style.setProperty('--accent', '30 95% 40%');
+                        }}
+                      >
+                        วันมาघบูชา
+                      </Button>
+                      
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="text-xs font-sarabun border-cyan-300 text-cyan-700 hover:bg-cyan-50"
+                        onClick={() => {
+                          const root = document.documentElement;
+                          root.classList.remove("light", "dark", "royal-yellow", "mothers-blue", "fathers-yellow", "national-tricolor", "constitution-gold", "buddhist-saffron", "songkran-blue");
+                          root.classList.add("thai-special", "songkran-blue");
+                          const style = root.style;
+                          style.setProperty('--primary', '195 100% 50%');
+                          style.setProperty('--secondary', '200 100% 70%');
+                          style.setProperty('--accent', '190 100% 42%');
+                        }}
+                      >
+                        วันสงกรานต์
+                      </Button>
+                      
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="text-xs font-sarabun col-span-2 border-gray-300 text-gray-700 hover:bg-gray-50"
+                        onClick={() => {
+                          const root = document.documentElement;
+                          root.classList.remove("light", "dark", "thai-special", "royal-yellow", "mothers-blue", "fathers-yellow", "national-tricolor", "constitution-gold", "buddhist-saffron", "songkran-blue");
+                          root.classList.add("light");
+                          const style = root.style;
+                          style.removeProperty('--primary');
+                          style.removeProperty('--secondary');
+                          style.removeProperty('--accent');
+                        }}
+                      >
+                        รีเซ็ตธีม (กลับเป็นธีมปกติ)
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
