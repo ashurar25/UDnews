@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Eye } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 
 interface NewsCardProps {
   id?: number;
@@ -26,7 +26,7 @@ const NewsCard = ({
   isBreaking = false,
   size = "medium" 
 }: NewsCardProps) => {
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const getCategoryColor = (cat: string) => {
     switch (cat.toLowerCase()) {
       case 'ข่าวด่วน': return 'bg-news-urgent text-white';
@@ -45,7 +45,7 @@ const NewsCard = ({
 
   const handleClick = () => {
     if (id) {
-      navigate(`/news/${id}`);
+      setLocation(`/news/${id}`);
     }
   };
 

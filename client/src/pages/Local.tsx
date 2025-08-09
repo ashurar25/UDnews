@@ -5,12 +5,12 @@ import NewsCard from "@/components/NewsCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, MapPin } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { ProcessedNewsItem, NewsItem } from "@/types/news";
 
 const Local = () => {
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
 
   // Fetch all news and filter for local news
   const { data: allNews, isLoading } = useQuery({
@@ -96,7 +96,7 @@ const Local = () => {
       <main className="container mx-auto px-4 py-8">
         {/* Back Button */}
         <div className="mb-6">
-          <Button variant="ghost" onClick={() => navigate('/')} className="gap-2">
+          <Button variant="ghost" onClick={() => setLocation('/')} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
             กลับสู่หน้าหลัก
           </Button>
@@ -131,7 +131,7 @@ const Local = () => {
             <p className="text-muted-foreground font-sarabun mb-4">
               ลองดูข่าวในหมวดอื่นๆ หรือกลับสู่หน้าหลัก
             </p>
-            <Button onClick={() => navigate('/')} className="font-sarabun">
+            <Button onClick={() => setLocation('/')} className="font-sarabun">
               กลับสู่หน้าหลัก
             </Button>
           </div>

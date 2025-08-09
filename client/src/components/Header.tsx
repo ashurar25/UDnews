@@ -2,11 +2,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, Search, Rss, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "wouter";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const location = useLocation();
+  const [location] = useLocation();
 
   const menuItems = [
     { name: "หน้าแรก", href: "/" },
@@ -104,7 +104,7 @@ const Header = () => {
                 <Button
                   variant="ghost"
                   className={`w-full md:w-auto justify-start md:justify-center font-sarabun px-4 py-2 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md border border-orange-200/50 hover:border-orange-300 ${
-                    location.pathname === item.href
+                    location === item.href
                       ? "bg-orange-200 text-orange-800 border-orange-300"
                       : "bg-white/80 hover:bg-orange-100 hover:text-orange-700"
                   }`}

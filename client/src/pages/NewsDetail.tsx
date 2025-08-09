@@ -1,5 +1,4 @@
-import { useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -24,7 +23,7 @@ interface NewsItem {
 
 const NewsDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const [viewCount, setViewCount] = useState(Math.floor(Math.random() * 5000 + 1000));
 
   // Fetch news detail
@@ -123,7 +122,7 @@ const NewsDetail = () => {
         <Header />
         <div className="container mx-auto px-4 py-8 text-center">
           <h1 className="text-2xl font-bold mb-4">ไม่พบข่าวที่ต้องการ</h1>
-          <Button onClick={() => navigate('/')}>
+          <Button onClick={() => setLocation('/')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             กลับสู่หน้าหลัก
           </Button>
@@ -140,7 +139,7 @@ const NewsDetail = () => {
       <main className="container mx-auto px-4 py-8">
         {/* Back Button */}
         <div className="mb-6">
-          <Button variant="ghost" onClick={() => navigate('/')} className="gap-2">
+          <Button variant="ghost" onClick={() => setLocation('/')} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
             กลับสู่หน้าหลัก
           </Button>
@@ -237,7 +236,7 @@ const NewsDetail = () => {
                     <div 
                       key={item.id}
                       className="cursor-pointer group"
-                      onClick={() => navigate(`/news/${item.id}`)}
+                      onClick={() => setLocation(`/news/${item.id}`)}
                     >
                       <div className="flex gap-3">
                         {item.imageUrl && (

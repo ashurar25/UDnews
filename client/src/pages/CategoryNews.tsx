@@ -1,12 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "wouter";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import NewsCard from "@/components/NewsCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+
 
 interface NewsItem {
   id: number;
@@ -23,7 +23,7 @@ interface NewsItem {
 
 const CategoryNews = () => {
   const { category } = useParams<{ category: string }>();
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
 
   // Fetch all news and filter by category
   const { data: allNews, isLoading } = useQuery({
@@ -118,7 +118,7 @@ const CategoryNews = () => {
       <main className="container mx-auto px-4 py-8">
         {/* Back Button */}
         <div className="mb-6">
-          <Button variant="ghost" onClick={() => navigate('/')} className="gap-2">
+          <Button variant="ghost" onClick={() => setLocation('/')} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
             กลับสู่หน้าหลัก
           </Button>
@@ -151,10 +151,10 @@ const CategoryNews = () => {
               ลองดูข่าวในหมวดอื่นๆ หรือกลับสู่หน้าหลัก
             </p>
             <div className="space-x-4">
-              <Button onClick={() => navigate('/')} className="font-sarabun">
+              <Button onClick={() => setLocation('/')} className="font-sarabun">
                 หน้าหลัก
               </Button>
-              <Button variant="outline" onClick={() => navigate('/news')} className="font-sarabun">
+              <Button variant="outline" onClick={() => setLocation('/news')} className="font-sarabun">
                 ข่าวทั้งหมด
               </Button>
             </div>
