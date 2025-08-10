@@ -172,7 +172,8 @@ export const dailyStats = pgTable("daily_stats", {
 
 export type InsertSiteSetting = z.infer<typeof insertSiteSettingSchema>;
 export type SiteSetting = typeof siteSettings.$inferSelect;
-export type InsertContactMessage = z.Insert<typeof contactMessages>;
+export type InsertContactMessage = typeof contactMessages.$inferInsert;
+export type ContactMessage = typeof contactMessages.$inferSelect;
 
 export const insertContactMessageSchema = createInsertSchema(contactMessages).pick({
   name: true,

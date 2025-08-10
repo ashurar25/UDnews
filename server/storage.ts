@@ -239,8 +239,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .update(contactMessages)
       .set({
-        isRead: true,
-        updatedAt: new Date()
+        isRead: true
       })
       .where(eq(contactMessages.id, id))
       .returning();
@@ -253,7 +252,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUnreadContactMessagesCount(): Promise<number> {
-    const result = await this.db
+    const result = await db
       .select({ count: sql<number>`count(*)` })
       .from(contactMessages)
       .where(eq(contactMessages.isRead, false));
@@ -263,7 +262,7 @@ export class DatabaseStorage implements IStorage {
 
   // Analytics methods
   async recordNewsView(newsId: number, ipAddress?: string, userAgent?: string, referrer?: string): Promise<NewsView> {
-    const [view] = await this.db
+    const [view] = await db
       .insert(newsViews)
       .values({
         newsId,
@@ -276,7 +275,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getNewsViewCount(newsId: number): Promise<number> {
-    const result = await this.db
+    const result = await db
       .select({ count: sql<number>`count(*)` })
       .from(newsViews)
       .where(eq(newsViews.newsId, newsId));
@@ -285,18 +284,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPopularNews(limit: number = 10): Promise<(typeof newsArticles.$inferSelect & { viewCount: number })[]> {
-    const result = await this.db
+    const result = await db
       .select({
         id: newsArticles.id,
         title: newsArticles.title,
-        description: newsArticles.description,
+        summary: newsArticles.summary,
         content: newsArticles.content,
         imageUrl: newsArticles.imageUrl,
         sourceUrl: newsArticles.sourceUrl,
         category: newsArticles.category,
-        publishedAt: newsArticles.publishedAt,
         isBreaking: newsArticles.isBreaking,
         createdAt: newsArticles.createdAt,
+        updatedAt: newsArticles.updatedAt,
         viewCount: sql<number>`count(${newsViews.id})`
       })
       .from(newsArticles)
@@ -309,7 +308,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDailyStats(date: string): Promise<DailyStats | null> {
-    const [stats] = await this.db
+    const [stats] = await db
       .select()
       .from(dailyStats)
       .where(eq(dailyStats.date, date));
@@ -321,7 +320,7 @@ export class DatabaseStorage implements IStorage {
     const existing = await this.getDailyStats(date);
 
     if (existing) {
-      const [updated] = await this.db
+      const [updated] = await db
         .update(dailyStats)
         .set({
           totalViews,
@@ -332,7 +331,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return updated;
     } else {
-      const [created] = await this.db
+      const [created] = await db
         .insert(dailyStats)
         .values({
           date,
@@ -353,15 +352,15 @@ export class DatabaseStorage implements IStorage {
   }> {
     const today = new Date().toISOString().split('T')[0];
 
-    const [totalViewsResult] = await this.db
+    const [totalViewsResult] = await db
       .select({ count: sql<number>`count(*)` })
       .from(newsViews);
 
-    const [totalNewsResult] = await this.db
+    const [totalNewsResult] = await db
       .select({ count: sql<number>`count(*)` })
       .from(newsArticles);
 
-    const [todayViewsResult] = await this.db
+    const [todayViewsResult] = await db
       .select({ count: sql<number>`count(*)` })
       .from(newsViews)
       .where(sql`DATE(${newsViews.viewedAt}) = ${today}`);
