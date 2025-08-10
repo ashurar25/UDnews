@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, Search, Rss, Clock, Heart } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,24 @@ const Header = () => {
   const [location] = useLocation();
   const { theme } = useTheme();
   const specialDay = getCurrentThaiSpecialDay();
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   // Dynamic theme classes based on current theme
   const getThemeClasses = () => {
@@ -129,60 +147,60 @@ const Header = () => {
             </div>
           </Link>
 
-          {/* Right Side - Search & Donate */}
+          {/* Right Side - Theme & Weather */}
           <div className="flex items-center space-x-4">
-              <div className="hidden md:block">
-                <SearchBar className="w-80" placeholder="ค้นหาข่าว..." />
-              </div>
               <ThemeToggle />
               <WeatherWidget />
+              
+              {/* Hamburger Menu Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="relative"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+              >
+                <Menu className="h-6 w-6" />
+              </Button>
             </div>
-
-          {/* Mobile Menu Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            <Menu className="h-6 w-6" />
-          </Button>
         </div>
 
-        {/* Mobile Search */}
-        <div className={`mt-4 ${isMenuOpen ? 'block md:hidden' : 'hidden'}`}>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input 
-              placeholder="ค้นหาข่าว..." 
-              className="pl-10 w-full font-sarabun"
-            />
+        {/* Hamburger Menu Dropdown */}
+        <div ref={menuRef} className={`absolute top-full right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-orange-200 dark:border-gray-700 z-50 ${isMenuOpen ? 'block' : 'hidden'}`}>
+          <div className="p-4 space-y-4">
+            {/* Search Bar in Menu */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input 
+                placeholder="ค้นหาข่าว..." 
+                className="pl-10 w-full font-sarabun"
+              />
+            </div>
+            
+            {/* Navigation Items */}
+            <div className="border-t border-orange-200 dark:border-gray-600 pt-4">
+              <nav className="space-y-2">
+                {menuItems.map((item, index) => (
+                  <Link key={index} to={item.href}>
+                    <Button
+                      variant="ghost"
+                      className={`w-full justify-start font-sarabun px-4 py-2 rounded-lg transition-all duration-200 ${
+                        location === item.href
+                          ? "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"
+                          : "hover:bg-orange-50 hover:text-orange-700 dark:hover:bg-gray-700"
+                      }`}
+                      onClick={() => {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        setIsMenuOpen(false);
+                      }}
+                    >
+                      {item.name}
+                    </Button>
+                  </Link>
+                ))}
+              </nav>
+            </div>
           </div>
         </div>
-
-        {/* Navigation Menu */}
-        <nav className={`mt-6 ${isMenuOpen ? 'block' : 'hidden md:block'}`}>
-          <div className="flex flex-col md:flex-row gap-2 md:gap-4">
-            {menuItems.map((item, index) => (
-              <Link key={index} to={item.href}>
-                <Button
-                  variant="ghost"
-                  className={`w-full md:w-auto justify-start md:justify-center font-sarabun px-4 py-2 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md border border-orange-200/50 hover:border-orange-300 ${
-                    location === item.href
-                      ? "bg-orange-200 text-orange-800 border-orange-300"
-                      : "bg-white/80 hover:bg-orange-100 hover:text-orange-700"
-                  }`}
-                  onClick={() => {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    setIsMenuOpen(false);
-                  }}
-                >
-                  {item.name}
-                </Button>
-              </Link>
-            ))}
-          </div>
-        </nav>
 
       </div>
     </header>
