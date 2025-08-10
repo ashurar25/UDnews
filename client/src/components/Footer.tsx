@@ -29,31 +29,31 @@ const Footer = () => {
           </p>
         </div>
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
+        {/* Main Content Grid - Centered 3 Columns */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-10 max-w-4xl mx-auto">
           {/* Quick Links */}
-          <div className="text-center lg:text-left">
-            <h3 className="font-semibold font-kanit text-lg text-foreground mb-4 pb-2 border-b-2 border-primary/20 inline-block">
+          <div className="text-center">
+            <h3 className="font-semibold font-kanit text-lg text-foreground mb-6 pb-2 border-b-2 border-primary/20 inline-block">
               ลิงก์ด่วน
             </h3>
-            <ul className="space-y-3 text-sm font-sarabun">
+            <ul className="space-y-4 text-sm font-sarabun">
               <li>
-                <Link to="/news/all" className="text-muted-foreground hover:text-primary transition-all duration-200 hover:translate-x-1 inline-block">
+                <Link to="/news/all" className="text-muted-foreground hover:text-primary transition-all duration-200 hover:scale-105 inline-block">
                   📰 ข่าวทั้งหมด
                 </Link>
               </li>
               <li>
-                <Link to="/news/breaking" className="text-muted-foreground hover:text-primary transition-all duration-200 hover:translate-x-1 inline-block">
+                <Link to="/news/breaking" className="text-muted-foreground hover:text-primary transition-all duration-200 hover:scale-105 inline-block">
                   🚨 ข่าวด่วน
                 </Link>
               </li>
               <li>
-                <Link to="/news/local" className="text-muted-foreground hover:text-primary transition-all duration-200 hover:translate-x-1 inline-block">
+                <Link to="/news/local" className="text-muted-foreground hover:text-primary transition-all duration-200 hover:scale-105 inline-block">
                   🏘️ ข่าวท้องถิ่น
                 </Link>
               </li>
               <li>
-                <Link to="/news/politics" className="text-muted-foreground hover:text-primary transition-all duration-200 hover:translate-x-1 inline-block">
+                <Link to="/news/politics" className="text-muted-foreground hover:text-primary transition-all duration-200 hover:scale-105 inline-block">
                   🏛️ ข่าวการเมือง
                 </Link>
               </li>
@@ -61,28 +61,28 @@ const Footer = () => {
           </div>
 
           {/* Categories */}
-          <div className="text-center lg:text-left">
-            <h3 className="font-semibold font-kanit text-lg text-foreground mb-4 pb-2 border-b-2 border-primary/20 inline-block">
+          <div className="text-center">
+            <h3 className="font-semibold font-kanit text-lg text-foreground mb-6 pb-2 border-b-2 border-primary/20 inline-block">
               หมวดหมู่
             </h3>
-            <ul className="space-y-3 text-sm font-sarabun">
+            <ul className="space-y-4 text-sm font-sarabun">
               <li>
-                <Link to="/news/sports" className="text-muted-foreground hover:text-primary transition-all duration-200 hover:translate-x-1 inline-block">
+                <Link to="/news/sports" className="text-muted-foreground hover:text-primary transition-all duration-200 hover:scale-105 inline-block">
                   ⚽ กีฬา
                 </Link>
               </li>
               <li>
-                <Link to="/news/entertainment" className="text-muted-foreground hover:text-primary transition-all duration-200 hover:translate-x-1 inline-block">
+                <Link to="/news/entertainment" className="text-muted-foreground hover:text-primary transition-all duration-200 hover:scale-105 inline-block">
                   🎬 บันเทิง
                 </Link>
               </li>
               <li>
-                <Link to="/news/crime" className="text-muted-foreground hover:text-primary transition-all duration-200 hover:translate-x-1 inline-block">
+                <Link to="/news/crime" className="text-muted-foreground hover:text-primary transition-all duration-200 hover:scale-105 inline-block">
                   🚔 อาชญากรรม
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="text-muted-foreground hover:text-primary transition-all duration-200 hover:translate-x-1 inline-block">
+                <Link to="/contact" className="text-muted-foreground hover:text-primary transition-all duration-200 hover:scale-105 inline-block">
                   📞 ติดต่อเรา
                 </Link>
               </li>
@@ -90,36 +90,25 @@ const Footer = () => {
           </div>
 
           {/* Contact Info */}
-          <div className="text-center lg:text-left">
-            <h3 className="font-semibold font-kanit text-lg text-foreground mb-4 pb-2 border-b-2 border-primary/20 inline-block">
+          <div className="text-center">
+            <h3 className="font-semibold font-kanit text-lg text-foreground mb-6 pb-2 border-b-2 border-primary/20 inline-block">
               ติดต่อเรา
             </h3>
-            <div className="space-y-3 text-sm font-sarabun text-muted-foreground">
-              <div className="flex items-center justify-center lg:justify-start gap-2">
+            <div className="space-y-4 text-sm font-sarabun text-muted-foreground">
+              <div className="flex items-center justify-center gap-2">
                 <Mail className="h-4 w-4 text-primary" />
                 <span>kenginol.ar@gmail.com</span>
               </div>
-              <div className="flex items-center justify-center lg:justify-start gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <Phone className="h-4 w-4 text-primary" />
                 <span>092-443-4311</span>
               </div>
-              <div className="flex items-center justify-center lg:justify-start gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <MapPin className="h-4 w-4 text-primary" />
                 <span>อุดรธานี ประเทศไทย</span>
               </div>
-            </div>
-          </div>
-
-          {/* Admin & Social */}
-          <div className="text-center lg:text-left">
-            <h3 className="font-semibold font-kanit text-lg text-foreground mb-4 pb-2 border-b-2 border-primary/20 inline-block">
-              ระบบ
-            </h3>
-            <div className="space-y-4">
-
-              
               {/* Social Media Icons */}
-              <div className="flex justify-center lg:justify-start space-x-3 pt-2">
+              <div className="flex justify-center space-x-3 pt-4">
                 <Button variant="ghost" size="sm" className="p-2 hover:bg-primary/10">
                   <Facebook className="h-4 w-4" />
                 </Button>
