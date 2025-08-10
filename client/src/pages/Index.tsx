@@ -142,13 +142,6 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      {/* Header Sponsor Banner Bar */}
-      <div className="bg-muted/30 py-3">
-        <div className="container mx-auto px-4">
-          <SponsorBannerBar position="header" className="justify-center" autoPlay={true} showNavigation={true} bannerCount={5} />
-        </div>
-      </div>
-      
       <ThaiSpecialDayBanner />
       
       {/* Breaking News Ticker */}
@@ -169,7 +162,7 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Hero Section - Reduced height and moved closer to header */}
+      {/* Hero Section - Now directly under header */}
       <section className="relative h-48 md:h-64 overflow-hidden">
         <img 
           src={heroImage} 
@@ -430,6 +423,13 @@ const Index = () => {
           </div>
         </section>
       </main>
+
+      {/* Header Sponsor Banner Bar - Moved to bottom */}
+      <div className="bg-muted/30 py-3">
+        <div className="container mx-auto px-4">
+          <SponsorBannerBar position="header" className="justify-center" autoPlay={true} showNavigation={true} bannerCount={5} />
+        </div>
+      </div>
 
       <Footer />
     </div>
