@@ -178,7 +178,7 @@ const Index = () => {
           style={{ objectPosition: 'center 75%' }}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent">
-          <div className="container mx-auto px-4 h-full flex items-start pt-16">
+          <div className="container mx-auto px-4 h-full flex items-start pt-4">
             <div className="text-white max-w-2xl">
               <h1 className="text-4xl md:text-6xl font-bold font-kanit mb-4 animate-fade-in">
                 ข่าวสารอุดรธานี
