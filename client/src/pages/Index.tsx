@@ -25,6 +25,8 @@ interface WeatherData {
   humidity: number;
   wind: number;
   city: string;
+  rainChance: number;
+  rainStatus: string;
 }
 
 interface ForecastData {
@@ -81,7 +83,9 @@ const Index = () => {
     icon: '🌡️',
     humidity: 0,
     wind: 0,
-    city: 'อุดรธานี'
+    city: 'อุดรธานี',
+    rainChance: 0,
+    rainStatus: 'กำลังโหลด...'
   };
 
   // Fetch real news data from API with performance optimization
@@ -363,6 +367,10 @@ const Index = () => {
                         <div className="text-lg mb-1">{weatherData.yesterday.icon}</div>
                         <div className="text-sm font-bold font-kanit text-orange-500">{weatherData.yesterday.temp}°C</div>
                         <p className="text-xs font-sarabun text-muted-foreground">{weatherData.yesterday.conditionThai}</p>
+                        <div className="flex items-center justify-center text-xs text-blue-600 mt-1">
+                          <span className="mr-1">💧</span>
+                          <span className="font-kanit">{weatherData.yesterday.rainChance}%</span>
+                        </div>
                       </div>
 
                       {/* Today */}
@@ -378,6 +386,10 @@ const Index = () => {
                         <div className="text-lg mb-1">{weatherData.today.icon}</div>
                         <div className="text-sm font-bold font-kanit text-orange-600">{weatherData.today.temp}°C</div>
                         <p className="text-xs font-sarabun text-muted-foreground">{weatherData.today.conditionThai}</p>
+                        <div className="flex items-center justify-center text-xs text-blue-600 mt-1">
+                          <span className="mr-1">💧</span>
+                          <span className="font-kanit">{weatherData.today.rainChance}%</span>
+                        </div>
                       </div>
 
                       {/* Tomorrow */}
@@ -393,6 +405,10 @@ const Index = () => {
                         <div className="text-lg mb-1">{weatherData.tomorrow.icon}</div>
                         <div className="text-sm font-bold font-kanit text-orange-500">{weatherData.tomorrow.temp}°C</div>
                         <p className="text-xs font-sarabun text-muted-foreground">{weatherData.tomorrow.conditionThai}</p>
+                        <div className="flex items-center justify-center text-xs text-blue-600 mt-1">
+                          <span className="mr-1">💧</span>
+                          <span className="font-kanit">{weatherData.tomorrow.rainChance}%</span>
+                        </div>
                       </div>
                     </>
                   ) : (
@@ -411,6 +427,51 @@ const Index = () => {
                   <div className="text-center bg-white/20 backdrop-blur-sm rounded-lg p-2">
                     <p className="text-xs font-sarabun text-muted-foreground">ลม</p>
                     <p className="text-sm font-bold font-kanit text-green-600">{currentWeather.wind} km/h</p>
+                  </div>
+                </div>
+
+                {/* Rain Forecast */}
+                <div className="bg-white/30 backdrop-blur-sm rounded-lg p-3 mb-4">
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <span className="text-lg">🌧️</span>
+                      <h4 className="text-sm font-bold font-kanit text-foreground">พยากรณ์ฝน</h4>
+                    </div>
+                    <div className="text-center mb-2">
+                      <div className="text-2xl font-bold font-kanit text-blue-600 mb-1">
+                        {currentWeather.rainChance}%
+                      </div>
+                      <p className="text-xs font-sarabun text-muted-foreground">
+                        {currentWeather.rainStatus}
+                      </p>
+                    </div>
+                    
+                    {/* Rain probability bar */}
+                    <div className="w-full bg-white/20 rounded-full h-2 mb-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all duration-500 ${
+                          currentWeather.rainChance >= 70 
+                            ? 'bg-blue-600' 
+                            : currentWeather.rainChance >= 40 
+                            ? 'bg-blue-500' 
+                            : currentWeather.rainChance >= 20 
+                            ? 'bg-blue-400' 
+                            : 'bg-blue-300'
+                        }`}
+                        style={{ width: `${currentWeather.rainChance}%` }}
+                      ></div>
+                    </div>
+                    
+                    <p className="text-xs font-sarabun text-muted-foreground">
+                      {currentWeather.rainChance >= 70 
+                        ? 'แนะนำพกร่ม' 
+                        : currentWeather.rainChance >= 40 
+                        ? 'อาจต้องพกร่ม' 
+                        : currentWeather.rainChance >= 20 
+                        ? 'ไม่ต้องกังวลเรื่องฝน' 
+                        : 'อากาศแจ่มใส'
+                      }
+                    </p>
                   </div>
                 </div>
 
