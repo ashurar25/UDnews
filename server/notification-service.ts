@@ -7,7 +7,7 @@ export class NotificationService {
 
   constructor() {
     // Configure email transporter
-    this.emailTransporter = nodemailer.createTransporter({
+    this.emailTransporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: 587,
       secure: false,

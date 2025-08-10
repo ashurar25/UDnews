@@ -31,10 +31,38 @@ import ContactMessagesManager from "@/components/ContactMessagesManager"
 import AnalyticsDashboard from "@/components/AnalyticsDashboard" // Assuming this component exists
 import { useTheme } from "next-themes"
 import { useQuery } from "@tanstack/react-query"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useLocation } from "wouter"
 
 const Admin = () => {
   const { setTheme } = useTheme()
+  const [location, setLocation] = useLocation()
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+  // Check authentication
+  useEffect(() => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+      setLocation('/login');
+    } else {
+      setIsAuthenticated(true);
+    }
+  }, [setLocation])
+
+  const handleLogout = () => {
+    localStorage.removeItem('adminToken');
+    setLocation('/');
+  }
+
+  // Show loading while checking authentication
+  if (!isAuthenticated) {
+    return <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
+        <p>กำลังตรวจสอบการเข้าสู่ระบบ...</p>
+      </div>
+    </div>
+  }
 
   // Fetch real database stats
   const { data: newsData } = useQuery({
@@ -84,6 +112,14 @@ const Admin = () => {
               <Badge variant="secondary" className="font-sarabun bg-orange-100 text-orange-700 hover:bg-orange-200">
                 ผู้ดูแลระบบ
               </Badge>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleLogout}
+                className="font-sarabun border-red-300 text-red-600 hover:bg-red-50"
+              >
+                ออกจากระบบ
+              </Button>
               <ThemeToggle />
             </div>
           </div>
