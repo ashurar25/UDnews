@@ -83,11 +83,8 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  if (process.env.NODE_ENV === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
+  // Temporarily use static serving to avoid Vite host configuration issues
+  serveStatic(app);
 
   // Use environment port or default to 5000
   // this serves both the API and the client.
