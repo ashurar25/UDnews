@@ -48,6 +48,11 @@ const Admin = () => {
     queryKey: ['/api/database/stats'],
     refetchInterval: 30000
   })
+
+  const { data: systemInfo } = useQuery({
+    queryKey: ['/api/system-info'],
+    refetchInterval: 60000
+  })
   
   const newsStats = Array.isArray(newsData) ? newsData.length : 0
   const rssFeeds = Array.isArray(rssFeedsData) ? rssFeedsData.length : 0
@@ -534,36 +539,64 @@ const Admin = () => {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="text-center p-3 bg-purple-50 rounded-lg">
                           <div className="text-2xl font-bold text-purple-700">
-                            {databaseStats?.newsCount ?? newsStats}
+{(databaseStats as any)?.newsCount ?? newsStats}
                           </div>
                           <div className="text-sm font-sarabun text-purple-600">ข่าวทั้งหมด</div>
                         </div>
                         <div className="text-center p-3 bg-blue-50 rounded-lg">
                           <div className="text-2xl font-bold text-blue-700">
-                            {databaseStats?.rssFeedsCount ?? rssFeeds}
+{(databaseStats as any)?.rssFeedsCount ?? rssFeeds}
                           </div>
                           <div className="text-sm font-sarabun text-blue-600">RSS Feeds</div>
                         </div>
                         <div className="text-center p-3 bg-green-50 rounded-lg">
                           <div className="text-2xl font-bold text-green-700">
-                            {databaseStats?.sponsorBannersCount ?? sponsorBanners}
+{(databaseStats as any)?.sponsorBannersCount ?? sponsorBanners}
                           </div>
                           <div className="text-sm font-sarabun text-green-600">แบนเนอร์</div>
                         </div>
                         <div className="text-center p-3 bg-yellow-50 rounded-lg">
                           <div className="text-2xl font-bold text-yellow-700">
-                            {databaseStats?.totalUsers ?? 0}
+{(databaseStats as any)?.totalUsers ?? 0}
                           </div>
                           <div className="text-sm font-sarabun text-yellow-600">ผู้ใช้งาน</div>
                         </div>
                       </div>
-                      <div className="mt-4 p-3 bg-orange-50 rounded-lg text-center">
-                        <div className="text-lg font-bold text-orange-700">
-                          {databaseStats?.databaseProvider ?? "Render PostgreSQL"}
-                        </div>
-                        <div className="text-sm font-sarabun text-orange-600">ผู้ให้บริการฐานข้อมูล</div>
-                        <div className="text-xs font-sarabun text-orange-500 mt-1">
-                          Singapore Region
+                      <div className="mt-4 p-4 bg-orange-50 rounded-lg">
+                        <h4 className="text-lg font-bold text-orange-700 mb-3 font-kanit">ข้อมูลการเชื่อมต่อฐานข้อมูล</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-sarabun">
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <span className="text-orange-600">ประเภทฐานข้อมูล:</span>
+<span className="text-orange-800 font-medium">{(systemInfo as any)?.database?.provider ?? "PostgreSQL"}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-orange-600">เซิร์ฟเวอร์:</span>
+<span className="text-orange-800 font-mono text-xs">{(systemInfo as any)?.database?.host ?? "Loading..."}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-orange-600">พอร์ต:</span>
+<span className="text-orange-800 font-mono">{(systemInfo as any)?.database?.port ?? "5432"}</span>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <span className="text-orange-600">ฐานข้อมูล:</span>
+<span className="text-orange-800 font-mono text-xs">{(systemInfo as any)?.database?.database ?? "Loading..."}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-orange-600">SSL:</span>
+<span className={`font-medium ${(systemInfo as any)?.database?.ssl === 'Enabled' ? 'text-green-600' : 'text-red-600'}`}>
+                                {(systemInfo as any)?.database?.ssl ?? "Enabled"}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-orange-600">สภาพแวดล้อม:</span>
+<span className={`font-medium ${(systemInfo as any)?.environment === 'production' ? 'text-green-600' : 'text-blue-600'}`}>
+                                {(systemInfo as any)?.environment ?? "development"}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-6">
