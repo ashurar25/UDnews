@@ -8,6 +8,12 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes (ล่าสุด)
 
+## Breaking News Scrolling Banner Added (10 สิงหาคม 2568)
+- ✅ Added scrolling news ticker banner at top of header with red background and yellow "ข่าวด่วน" label
+- ✅ Implemented smooth CSS animation for continuous scrolling text (30s duration)
+- ✅ Enhanced header component with breaking news section displaying real Thai news content
+- ✅ Added proper styling with Thai fonts (Sarabun/Kanit) and responsive design
+
 ## Advanced Theme Management System Implemented (10 สิงหาคม 2568)
 - ✅ Added comprehensive site settings database schema with color/theme management
 - ✅ Implemented full CRUD API for site settings (/api/site-settings)
