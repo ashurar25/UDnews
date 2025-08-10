@@ -46,10 +46,10 @@ Preferred communication style: Simple, everyday language.
 - ✅ Application supports real-time theme switching across entire website
 
 ## UI Improvements - Header Redesign (10 สิงหาคม 2568)
-- ✅ Removed red breaking news ticker banner from homepage as requested
-- ✅ Moved donation button from top header bar to hamburger menu for cleaner design
-- ✅ Enhanced hamburger menu with donation button featuring heart icon
-- ✅ Maintained clean header layout with date, contact info, and weather
+- ✅ Moved donation button back to original header location (top bar) with heart icon and animation
+- ✅ Moved theme toggle and weather widget to hamburger menu for better organization
+- ✅ Enhanced hamburger menu with theme and weather controls featuring Thai labels
+- ✅ Maintained clean header layout with prominent donation button and organized menu controls
 
 ## Project Migration to Replit Environment Complete (10 สิงหาคม 2568)
 - ✅ Successfully migrated project from Replit Agent to standard Replit environment

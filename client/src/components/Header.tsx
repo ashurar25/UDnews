@@ -94,7 +94,17 @@ const Header = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Empty space where donation button was */}
+            {/* Donation Button */}
+            <Link to="/donate">
+              <Button
+                size="sm"
+                className="bg-red-500 hover:bg-red-600 text-white font-sarabun gap-1 px-3 py-1 text-xs"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              >
+                <Heart className="h-3 w-3 fill-current animate-pulse" />
+                สนับสนุนเรา
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
@@ -120,11 +130,8 @@ const Header = () => {
             </div>
           </Link>
 
-          {/* Right Side - Theme & Weather */}
+          {/* Right Side - Hamburger Menu Only */}
           <div className="flex items-center space-x-4">
-              <ThemeToggle />
-              <WeatherWidget />
-              
               {/* Hamburger Menu Button */}
               <Button
                 variant="ghost"
@@ -172,20 +179,16 @@ const Header = () => {
                 ))}
               </nav>
               
-              {/* Donation Button */}
-              <div className="border-t border-orange-200 dark:border-gray-600 pt-4 mt-4">
-                <Link to="/donate">
-                  <Button
-                    className="w-full bg-red-500 hover:bg-red-600 text-white font-sarabun gap-2"
-                    onClick={() => {
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                      setIsMenuOpen(false);
-                    }}
-                  >
-                    <Heart className="h-4 w-4 fill-current" />
-                    สนับสนุนเรา
-                  </Button>
-                </Link>
+              {/* Theme and Weather Controls */}
+              <div className="border-t border-orange-200 dark:border-gray-600 pt-4 mt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-sarabun text-sm text-gray-600 dark:text-gray-400">เปลี่ยนธีม:</span>
+                  <ThemeToggle />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-sarabun text-sm text-gray-600 dark:text-gray-400">สภาพอากาศ:</span>
+                  <WeatherWidget />
+                </div>
               </div>
 
               {/* Admin Login Button */}
