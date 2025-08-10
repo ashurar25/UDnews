@@ -123,7 +123,7 @@ const Header = () => {
             />
             <div>
               <h1 className="text-3xl font-bold font-kanit text-yellow-200 drop-shadow-lg" style={{ textShadow: '2px 2px 4px rgba(251, 146, 60, 0.8), -1px -1px 2px rgba(251, 146, 60, 0.6)' }}>
-                {specialDay ? specialDay.name || "อัพเดทข่าวอุดร" : "อัพเดทข่าวอุดร"}
+                {specialDay ? specialDay.name || "อัพเดทข่าวอุดร" : "อัพเดทข่าวอุดร"} 🔥
               </h1>
               <p className="text-xl text-orange-100 font-sarabun font-bold drop-shadow-md" style={{ textShadow: '1px 1px 2px rgba(251, 146, 60, 0.6)' }}>
                 UD News Update
