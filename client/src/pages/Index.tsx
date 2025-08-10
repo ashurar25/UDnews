@@ -66,7 +66,7 @@ const Index = () => {
     };
 
     loadWeather();
-    
+
     // Refresh weather data every 30 minutes
     const interval = setInterval(loadWeather, 30 * 60 * 1000);
     return () => clearInterval(interval);
@@ -102,11 +102,11 @@ const Index = () => {
     const now = new Date();
     const created = new Date(dateString);
     const diffInHours = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60));
-    
+
     if (diffInHours < 1) return 'เมื่อสักครู่';
     if (diffInHours === 1) return '1 ชั่วโมงที่แล้ว';
     if (diffInHours < 24) return `${diffInHours} ชั่วโมงที่แล้ว`;
-    
+
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays === 1) return '1 วันที่แล้ว';
     return `${diffInDays} วันที่แล้ว`;
@@ -126,7 +126,7 @@ const Index = () => {
     isBreaking: news.isBreaking,
     size: "large" as const
   }));
-  
+
   const latestNews = allNews.slice(2, 5).map((news: NewsItem, index: number) => ({
     id: news.id,
     title: news.title,
@@ -141,22 +141,29 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <ThaiSpecialDayBanner />
-      
+
       {/* Breaking News Ticker */}
       <div className="bg-red-600 text-white py-2 overflow-hidden">
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-4">
-            <Badge className="bg-white text-red-600 whitespace-nowrap font-kanit">
+            <Badge className="bg-white text-red-600 whitespace-nowrap font-kanit flex-shrink-0">
               ข่าวด่วน
             </Badge>
-            <div className="flex animate-slide-up">
-              {breakingNews.map((news, index) => (
-                <span key={index} className="font-sarabun mr-8 whitespace-nowrap">
-                  {news}
-                </span>
-              ))}
+            <div className="flex-1 overflow-hidden">
+              <div className="animate-scroll-slow">
+                {breakingNews.map((news, index) => (
+                  <span key={index} className="inline-block mr-12 font-sarabun">
+                    🔥 {news}
+                  </span>
+                ))}
+                {breakingNews.length === 0 && (
+                  <span className="inline-block font-sarabun">
+                    🔥 ไม่มีข่าวด่วนในขณะนี้
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -189,20 +196,20 @@ const Index = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        
+
         {/* Featured News Section */}
         <section className="mb-12">
           <div className="flex items-center gap-2 mb-6">
             <TrendingUp className="h-6 w-6 text-primary" />
             <h2 className="text-2xl font-bold font-kanit">ข่าวเด่นวันนี้</h2>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {featuredNews.map((news, index) => (
               <NewsCard key={index} {...news} />
             ))}
           </div>
-          
+
           {/* Between News Sponsor Banner Bar */}
           <div className="mt-8 mb-4">
             <SponsorBannerBar position="between_news" autoPlay={true} showNavigation={false} bannerCount={3} />
@@ -211,14 +218,14 @@ const Index = () => {
 
         {/* Latest News Section */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* Main News Feed */}
           <div className="lg:col-span-2">
             <div className="flex items-center gap-2 mb-6">
               <Clock className="h-6 w-6 text-primary" />
               <h2 className="text-2xl font-bold font-kanit">ข่าวล่าสุด</h2>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {latestNews.map((news, index) => (
                 <NewsCard key={index} {...news} />
@@ -228,10 +235,10 @@ const Index = () => {
 
           {/* Sidebar */}
           <div className="space-y-8">
-            
+
             {/* Sidebar Sponsor Banner Bar */}
             <SponsorBannerBar position="sidebar" autoPlay={true} showNavigation={false} bannerCount={3} />
-            
+
             {/* Popular Today */}
             <div className="bg-card rounded-lg p-6 shadow-news">
               <h3 className="text-xl font-bold font-kanit mb-4 flex items-center gap-2">
@@ -265,7 +272,7 @@ const Index = () => {
                 <h3 className="text-xl font-bold font-kanit mb-4 text-foreground">
                   สภาพอากาศอุดรธานี
                 </h3>
-                
+
                 {/* Weather Navigation */}
                 <div className="flex justify-center mb-4">
                   <div className="flex bg-white/20 backdrop-blur-sm rounded-full p-1">
@@ -317,7 +324,7 @@ const Index = () => {
                       <p className="text-muted-foreground font-sarabun mb-2">{currentWeather.conditionThai}</p>
                     </>
                   )}
-                  
+
                   {/* High/Low Temps */}
                   <div className="flex justify-between mt-2 text-sm font-sarabun bg-white/30 backdrop-blur-sm rounded-lg p-3">
                     <div className="text-center">
@@ -349,7 +356,7 @@ const Index = () => {
                         <div className="text-sm font-bold font-kanit text-orange-500">{weatherData.yesterday.temp}°C</div>
                         <p className="text-xs font-sarabun text-muted-foreground">{weatherData.yesterday.conditionThai}</p>
                       </div>
-                      
+
                       {/* Today */}
                       <div 
                         className={`text-center backdrop-blur-sm rounded-lg p-2 cursor-pointer transition-all ${
@@ -364,7 +371,7 @@ const Index = () => {
                         <div className="text-sm font-bold font-kanit text-orange-600">{weatherData.today.temp}°C</div>
                         <p className="text-xs font-sarabun text-muted-foreground">{weatherData.today.conditionThai}</p>
                       </div>
-                      
+
                       {/* Tomorrow */}
                       <div 
                         className={`text-center backdrop-blur-sm rounded-lg p-2 cursor-pointer transition-all ${
