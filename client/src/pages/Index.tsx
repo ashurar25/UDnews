@@ -140,7 +140,11 @@ const Index = () => {
       <Header />
       
       {/* Header Sponsor Banner Bar */}
-
+      <div className="bg-muted/30 py-3">
+        <div className="container mx-auto px-4">
+          <SponsorBannerBar position="header" className="justify-center" autoPlay={true} showNavigation={true} bannerCount={5} />
+        </div>
+      </div>
       
       <ThaiSpecialDayBanner />
       

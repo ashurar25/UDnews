@@ -128,25 +128,17 @@ const SponsorBannerBar = ({
   if (banners.length === 0) {
     return (
       <div className={`sponsor-banner-bar-empty ${className}`}>
-        <div className={`p-4 ${getBarStyles()}`}>
-          <div className="text-center space-y-3">
-            <div className="flex items-center justify-center space-x-2">
-              <Badge variant="secondary" className="font-sarabun text-xs">
-                สปอนเซอร์
-              </Badge>
-              <span className="text-sm font-sarabun text-muted-foreground">
-                พื้นที่โฆษณาสำหรับสปอนเซอร์ ({getBannerSizeText()})
-              </span>
+        <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 p-4 text-center transition-all duration-300 hover:shadow-lg cursor-pointer rounded-lg border border-yellow-300" onClick={handleContactSponsor}>
+          <div className="flex flex-col items-center justify-center space-y-3">
+            <div className="text-gray-800 font-sarabun text-base font-medium">
+              สปอนเซอร์ - ตั้งโฆษณาพื้นที่นี้รับหิ้วไปอันเดอร์ ({getBannerSizeText()})
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleContactSponsor}
-              className="font-sarabun text-xs"
-            >
-              <Phone className="h-3 w-3 mr-2" />
-              ติดต่อสนับสนุนสปอนเซอร์
-            </Button>
+            <div className="bg-white px-4 py-2 rounded-full shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-2 text-gray-700 text-sm font-sarabun">
+                <Phone className="h-4 w-4" />
+                <span>ติดต่อสินเล็บสปอนเซอร์</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
