@@ -76,7 +76,7 @@ const Header = () => {
       <div className={themeClasses.mainHeader}>
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-6 hover:opacity-90 transition-opacity">
+          <Link to="/" className="flex items-center gap-6 hover:opacity-90 transition-opacity" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <img 
               src="/logo.jpg" 
               alt="UD News Update Logo"
@@ -137,7 +137,10 @@ const Header = () => {
                       ? "bg-orange-200 text-orange-800 border-orange-300"
                       : "bg-white/80 hover:bg-orange-100 hover:text-orange-700"
                   }`}
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={() => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    setIsMenuOpen(false);
+                  }}
                 >
                   {item.name}
                 </Button>

@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Clock, Eye, Share2, ExternalLink } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface NewsItem {
   id: number;
@@ -25,6 +25,11 @@ const NewsDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const [viewCount, setViewCount] = useState(Math.floor(Math.random() * 5000 + 1000));
+
+  // Scroll to top when page loads
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [id]);
 
   // Fetch news detail
   const { data: news, isLoading, error } = useQuery({
@@ -122,7 +127,10 @@ const NewsDetail = () => {
         <Header />
         <div className="container mx-auto px-4 py-8 text-center">
           <h1 className="text-2xl font-bold mb-4">ไม่พบข่าวที่ต้องการ</h1>
-          <Button onClick={() => setLocation('/')}>
+          <Button onClick={() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setLocation('/');
+          }}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             กลับสู่หน้าหลัก
           </Button>
@@ -139,7 +147,10 @@ const NewsDetail = () => {
       <main className="container mx-auto px-4 py-8">
         {/* Back Button */}
         <div className="mb-6">
-          <Button variant="ghost" onClick={() => setLocation('/')} className="gap-2">
+          <Button variant="ghost" onClick={() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setLocation('/');
+          }} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
             กลับสู่หน้าหลัก
           </Button>
@@ -236,7 +247,10 @@ const NewsDetail = () => {
                     <div 
                       key={item.id}
                       className="cursor-pointer group"
-                      onClick={() => setLocation(`/news/${item.id}`)}
+                      onClick={() => {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        setLocation(`/news/${item.id}`);
+                      }}
                     >
                       <div className="flex gap-3">
                         {item.imageUrl && (

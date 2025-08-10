@@ -38,6 +38,7 @@ const NewsManager = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingNews, setEditingNews] = useState<NewsArticle | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const [formData, setFormData] = useState<NewsForm>({
     title: "",
     summary: "",
@@ -47,6 +48,8 @@ const NewsManager = () => {
     isBreaking: false,
   });
   const { toast } = useToast();
+
+  const ITEMS_PER_PAGE = 20;
 
   const categories = [
     "ข่าวท้องถิ่น",
@@ -106,6 +109,7 @@ const NewsManager = () => {
         fetchNews();
         resetForm();
         setIsDialogOpen(false);
+        setCurrentPage(1); // Reset to first page after adding/editing
       } else {
         throw new Error("Failed to save news article");
       }
@@ -136,6 +140,11 @@ const NewsManager = () => {
           description: "ลบข่าวสำเร็จ",
         });
         fetchNews();
+        // Reset page if current page becomes empty
+        const newTotalPages = Math.ceil((news.length - 1) / ITEMS_PER_PAGE);
+        if (currentPage > newTotalPages && newTotalPages > 0) {
+          setCurrentPage(newTotalPages);
+        }
       } else {
         throw new Error("Failed to delete news article");
       }
@@ -322,19 +331,30 @@ const NewsManager = () => {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="font-sarabun">หัวข้อ</TableHead>
-                  <TableHead className="font-sarabun">หมวดหมู่</TableHead>
-                  <TableHead className="font-sarabun">สถานะ</TableHead>
-                  <TableHead className="font-sarabun">วันที่สร้าง</TableHead>
-                  <TableHead className="font-sarabun">การจัดการ</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {news.map((article) => (
+          <>
+            {/* Pagination Info */}
+            <div className="flex justify-between items-center mb-4">
+              <div className="font-sarabun text-sm text-muted-foreground">
+                แสดงข่าว {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, news.length)} 
+                จากทั้งหมด {news.length} ข่าว
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="font-sarabun">หัวข้อ</TableHead>
+                    <TableHead className="font-sarabun">หมวดหมู่</TableHead>
+                    <TableHead className="font-sarabun">สถานะ</TableHead>
+                    <TableHead className="font-sarabun">วันที่สร้าง</TableHead>
+                    <TableHead className="font-sarabun">การจัดการ</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {news
+                    .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+                    .map((article) => (
                   <TableRow key={article.id}>
                     <TableCell className="font-sarabun">
                       <div className="max-w-xs">
@@ -385,10 +405,60 @@ const NewsManager = () => {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Pagination Controls */}
+            {news.length > ITEMS_PER_PAGE && (
+              <div className="flex justify-center items-center gap-2 mt-6">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="font-sarabun"
+                >
+                  ← ก่อนหน้า
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.ceil(news.length / ITEMS_PER_PAGE) }, (_, i) => i + 1)
+                    .filter(page => 
+                      page === 1 || 
+                      page === Math.ceil(news.length / ITEMS_PER_PAGE) || 
+                      Math.abs(page - currentPage) <= 1
+                    )
+                    .map((page, index, array) => (
+                      <div key={page} className="flex items-center">
+                        {index > 0 && array[index - 1] !== page - 1 && (
+                          <span className="text-muted-foreground px-2">...</span>
+                        )}
+                        <Button
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(page)}
+                          className="font-sarabun w-8 h-8 p-0"
+                        >
+                          {page}
+                        </Button>
+                      </div>
+                    ))}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(Math.ceil(news.length / ITEMS_PER_PAGE), prev + 1))}
+                  disabled={currentPage === Math.ceil(news.length / ITEMS_PER_PAGE)}
+                  className="font-sarabun"
+                >
+                  ถัดไป →
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>
