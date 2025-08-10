@@ -122,10 +122,10 @@ const Header = () => {
               loading="eager"
             />
             <div>
-              <h1 className="text-3xl font-bold font-kanit text-yellow-200 drop-shadow-lg" style={{ textShadow: '2px 2px 4px rgba(251, 146, 60, 0.8), -1px -1px 2px rgba(251, 146, 60, 0.6)' }}>
-                {specialDay ? specialDay.name || "อัพเดทข่าวอุดร" : "อัพเดทข่าวอุดร"} 🔥
+              <h1 className="text-2xl font-bold font-kanit text-yellow-200 drop-shadow-lg" style={{ textShadow: '2px 2px 4px rgba(251, 146, 60, 0.8), -1px -1px 2px rgba(251, 146, 60, 0.6)' }}>
+                {specialDay ? specialDay.name || "อัพเดทข่าวอุดร" : "อัพเดทข่าวอุดร"}
               </h1>
-              <p className="text-xl text-orange-100 font-sarabun font-bold drop-shadow-md" style={{ textShadow: '1px 1px 2px rgba(251, 146, 60, 0.6)' }}>
+              <p className="text-lg text-orange-100 font-sarabun font-bold drop-shadow-md" style={{ textShadow: '1px 1px 2px rgba(251, 146, 60, 0.6)' }}>
                 UD News Update
               </p>
             </div>
@@ -205,13 +205,13 @@ const Header = () => {
                 <Link to="/admin">
                   <Button
                     size="sm"
-                    className="w-10 h-10 rounded-full bg-orange-600 hover:bg-orange-700 text-white p-0 flex items-center justify-center"
+                    className="w-10 h-10 rounded-full bg-orange-600 hover:bg-orange-700 text-white p-0 flex items-center justify-center text-lg"
                     onClick={() => {
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                       setIsMenuOpen(false);
                     }}
                   >
-                    <Key className="h-4 w-4" />
+                    🔑
                   </Button>
                 </Link>
               </div>
