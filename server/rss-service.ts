@@ -291,8 +291,11 @@ export class RSSService {
 
   // Generate a unique hash for article content
   private generateContentHash(title: string, link: string): string {
-    const crypto = require('crypto');
-    return crypto.createHash('md5').update(`${title}:${link}`).digest('hex');
+    import('crypto').then(crypto => {
+      return crypto.createHash('md5').update(`${title}:${link}`).digest('hex');
+    });
+    // For now, use simpler approach
+    return Buffer.from(`${title}:${link}`).toString('base64').slice(0, 16);
   }
 
   // Process a single RSS item

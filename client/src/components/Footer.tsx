@@ -16,14 +16,14 @@ const Footer = () => {
             <img 
               src="/logo.jpg" 
               alt="UD News Logo" 
-              className="h-12 w-12 rounded" 
+              className="h-12 w-12 rounded animate-pulse" 
             />
-            <span className="font-bold font-kanit text-2xl bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              UD News
+            <span className="font-bold font-kanit text-2xl bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 bg-clip-text text-transparent animate-gradient">
+              UD News - ระบบใหม่
             </span>
           </div>
           <p className="text-sm text-muted-foreground font-sarabun max-w-md mx-auto">
-            แหล่งข่าวสารที่เชื่อถือได้ อัปเดตข่าวใหม่ตลอด 24 ชั่วโมง
+            แหล่งข่าวสารที่เชื่อถือได้ อัปเดตข่าวใหม่ตลอด 24 ชั่วโมง - ระบบ RSS ปรับปรุงแล้ว
           </p>
         </div>
 
