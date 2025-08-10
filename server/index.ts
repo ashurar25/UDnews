@@ -83,20 +83,22 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // temporarily disable vite setup due to host configuration issue
-  // TODO: fix vite allowedHosts configuration error
-  // if (app.get("env") === "development") {
-  //   await setupVite(app, server);
-  // } else {
+  if (process.env.NODE_ENV === "development") {
+    await setupVite(app, server);
+  } else {
     serveStatic(app);
-  // }
+  }
 
-  // ALWAYS serve the app on port 5000
+  // Use environment port or default to 5000
   // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
+  const port = parseInt(process.env.PORT || "5000", 10);
   const host = "0.0.0.0"; // Explicitly bind to all interfaces for Replit
-  server.listen(port, host, () => {
+  
+  server.listen(port, host, (err?: Error) => {
+    if (err) {
+      console.error("Failed to start server:", err);
+      process.exit(1);
+    }
     log(`serving on port ${port}`);
     
     // Start automatic RSS processing after server is ready
