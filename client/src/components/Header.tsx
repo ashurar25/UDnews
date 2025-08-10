@@ -181,6 +181,21 @@ const Header = () => {
                   </Link>
                 ))}
               </nav>
+              
+              {/* Login Button */}
+              <div className="border-t border-orange-200 dark:border-gray-600 pt-4 mt-4">
+                <Link to="/login">
+                  <Button
+                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-sarabun"
+                    onClick={() => {
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    เข้าสู่ระบบ / สมัครสมาชิก
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
