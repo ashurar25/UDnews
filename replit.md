@@ -8,7 +8,17 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes (ล่าสุด)
 
-## Full System Working - Real Data Integration (10 สิงหาคม 2568)
+## UI Improvements and RSS System Enhanced (10 สิงหาคม 2568)
+- ✅ Removed unwanted header sponsor banner from main page as requested by user
+- ✅ Fixed build and deployment process with automated build-and-deploy.sh script
+- ✅ Resolved RSS service TypeScript errors (require/import issues)
+- ✅ Enhanced duplicate prevention with 85% similarity matching
+- ✅ Added working RSS feeds: Matichon (3 new articles processed)
+- ✅ Improved RSS processing with better error handling and 10s timeout
+- ✅ Added visual indicators in footer showing "ระบบใหม่" with animations
+- ✅ Build process now automatically copies files from dist/public to server/public
+
+## Full System Working - Real Data Integration (10 สิงหาคม 2568)  
 - ✅ Website now displays 65+ real news articles from database instead of sample data
 - ✅ Admin panel shows actual database statistics (65 news, 5 RSS feeds, 3 banners)  
 - ✅ Fixed RSS feed URLs: Added Thai Rath, Post Today, Khaosod (working feeds)
@@ -16,7 +26,6 @@ Preferred communication style: Simple, everyday language.
 - ✅ All TypeScript errors resolved in Admin.tsx and NewsCard.tsx
 - ✅ Database connection information displayed correctly in admin system tab
 - ✅ Homepage features real breaking news and article content from PostgreSQL
-- ✅ Sponsor banner system fully operational with 3 active banners
 
 ## MemStorage Removal Complete (10 สิงหาคม 2568)
 - ✅ Removed MemStorage class entirely from server/storage.ts
