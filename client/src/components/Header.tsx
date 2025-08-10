@@ -146,7 +146,7 @@ const Header = () => {
         </div>
 
         {/* Hamburger Menu Dropdown */}
-        <div ref={menuRef} className={`absolute top-full right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-orange-200 dark:border-gray-700 z-50 ${isMenuOpen ? 'block' : 'hidden'}`}>
+        <div ref={menuRef} className={`absolute top-full right-0 mt-2 w-80 max-h-96 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-orange-200 dark:border-gray-700 z-50 overflow-y-auto ${isMenuOpen ? 'block' : 'hidden'}`}>
           <div className="p-4 space-y-4">
             {/* Search Bar in Menu */}
             <div className="relative">
