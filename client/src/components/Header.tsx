@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Link, useLocation } from "wouter";
 import { useTheme } from "next-themes";
 import { getCurrentThaiSpecialDay } from "@/lib/thai-special-days";
+import SponsorBannerBar from "@/components/SponsorBannerBar";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -49,6 +50,15 @@ const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-orange-50/40 dark:bg-gray-900/40 backdrop-blur-md supports-[backdrop-filter]:bg-orange-100/20 dark:supports-[backdrop-filter]:bg-gray-800/20">
+      {/* Sponsor Banner at Top */}
+      <SponsorBannerBar 
+        position="header" 
+        className="border-b border-orange-200/30" 
+        autoPlay={true}
+        showNavigation={true}
+        bannerCount={3}
+      />
+      
       {/* Top Bar */}
       <div className={themeClasses.topBar}>
         <div className="container mx-auto px-4 flex justify-between items-center text-xs">
