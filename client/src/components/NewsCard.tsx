@@ -1,7 +1,10 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Eye } from "lucide-react";
+import { Clock, Eye, Heart } from "lucide-react";
 import { useLocation } from "wouter";
+import { Link } from "wouter-preact";
+import { formatDistanceToNow } from "date-fns";
+import { th } from "date-fns/locale";
 
 interface NewsCardProps {
   id?: number;
@@ -13,18 +16,30 @@ interface NewsCardProps {
   image?: string;
   isBreaking?: boolean;
   size?: "small" | "medium" | "large";
+  imageUrl?: string;
+  placeholderSvg?: string;
+  isUrgent?: boolean;
+  categoryLabels?: { [key: string]: string };
+  likes?: number;
+  publishedAt?: string;
 }
 
-const NewsCard = ({ 
+const NewsCard = ({
   id,
-  title, 
-  summary, 
-  category, 
-  time, 
-  views, 
-  image, 
+  title,
+  summary,
+  category,
+  time,
+  views,
+  image,
   isBreaking = false,
-  size = "medium" 
+  size = "medium",
+  imageUrl,
+  placeholderSvg,
+  isUrgent,
+  categoryLabels,
+  likes,
+  publishedAt
 }: NewsCardProps) => {
   const [, setLocation] = useLocation();
   const getCategoryColor = (cat: string) => {
@@ -37,10 +52,10 @@ const NewsCard = ({
     }
   };
 
-  const cardClass = size === "large" 
-    ? "md:col-span-2 md:row-span-2" 
-    : size === "small" 
-    ? "md:col-span-1" 
+  const cardClass = size === "large"
+    ? "md:col-span-2 md:row-span-2"
+    : size === "small"
+    ? "md:col-span-1"
     : "md:col-span-1";
 
   const handleClick = () => {
@@ -50,14 +65,14 @@ const NewsCard = ({
   };
 
   return (
-    <Card 
-      className={`group cursor-pointer transition-all duration-300 hover:shadow-news hover:-translate-y-1 animate-fade-in ${cardClass}`}
+    <Card
+      className={`group cursor-pointer transition-all duration-300 hover:shadow-news hover:-translate-y-1 animate-fade-in ${cardClass} bg-card border-border`}
       onClick={handleClick}
     >
       {image && (
         <div className="relative overflow-hidden">
-          <img 
-            src={image} 
+          <img
+            src={image}
             alt={title}
             className={`w-full object-cover transition-transform duration-300 group-hover:scale-105 ${
               size === "large" ? "h-64" : "h-48"
@@ -77,7 +92,7 @@ const NewsCard = ({
           </div>
         </div>
       )}
-      
+
       <CardHeader className="pb-3">
         <h3 className={`font-kanit font-semibold leading-tight group-hover:text-primary transition-colors ${
           size === "large" ? "text-xl" : "text-lg"
@@ -85,14 +100,14 @@ const NewsCard = ({
           {title}
         </h3>
       </CardHeader>
-      
+
       <CardContent className="pt-0">
         <p className={`text-muted-foreground font-sarabun leading-relaxed mb-4 ${
           size === "large" ? "text-base" : "text-sm"
         }`}>
           {summary}
         </p>
-        
+
         <div className="flex items-center justify-between text-xs text-muted-foreground font-sarabun">
           <div className="flex items-center gap-2">
             <Clock className="h-3 w-3" />

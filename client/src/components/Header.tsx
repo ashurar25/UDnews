@@ -11,7 +11,7 @@ const Header = () => {
   const [location] = useLocation();
   const { theme } = useTheme();
   const specialDay = getCurrentThaiSpecialDay();
-  
+
   // Dynamic theme classes based on current theme
   const getThemeClasses = () => {
     if (specialDay && theme === "thai-special") {
@@ -34,7 +34,7 @@ const Header = () => {
       title: "text-3xl font-bold font-kanit text-yellow-400"
     }
   }
-  
+
   const themeClasses = getThemeClasses();
 
   const menuItems = [

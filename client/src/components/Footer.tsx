@@ -3,134 +3,110 @@ import { Input } from "@/components/ui/input";
 import { Facebook, Twitter, Youtube, Mail, Phone, MapPin, Rss, Key } from "lucide-react";
 import SponsorBanner from "./SponsorBanner";
 import SponsorBannerBar from "./SponsorBannerBar";
+import { Separator } from "@/components/ui/separator";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
-    <footer className="bg-gradient-subtle border-t">
-      {/* Footer Sponsor Banner Bar */}
-      <div className="bg-muted/20 border-b">
-        <div className="container mx-auto px-4 py-6">
-          <SponsorBannerBar position="footer" autoPlay={true} showNavigation={true} bannerCount={4} />
-        </div>
-      </div>
-      
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* Company Info */}
-          <div>
-            <div className="flex items-center gap-3 mb-4">
+    <footer className="bg-gradient-subtle border-t border-border transition-colors duration-300">
+      <div className="container py-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          {/* Logo and Description */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
               <img 
                 src="/logo.jpg" 
-                alt="UD News Update Logo"
-                className="h-12 w-12 object-contain rounded-lg"
+                alt="UD News Logo" 
+                className="h-8 w-8 rounded" 
               />
-              <div>
-                <h3 className="font-kanit font-bold text-lg">อัพเดทข่าวอุดร</h3>
-                <p className="text-sm text-muted-foreground">UD News Update</p>
-              </div>
+              <span className="font-bold font-kanit text-lg bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                UD News
+              </span>
             </div>
-            <p className="text-sm text-muted-foreground font-sarabun mb-4">
-              แหล่งข่าวสารอุดรธานีที่ถูกต้อง รวดเร็ว และน่าเชื่อถือ 
-              อัพเดทข่าวตลอด 24 ชั่วโมง
+            <p className="text-sm text-muted-foreground font-sarabun">
+              แหล่งข่าวสารที่เชื่อถือได้ อัปเดตข่าวใหม่ตลอด 24 ชั่วโมง
             </p>
-            <div className="flex gap-2">
-              <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                <Facebook className="h-4 w-4" />
-              </Button>
-              <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                <Twitter className="h-4 w-4" />
-              </Button>
-              <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                <Youtube className="h-4 w-4" />
-              </Button>
-              <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                <Rss className="h-4 w-4" />
-              </Button>
-            </div>
           </div>
 
           {/* Quick Links */}
-          <div>
-            <h4 className="font-kanit font-semibold mb-4">หมวดข่าว</h4>
-            <div className="space-y-2">
-              {[
-                "ข่าวท้องถิ่น",
-                "การเมือง", 
-                "กีฬา",
-                "บันเทิง",
-                "เศรษฐกิจ",
-                "สังคม"
-              ].map((item, index) => (
-                <Button 
-                  key={index}
-                  variant="ghost" 
-                  className="h-auto p-0 justify-start text-sm font-sarabun text-muted-foreground hover:text-foreground"
-                >
-                  {item}
-                </Button>
-              ))}
-            </div>
+          <div className="space-y-4">
+            <h3 className="font-semibold font-kanit text-foreground">ลิงก์ด่วน</h3>
+            <ul className="space-y-2 text-sm font-sarabun">
+              <li>
+                <Link to="/news/all" className="text-muted-foreground hover:text-primary transition-colors">
+                  ข่าวทั้งหมด
+                </Link>
+              </li>
+              <li>
+                <Link to="/news/breaking" className="text-muted-foreground hover:text-primary transition-colors">
+                  ข่าวด่วน
+                </Link>
+              </li>
+              <li>
+                <Link to="/news/local" className="text-muted-foreground hover:text-primary transition-colors">
+                  ข่าวท้องถิ่น
+                </Link>
+              </li>
+              <li>
+                <Link to="/news/politics" className="text-muted-foreground hover:text-primary transition-colors">
+                  ข่าวการเมือง
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Categories */}
+          <div className="space-y-4">
+            <h3 className="font-semibold font-kanit text-foreground">หมวดหมู่</h3>
+            <ul className="space-y-2 text-sm font-sarabun">
+              <li>
+                <Link to="/news/sports" className="text-muted-foreground hover:text-primary transition-colors">
+                  กีฬา
+                </Link>
+              </li>
+              <li>
+                <Link to="/news/entertainment" className="text-muted-foreground hover:text-primary transition-colors">
+                  บันเทิง
+                </Link>
+              </li>
+              <li>
+                <Link to="/news/crime" className="text-muted-foreground hover:text-primary transition-colors">
+                  อาชญากรรม
+                </Link>
+              </li>
+              <li>
+                <Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors">
+                  ติดต่อเรา
+                </Link>
+              </li>
+            </ul>
           </div>
 
           {/* Contact Info */}
-          <div>
-            <h4 className="font-kanit font-semibold mb-4">ติดต่อเรา</h4>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="h-4 w-4 text-primary" />
-                <span className="font-sarabun">
-                  อุดรธานี, ประเทศไทย 41250
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Phone className="h-4 w-4 text-primary" />
-                <span className="font-sarabun">092-443-4311</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Mail className="h-4 w-4 text-primary" />
-                <span className="font-sarabun">kenginol.ar@gmail.com</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Newsletter */}
-          <div>
-            <h4 className="font-kanit font-semibold mb-4">รับข่าวสารล่าสุด</h4>
-            <p className="text-sm text-muted-foreground font-sarabun mb-4">
-              สมัครรับข่าวสารและอัพเดทล่าสุดทางอีเมล
-            </p>
-            <div className="space-y-2">
-              <Input 
-                placeholder="อีเมลของคุณ"
-                className="font-sarabun"
-              />
-              <Button className="w-full bg-gradient-primary hover:bg-primary-dark">
-                <span className="font-sarabun">สมัครสมาชิก</span>
-              </Button>
+          <div className="space-y-4">
+            <h3 className="font-semibold font-kanit text-foreground">ติดต่อเรา</h3>
+            <div className="space-y-2 text-sm font-sarabun text-muted-foreground">
+              <p>📧 news@udnews.com</p>
+              <p>📞 02-XXX-XXXX</p>
+              <p>📍 กรุงเทพมหานคร ประเทศไทย</p>
             </div>
           </div>
         </div>
 
-        <div className="border-t mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+        <Separator className="my-6 bg-border" />
+
+        {/* Bottom Footer */}
+        <div className="flex flex-col md:flex-flex-row justify-between items-center space-y-4 md:space-y-0">
           <p className="text-sm text-muted-foreground font-sarabun">
-            © 2024 อัพเดทข่าวอุดร (UD News Update). สงวนลิขสิทธิ์.
+            © 2024 UD News. สงวนลิขสิทธิ์.
           </p>
-          <div className="flex gap-4 mt-4 md:mt-0 items-center">
-            <Button variant="link" className="text-sm font-sarabun p-0 h-auto">
+          <div className="flex space-x-4 text-sm font-sarabun">
+            <Link to="/privacy" className="text-muted-foreground hover:text-primary transition-colors">
               นโยบายความเป็นส่วนตัว
-            </Button>
-            <Button variant="link" className="text-sm font-sarabun p-0 h-auto">
-              เงื่อนไขการใช้งาน
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => window.location.href = '/admin'}
-              className="ml-4 text-muted-foreground hover:text-primary"
-              title="แอดมิน"
-            >
-              <Key className="h-4 w-4" />
-            </Button>
+            </Link>
+            <Link to="/terms" className="text-muted-foreground hover:text-primary transition-colors">
+              ข้อกำหนดการใช้งาน
+            </Link>
           </div>
         </div>
       </div>

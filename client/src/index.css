@@ -203,6 +203,7 @@ All colors MUST be HSL.
 @layer base {
   * {
     @apply border-border;
+    transition: border-color 0.3s ease;
   }
 
   body {
@@ -215,8 +216,22 @@ All colors MUST be HSL.
     transition: background-color 0.3s ease;
   }
 
-  .card, .popover, .dropdown-menu, .sheet, .dialog {
-    transition: background-color 0.3s ease, border-color 0.3s ease;
+  /* Enhanced transitions for all components */
+  .card, .popover, .dropdown-menu, .sheet, .dialog, 
+  header, footer, nav, main, section, article, aside,
+  .navigation-menu, .button, .input, .textarea, .select {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Special handling for gradients */
+  .bg-gradient-to-r, .bg-gradient-to-b, .bg-gradient-to-t, .bg-gradient-to-br,
+  .bg-gradient-primary, .bg-gradient-warm, .bg-gradient-subtle {
+    transition: background-image 0.3s ease, background-color 0.3s ease;
+  }
+
+  /* Ensure text transitions smoothly */
+  h1, h2, h3, h4, h5, h6, p, span, a, button, label {
+    transition: color 0.3s ease;
   }
 
   /* Auto dark mode indicator */
