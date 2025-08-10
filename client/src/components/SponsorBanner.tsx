@@ -37,19 +37,39 @@ const SponsorBannerComponent = ({ position, className = "" }: SponsorBannerProps
     alert("ติดต่อสำหรับการสนับสนุนสปอนเซอร์\nโทร: 042-123-456\nอีเมล: sponsor@udnews.com");
   };
 
+  const getBannerSizeText = () => {
+    switch (position) {
+      case "header":
+        return "ขนาด: 800x100 px";
+      case "sidebar":
+        return "ขนาด: 300x250 px";
+      case "footer":
+        return "ขนาด: 728x90 px";
+      case "between_news":
+        return "ขนาด: 728x60 px";
+      default:
+        return "ขนาด: 300x200 px";
+    }
+  };
+
   if (isLoading || isError || !Array.isArray(banners) || banners.length === 0) {
-    // Show sponsor contact button even when no banners are available
+    // Show sponsor contact button with banner size info when no banners are available
     return (
-      <div className={`sponsor-contact-section ${className}`}>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleContactSponsor}
-          className="font-sarabun text-xs bg-primary/10 hover:bg-primary/20 border-primary/30"
-        >
-          <Phone className="h-3 w-3 mr-2" />
-          ติดต่อสนับสนุนสปอนเซอร์
-        </Button>
+      <div className={`sponsor-contact-section ${className} p-4 border border-dashed border-primary/30 rounded-lg bg-primary/5`}>
+        <div className="text-center space-y-3">
+          <div className="text-sm font-sarabun text-muted-foreground">
+            พื้นที่โฆษณาสปอนเซอร์ ({getBannerSizeText()})
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleContactSponsor}
+            className="font-sarabun text-xs bg-primary/10 hover:bg-primary/20 border-primary/30"
+          >
+            <Phone className="h-3 w-3 mr-2" />
+            ติดต่อสนับสนุนสปอนเซอร์
+          </Button>
+        </div>
       </div>
     );
   }
@@ -86,19 +106,6 @@ const SponsorBannerComponent = ({ position, className = "" }: SponsorBannerProps
 
   return (
     <div className={`sponsor-banners-container ${className}`}>
-      {/* Sponsor Contact Button */}
-      <div className="flex justify-end mb-3">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleContactSponsor}
-          className="font-sarabun text-xs bg-primary/10 hover:bg-primary/20 border-primary/30 shadow-sm"
-        >
-          <Phone className="h-3 w-3 mr-2" />
-          ติดต่อสนับสนุนสปอนเซอร์
-        </Button>
-      </div>
-      
       {/* Sponsor Banners */}
       <div className={`sponsor-banners ${getPositionStyles()}`}>
         {banners.map((banner) => (

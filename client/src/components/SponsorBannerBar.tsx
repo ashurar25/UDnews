@@ -110,17 +110,32 @@ const SponsorBannerBar = ({
     );
   }
 
+  const getBannerSizeText = () => {
+    switch (position) {
+      case "header":
+        return "ขนาด: 800x100 px";
+      case "sidebar":
+        return "ขนาด: 300x250 px";
+      case "footer":
+        return "ขนาด: 728x90 px";
+      case "between_news":
+        return "ขนาด: 728x60 px";
+      default:
+        return "ขนาด: 300x200 px";
+    }
+  };
+
   if (banners.length === 0) {
     return (
       <div className={`sponsor-banner-bar-empty ${className}`}>
         <div className={`p-4 ${getBarStyles()}`}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+          <div className="text-center space-y-3">
+            <div className="flex items-center justify-center space-x-2">
               <Badge variant="secondary" className="font-sarabun text-xs">
                 สปอนเซอร์
               </Badge>
               <span className="text-sm font-sarabun text-muted-foreground">
-                พื้นที่โฆษณาสำหรับสปอนเซอร์
+                พื้นที่โฆษณาสำหรับสปอนเซอร์ ({getBannerSizeText()})
               </span>
             </div>
             <Button
@@ -130,7 +145,7 @@ const SponsorBannerBar = ({
               className="font-sarabun text-xs"
             >
               <Phone className="h-3 w-3 mr-2" />
-              ติดต่อสนับสนุน
+              ติดต่อสนับสนุนสปอนเซอร์
             </Button>
           </div>
         </div>
@@ -141,7 +156,7 @@ const SponsorBannerBar = ({
   return (
     <div className={`sponsor-banner-bar ${className}`}>
       <div className={`relative overflow-hidden p-4 ${getBarStyles()}`}>
-        {/* Header with contact button */}
+        {/* Header without contact button */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-3">
             <Badge variant="secondary" className="font-sarabun text-xs bg-primary/20 text-primary">
@@ -155,37 +170,26 @@ const SponsorBannerBar = ({
               </div>
             )}
           </div>
-          <div className="flex items-center space-x-2">
-            {showNavigation && banners.length > 1 && (
-              <div className="flex items-center space-x-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={prevBanner}
-                  className="h-8 w-8 p-0"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={nextBanner}
-                  className="h-8 w-8 p-0"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleContactSponsor}
-              className="font-sarabun text-xs"
-            >
-              <Phone className="h-3 w-3 mr-2" />
-              ติดต่อ
-            </Button>
-          </div>
+          {showNavigation && banners.length > 1 && (
+            <div className="flex items-center space-x-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={prevBanner}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={nextBanner}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Banner display */}
