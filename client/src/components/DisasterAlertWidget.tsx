@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +18,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
 
 interface DisasterAlert {
   id: string;
@@ -38,7 +38,11 @@ interface DisasterAlert {
   isActive: boolean;
 }
 
-const DisasterAlertWidget = () => {
+interface DisasterAlertWidgetProps {
+  compact?: boolean;
+}
+
+const DisasterAlertWidget = ({ compact = false }: DisasterAlertWidgetProps) => {
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
   const { toast } = useToast();
 
@@ -121,8 +125,33 @@ const DisasterAlertWidget = () => {
     return null;
   }
 
+  // Compact mode for header
+  if (compact) {
+    const criticalAlerts = activeAlerts.filter(alert => alert.severity === 'critical');
+    const highAlerts = activeAlerts.filter(alert => alert.severity === 'high');
+    const urgentAlerts = [...criticalAlerts, ...highAlerts];
+    
+    if (urgentAlerts.length === 0) return null;
+
+    return (
+      <div className="flex items-center gap-2">
+        <div className="relative">
+          <AlertTriangle className="h-5 w-5 text-red-500 animate-pulse" />
+          {urgentAlerts.length > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+              {urgentAlerts.length}
+            </span>
+          )}
+        </div>
+        <Link href="/disaster-alert/latest" className="text-sm text-red-600 hover:underline">
+          ภัยพิบัติ
+        </Link>
+      </div>
+    );
+  }
+
   if (activeAlerts.length === 0) {
-    return null;
+    return <div className="p-4 text-center text-gray-500">ไม่มีการแจ้งเตือนภัยพิบัติ</div>;
   }
 
   return (
@@ -176,7 +205,7 @@ const DisasterAlertWidget = () => {
                 <strong>รายละเอียด:</strong> {alert.description}
               </AlertDescription>
             </Alert>
-            
+
             <div className="bg-white dark:bg-gray-800 p-3 rounded border">
               <h4 className="font-semibold font-kanit mb-2 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-orange-500" />

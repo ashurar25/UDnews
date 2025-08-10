@@ -8,6 +8,7 @@ import { getCurrentThaiSpecialDay } from "@/lib/thai-special-days";
 import { ThemeToggle } from "./ThemeToggle";
 import WeatherWidget from "./WeatherWidget";
 import SearchBar from "./SearchBar";
+import { DisasterAlertWidget } from "./DisasterAlertWidget";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -70,7 +71,7 @@ const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-orange-50/40 dark:bg-gray-900/40 backdrop-blur-md supports-[backdrop-filter]:bg-orange-100/20 dark:supports-[backdrop-filter]:bg-gray-800/20">
-      
+
 
       {/* Top Bar */}
       <div className={themeClasses.topBar}>
@@ -131,7 +132,10 @@ const Header = () => {
           </Link>
 
           {/* Right Side - Hamburger Menu Only */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-4">
+              <DisasterAlertWidget compact />
+              <WeatherWidget />
+              <ThemeToggle />
               {/* Hamburger Menu Button */}
               <Button
                 variant="ghost"
@@ -155,7 +159,7 @@ const Header = () => {
                 className="pl-10 w-full font-sarabun"
               />
             </div>
-            
+
             {/* Navigation Items */}
             <div className="border-t border-orange-200 dark:border-gray-600 pt-4">
               <nav className="space-y-2">
@@ -178,7 +182,7 @@ const Header = () => {
                   </Link>
                 ))}
               </nav>
-              
+
               {/* Theme and Weather Controls */}
               <div className="border-t border-orange-200 dark:border-gray-600 pt-4 mt-4 space-y-3">
                 <div className="flex items-center justify-between">

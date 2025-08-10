@@ -31,12 +31,24 @@ interface RSSItem {
   mediaContent?: any;
   contentEncoded?: string;
   mediaThumbnail?: any;
+  enclosure?: { url: string }; // Added for enclosure URL
+  summary?: string; // Added for summary
+}
+
+// Define feed status interface
+interface FeedStatus {
+  isProcessing: boolean;
+  lastError: string | null;
+  lastProcessed?: Date;
+  itemsProcessed?: number;
 }
 
 export class RSSService {
   private isProcessing = false;
   private lastProcessed = new Map<number, Date>();
   private intervalId: NodeJS.Timeout | null = null;
+  private feedStatus: Record<number, FeedStatus> = {}; // Store status for each feed
+  private storage = storage; // Alias storage for easier access
 
   // Extract image URL from content
   private extractImageUrl(content: string | undefined, mediaContent?: any, mediaThumbnail?: any): string | undefined {
@@ -73,19 +85,19 @@ export class RSSService {
   private calculateSimilarity(str1: string, str2: string): number {
     const longer = str1.length > str2.length ? str1 : str2;
     const shorter = str1.length > str2.length ? str2 : str1;
-    
+
     if (longer.length === 0) return 1.0;
-    
+
     const editDistance = this.levenshteinDistance(longer, shorter);
     return (longer.length - editDistance) / longer.length;
   }
 
   private levenshteinDistance(str1: string, str2: string): number {
     const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
-    
+
     for (let i = 0; i <= str1.length; i += 1) matrix[0][i] = i;
     for (let j = 0; j <= str2.length; j += 1) matrix[j][0] = j;
-    
+
     for (let j = 1; j <= str2.length; j += 1) {
       for (let i = 1; i <= str1.length; i += 1) {
         const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
@@ -96,14 +108,14 @@ export class RSSService {
         );
       }
     }
-    
+
     return matrix[str2.length][str1.length];
   }
 
   // Clean and format content
   private cleanContent(content: string | undefined, contentEncoded?: string): string {
     let text = contentEncoded || content || '';
-    
+
     try {
       // Parse HTML and extract text
       const root = parse(text);
@@ -136,25 +148,25 @@ export class RSSService {
     if (!content || content.length < 50) {
       return content || 'ไม่มีเนื้อหาสรุป';
     }
-    
+
     // Split by sentences (Thai and English)
     const sentences = content.split(/[.!?।]/).filter(s => s.trim().length > 10);
-    
+
     if (sentences.length === 0) {
       return content.substring(0, 200) + '...';
     }
-    
+
     // Take first 2-3 sentences for summary
     const summaryLength = Math.min(3, sentences.length);
     let summary = sentences.slice(0, summaryLength).join('. ').trim();
-    
+
     // Limit summary length
     if (summary.length > 300) {
       summary = summary.substring(0, 300) + '...';
     } else if (!summary.endsWith('.')) {
       summary += '...';
     }
-    
+
     return summary;
   }
 
@@ -163,7 +175,7 @@ export class RSSService {
     // If item has specific categories, use the first one
     if (itemCategories && itemCategories.length > 0) {
       const category = itemCategories[0].toLowerCase();
-      
+
       // Map common categories to Thai categories
       if (category.includes('politics') || category.includes('government') || 
           category.includes('การเมือง') || category.includes('รัฐบาล')) return 'การเมือง';
@@ -196,77 +208,70 @@ export class RSSService {
 
     try {
       console.log(`Processing RSS feed: ${feedUrl}`);
-      
-      // Add user agent for better compatibility
-      const customParser = new Parser({
-        timeout: 8000, // Reasonable timeout for reliable processing
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; UD News RSS Reader/1.0)',
-          'Accept': 'application/rss+xml, application/xml, text/xml',
-          'Accept-Language': 'th,en;q=0.9'
-        },
-        customFields: {
-          item: [
-            ['media:content', 'mediaContent'],
-            ['content:encoded', 'contentEncoded'],
-            ['media:thumbnail', 'mediaThumbnail']
-          ]
-        }
-      });
 
       // Add timeout and better error handling
-      const feed = await Promise.race([
-        customParser.parseURL(feedUrl),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('RSS fetch timeout')), 10000)
-        )
-      ]) as any;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
-      if (!feed || !feed.items || feed.items.length === 0) {
-        console.log(`No items found in feed: ${feedUrl}`);
-        await this.recordProcessingHistory(feedId, 0, 0, true, 'No items found in feed');
-        return 0;
-      }
+      try {
+        // Use the global parser instance
+        const feed = await parser.parseURL(feedUrl);
+        clearTimeout(timeout); // Clear timeout if parsing is successful
 
-      articlesProcessed = feed.items.length;
-
-      // Process each item in the feed
-      for (const item of feed.items) {
-        try {
-          const wasAdded = await this.processRSSItem(item as RSSItem, category, feedId);
-          if (wasAdded) articlesAdded++;
-        } catch (error) {
-          console.error(`Error processing RSS item from ${feedUrl}:`, error);
-          // Continue processing other items
+        if (!feed || !feed.items || feed.items.length === 0) {
+          console.log(`No items found in feed: ${feedUrl}`);
+          await this.recordProcessingHistory(feedId, 0, 0, true, 'No items found in feed');
+          this.lastProcessed.set(feedId, new Date()); // Update last processed time even if no items
+          return 0;
         }
-      }
 
-      // Update feed last processed time
-      await storage.updateRssFeedLastProcessed(feedId);
-      
-      // Record processing history
-      await this.recordProcessingHistory(feedId, articlesProcessed, articlesAdded, true, null);
-      
-      this.lastProcessed.set(feedId, new Date());
-      console.log(`Successfully processed ${articlesAdded}/${articlesProcessed} items from ${feedUrl}`);
-      return articlesAdded;
+        articlesProcessed = feed.items.length;
+
+        // Process each item in the feed
+        for (const item of feed.items) {
+          try {
+            const wasAdded = await this.processRSSItem(item as RSSItem, category, feedId);
+            if (wasAdded) articlesAdded++;
+          } catch (error) {
+            console.error(`Error processing RSS item from ${feedUrl}:`, error);
+            // Continue processing other items
+          }
+        }
+
+        // Update feed last processed time
+        await storage.updateRssFeedLastProcessed(feedId);
+
+        // Record processing history
+        await this.recordProcessingHistory(feedId, articlesProcessed, articlesAdded, true, null);
+
+        this.lastProcessed.set(feedId, new Date());
+        console.log(`Successfully processed ${articlesAdded}/${articlesProcessed} items from ${feedUrl}`);
+        return articlesAdded;
+
+      } catch (fetchError) {
+        clearTimeout(timeout); // Clear timeout if fetch fails
+        throw fetchError; // Re-throw the error to be caught by the outer catch block
+      }
 
     } catch (error) {
       success = false;
       errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error(`Error processing RSS feed ${feedUrl}:`, error);
-      
+
       // Record failed processing
       await this.recordProcessingHistory(feedId, articlesProcessed, articlesAdded, false, errorMessage);
-      
-      // Check if it's a parsing error and try alternative approach
+
+      // Update last processed time even on error
+      this.lastProcessed.set(feedId, new Date());
+
+      // Check if it's a parsing error and try alternative approach (consider if this is still needed or if timeout is sufficient)
       if (error instanceof Error && error.message && error.message.includes('Non-whitespace before first tag')) {
         console.log(`Attempting alternative fetch for ${feedUrl}`);
         try {
           const response = await fetch(feedUrl);
           const text = await response.text();
           console.log(`Feed content preview: ${text.substring(0, 200)}...`);
-          
+
           // If it starts with JSON, it might be a JSON feed
           if (text.trim().startsWith('{')) {
             console.log(`Feed ${feedUrl} appears to be JSON format, skipping for now`);
@@ -276,7 +281,7 @@ export class RSSService {
           console.error(`Alternative fetch also failed for ${feedUrl}:`, fetchError);
         }
       }
-      
+
       return 0;
     }
   }
@@ -312,17 +317,17 @@ export class RSSService {
     const contentHash = this.generateContentHash(item.title, item.link);
 
     // Check if this article already exists (by sourceUrl or similar title)
-    const existingNews = await storage.getAllNews();
+    const existingNews = await storage.getAllNews(); // This might be inefficient for many news items
     const exists = existingNews.some(news => {
       // Check exact URL match
       if (item.link && news.sourceUrl === item.link) return true;
-      
+
       // Check similar titles (fuzzy matching)
       if (news.title && item.title) {
         const similarity = this.calculateSimilarity(news.title.toLowerCase(), item.title.toLowerCase());
         return similarity > 0.85; // 85% similarity threshold
       }
-      
+
       return false;
     });
 
@@ -353,8 +358,6 @@ export class RSSService {
     await storage.insertNews(newsData);
     return true; // Article was added
   }
-
-
 
   // Determine if news is breaking based on title keywords
   private isBreakingNews(title: string): boolean {
@@ -387,21 +390,25 @@ export class RSSService {
 
       if (activeFeeds.length === 0) {
         console.log('No active RSS feeds found');
+        this.isProcessing = false; // Ensure flag is reset
         return;
       }
 
       let totalProcessed = 0;
-      
+
       // Process feeds in parallel for faster performance
       const feedPromises = activeFeeds.map(async (feed, index) => {
         try {
           // Stagger requests to avoid overwhelming servers
           await new Promise(resolve => setTimeout(resolve, index * 500));
           const count = await this.processFeed(feed.id, feed.url, feed.category);
-          await storage.updateRssFeedLastProcessed(feed.id);
           return count;
         } catch (error) {
           console.error(`Failed to process feed ${feed.title}:`, error);
+          // Record the error in feed status if not already done by processFeed
+          if (!this.feedStatus[feed.id] || !this.feedStatus[feed.id].lastError) {
+             this.feedStatus[feed.id] = { isProcessing: false, lastError: error instanceof Error ? error.message : 'Unknown error' };
+          }
           return 0;
         }
       });
@@ -411,9 +418,9 @@ export class RSSService {
         return sum + (result.status === 'fulfilled' ? result.value : 0);
       }, 0);
 
-      console.log(`RSS processing complete. Total articles processed: ${totalProcessed}`);
+      console.log(`RSS processing complete. Total articles processed across all feeds: ${totalProcessed}`);
     } catch (error) {
-      console.error('Error in RSS processing:', error);
+      console.error('Error in overall RSS feed processing:', error);
     } finally {
       this.isProcessing = false;
     }
@@ -424,7 +431,8 @@ export class RSSService {
     return {
       isProcessing: this.isProcessing,
       lastProcessed: Object.fromEntries(this.lastProcessed),
-      autoProcessingEnabled: this.intervalId !== null
+      autoProcessingEnabled: this.intervalId !== null,
+      feedStatuses: this.feedStatus // Include status for individual feeds
     };
   }
 
@@ -435,8 +443,8 @@ export class RSSService {
       return;
     }
 
-    console.log('Starting automatic RSS processing every 30 minutes...');
-    
+    console.log('Starting automatic RSS processing every 15 minutes...');
+
     // Process immediately on start
     this.processAllFeeds().catch(error => {
       console.error('Error in initial RSS processing:', error);

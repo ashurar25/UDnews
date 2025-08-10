@@ -147,10 +147,19 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-
-      {/* Special Day Banner */}
-      <ThaiSpecialDayBanner />
+      {/* Breaking News Banner */}
+      <div className="bg-red-600 text-white py-2 overflow-hidden">
+        <div className="animate-scroll whitespace-nowrap">
+          <span className="bg-yellow-400 text-red-800 px-2 py-1 rounded font-bold mr-4">
+            ข่าวด่วน
+          </span>
+          {breakingNews.map((news, index) => (
+            <span key={index} className="mr-8">
+              📢 {news.title}
+            </span>
+          ))}
+        </div>
+      </div>
 
       {/* Disaster Alert Widget */}
       <DisasterAlertWidget />

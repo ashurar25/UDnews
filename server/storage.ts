@@ -17,6 +17,7 @@ export interface IStorage {
   deleteRssFeed(id: number): Promise<boolean>;
   getAllNews(): Promise<NewsArticle[]>;
   getNewsById(id: number): Promise<NewsArticle | null>;
+  getNewsByUrl(url: string): Promise<NewsArticle | null>;
   insertNews(news: InsertNews): Promise<NewsArticle>;
   updateNews(id: number, news: Partial<InsertNews>): Promise<NewsArticle | null>;
   deleteNews(id: number): Promise<boolean>;
@@ -150,8 +151,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getNewsById(id: number): Promise<NewsArticle | null> {
-    const [article] = await db.select().from(newsArticles).where(eq(newsArticles.id, id));
-    return article || null;
+    const result = await this.db.select().from(newsArticles).where(eq(newsArticles.id, id));
+    return result[0] || null;
+  }
+
+  async getNewsByUrl(url: string): Promise<NewsArticle | null> {
+    const result = await this.db.select().from(newsArticles).where(eq(newsArticles.originalUrl, url));
+    return result[0] || null;
   }
 
   async insertNews(news: InsertNews): Promise<NewsArticle> {

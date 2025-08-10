@@ -145,3 +145,57 @@ export default function TestSystems() {
     </div>
   );
 }
+
+
+      {/* RSS Testing Section */}
+      <Card className="bg-blue-50">
+        <CardHeader>
+          <CardTitle className="text-xl text-blue-600">
+            📡 ทดสอบระบบ RSS
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <Button 
+              onClick={() => {
+                fetch('/api/rss/process', { method: 'POST' })
+                  .then(res => res.json())
+                  .then(data => {
+                    toast({
+                      title: "RSS Processing Started",
+                      description: data.message,
+                    });
+                  })
+                  .catch(err => {
+                    toast({
+                      title: "Error",
+                      description: "Failed to start RSS processing",
+                      variant: "destructive",
+                    });
+                  });
+              }}
+              className="w-full"
+            >
+              🔄 ประมวลผล RSS ทันที
+            </Button>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="bg-white p-3 rounded">
+                <div className="font-semibold text-green-600">✅ RSS Feeds ที่ทำงาน:</div>
+                <ul className="mt-2 space-y-1">
+                  <li>• Thai Rath</li>
+                  <li>• Khaosod (บางครั้ง)</li>
+                </ul>
+              </div>
+              <div className="bg-white p-3 rounded">
+                <div className="font-semibold text-red-600">❌ RSS Feeds ที่มีปัญหา:</div>
+                <ul className="mt-2 space-y-1">
+                  <li>• Post Today (XML Error)</li>
+                  <li>• Inn News</li>
+                  <li>• Matichon</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
