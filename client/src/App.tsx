@@ -40,6 +40,7 @@ const App = () => (
           <Route path="/entertainment" component={Entertainment} />
           <Route path="/contact" component={Contact} />
           <Route path="/news" component={AllNews} />
+          <Route path="/all-news" component={AllNews} />
           <Route path="/news/:id" component={NewsDetail} />
           <Route path="/category/:category" component={CategoryNews} />
           <Route path="/donate" component={Donate} />

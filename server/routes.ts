@@ -205,8 +205,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertNewsSchema.parse(req.body);
       const article = await storage.insertNews(validatedData);
       
-      // Clear cache when new news is added
+      // Clear cache when new news is added  
       newsCache.flushAll();
+      individualNewsCache.flushAll();
       
       res.status(201).json(article);
     } catch (error) {

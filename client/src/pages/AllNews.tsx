@@ -99,36 +99,31 @@ const AllNews = () => {
     setAllLoadedNews([]);
   };
 
-  // Get unique categories
-  const categories = allNews ? Array.from(new Set(allNews.map(news => news.category))) : [];
-
-  // Process news for display
-  const processedNews = filteredNews.map((news, index) => ({
-    id: news.id,
-    title: news.title,
-    summary: news.summary,
-    category: news.category,
-    time: getTimeAgo(news.createdAt),
-    views: `${Math.floor(Math.random() * 3000 + 500)}`,
-    image: news.imageUrl,
-    isBreaking: news.isBreaking
-  }));
-
-  if (isLoading) {
+  // Show loading state while initial data is loading
+  if (isLoading && currentPage === 1) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="animate-pulse space-y-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-32 bg-muted rounded"></div>
-            ))}
+            <div className="h-8 bg-muted rounded w-1/3"></div>
+            <div className="h-4 bg-muted rounded w-2/3"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-64 bg-muted rounded"></div>
+              ))}
+            </div>
           </div>
         </div>
         <Footer />
       </div>
     );
   }
+
+  // Get unique categories
+  const categories = allLoadedNews ? Array.from(new Set(allLoadedNews.map((news: NewsItem) => news.category))) : [];
+
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -170,7 +165,7 @@ const AllNews = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">ทุกหมวดหมู่</SelectItem>
-                {categories.map(category => (
+                {categories.map((category: string) => (
                   <SelectItem key={category} value={category}>
                     {category}
                   </SelectItem>
@@ -226,7 +221,17 @@ const AllNews = () => {
           <div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredNews.map((news) => (
-                <NewsCard key={news.id} {...news} />
+                <NewsCard 
+                  key={news.id} 
+                  id={news.id}
+                  title={news.title}
+                  summary={news.summary}
+                  category={news.category}
+                  time={getTimeAgo(news.createdAt)}
+                  views={`${Math.floor(Math.random() * 3000 + 500)}`}
+                  image={news.imageUrl}
+                  isBreaking={news.isBreaking}
+                />
               ))}
             </div>
             

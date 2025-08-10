@@ -142,9 +142,9 @@ const Index = () => {
   };
 
   // Process news data - Increased to 15 articles total
-  const allNews = newsData || [];
-  const breakingNews = allNews.filter((news: NewsItem) => news.isBreaking);
-  const featuredNews = allNews.slice(0, 3).map((news: NewsItem) => ({
+  const processedNewsData = newsData || [];
+  const breakingNews = processedNewsData.filter((news: NewsItem) => news.isBreaking);
+  const featuredNews = processedNewsData.slice(0, 3).map((news: NewsItem) => ({
     id: news.id,
     title: news.title,
     summary: news.summary,
@@ -156,7 +156,7 @@ const Index = () => {
     size: "large" as const
   }));
 
-  const latestNews = allNews.slice(3, 15).map((news: NewsItem, index: number) => ({
+  const latestNews = processedNewsData.slice(3, 15).map((news: NewsItem, index: number) => ({
     id: news.id,
     title: news.title,
     summary: news.summary,
