@@ -18,20 +18,20 @@ const Header = () => {
       return {
         topBar: `bg-${specialDay.colors.primary}/60 backdrop-blur-md text-white py-1 border-b border-${specialDay.colors.secondary}/20`,
         mainHeader: `container mx-auto px-6 py-6 bg-${specialDay.colors.primary}/25 backdrop-blur-md border-b border-${specialDay.colors.secondary}/30`,
-        title: `text-3xl font-bold font-kanit text-${specialDay.colors.accent}`
+        title: `text-3xl font-bold font-kanit text-white drop-shadow-lg shadow-orange-500`
       }
     }
     if (theme === "dark") {
       return {
         topBar: "bg-gray-800/60 backdrop-blur-md text-white py-1 border-b border-gray-700/20",
         mainHeader: "container mx-auto px-6 py-6 bg-gray-900/25 backdrop-blur-md border-b border-gray-800/30",
-        title: "text-3xl font-bold font-kanit text-blue-400"
+        title: "text-3xl font-bold font-kanit text-white drop-shadow-lg shadow-orange-500"
       }
     }
     return {
       topBar: "bg-orange-600/60 backdrop-blur-md text-white py-1 border-b border-orange-300/20",
       mainHeader: "container mx-auto px-6 py-6 bg-orange-500/25 backdrop-blur-md border-b border-orange-200/30",
-      title: "text-3xl font-bold font-kanit text-yellow-400"
+      title: "text-3xl font-bold font-kanit text-white drop-shadow-lg shadow-orange-500"
     }
   }
 
@@ -103,10 +103,10 @@ const Header = () => {
               loading="eager"
             />
             <div>
-              <h1 className={themeClasses.title}>
+              <h1 className={themeClasses.title} style={{ textShadow: '2px 2px 4px rgba(251, 146, 60, 0.8), -1px -1px 2px rgba(251, 146, 60, 0.6)' }}>
                 {specialDay ? specialDay.name || "อัพเดทข่าวอุดร" : "อัพเดทข่าวอุดร"}
               </h1>
-              <p className="text-xl text-black dark:text-white font-sarabun font-bold">
+              <p className="text-xl text-white font-sarabun font-bold drop-shadow-md" style={{ textShadow: '1px 1px 2px rgba(251, 146, 60, 0.6)' }}>
                 UD News Update
               </p>
             </div>
