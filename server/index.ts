@@ -16,6 +16,9 @@ import { rssService } from "./rss-service";
 
 const app = express();
 
+// Trust proxy for Replit environment (fixes rate limit error)
+app.set('trust proxy', 1);
+
 // CORS configuration for Replit domains
 app.use((req, res, next) => {
   const origin = req.headers.origin;
