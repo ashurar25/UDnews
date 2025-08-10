@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Facebook, Twitter, Youtube, Mail, Phone, MapPin, Rss, Key } from "lucide-react";
+import { Facebook, Twitter, Youtube, Mail, Phone, MapPin, Key } from "lucide-react";
 import SponsorBanner from "./SponsorBanner";
 import SponsorBannerBar from "./SponsorBannerBar";
 import { Separator } from "@/components/ui/separator";
@@ -16,7 +16,8 @@ const Footer = () => {
             <img 
               src="/logo.jpg" 
               alt="UD News Logo" 
-              className="h-16 w-16 rounded-full shadow-lg animate-pulse border-2 border-primary/20" 
+              className="h-16 w-16 rounded-full shadow-lg animate-pulse border-2 border-primary/20"
+              loading="lazy"
             />
             <span className="font-bold font-kanit text-3xl bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 bg-clip-text text-transparent animate-gradient">
               อัพเดทข่าวอุดร - UD News Update
@@ -132,9 +133,6 @@ const Footer = () => {
                 </Button>
                 <Button variant="ghost" size="sm" className="p-2 hover:bg-primary/10">
                   <Youtube className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="sm" className="p-2 hover:bg-primary/10">
-                  <Rss className="h-4 w-4" />
                 </Button>
               </div>
             </div>

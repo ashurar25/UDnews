@@ -78,6 +78,8 @@ const NewsCard = ({
             className={`w-full object-cover transition-transform duration-300 group-hover:scale-105 ${
               size === "large" ? "h-64" : "h-48"
             }`}
+            loading="lazy"
+            decoding="async"
           />
           {isBreaking && (
             <div className="absolute top-3 left-3">

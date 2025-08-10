@@ -67,7 +67,7 @@ const Header = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Top Bar */}
       <div className={themeClasses.topBar}>
         <div className="container mx-auto px-4 flex justify-between items-center text-xs">
@@ -100,6 +100,7 @@ const Header = () => {
               src="/logo.jpg" 
               alt="UD News Update Logo"
               className="h-16 w-16 object-contain rounded-lg shadow-lg hover:scale-105 hover:shadow-xl transition-all duration-300 cursor-pointer"
+              loading="eager"
             />
             <div>
               <h1 className={themeClasses.title}>
