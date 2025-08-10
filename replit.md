@@ -8,6 +8,13 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes (ล่าสุด)
 
+## Sponsor Banners Added to News Reading Pages (10 สิงหาคม 2568)
+- ✅ Added comprehensive sponsor banner system to news detail pages
+- ✅ Implemented strategic banner placements: top banner, mid-content banner, sidebar banners
+- ✅ Added mobile-responsive banner display with responsive hiding/showing
+- ✅ Enhanced revenue generation opportunities with 5 banner positions per news article
+- ✅ Maintained clean reading experience with well-spaced banner integration
+
 ## Database Backup System Added (10 สิงหาคม 2568)
 - ✅ Configured backup database connection to Neon PostgreSQL
 - ✅ Added backup functionality with automatic data synchronization

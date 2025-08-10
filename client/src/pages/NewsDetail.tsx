@@ -2,6 +2,8 @@ import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import SponsorBanner from "@/components/SponsorBanner";
+import SponsorBannerBar from "@/components/SponsorBannerBar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -152,6 +154,11 @@ const NewsDetail = () => {
       <Header />
       
       <main className="container mx-auto px-4 py-8">
+        {/* Top Banner */}
+        <div className="mb-6">
+          <SponsorBannerBar position="header" autoPlay={true} showNavigation={false} bannerCount={1} />
+        </div>
+
         {/* Back Button */}
         <div className="mb-6">
           <Button variant="ghost" onClick={() => {
@@ -240,11 +247,21 @@ const NewsDetail = () => {
                   dangerouslySetInnerHTML={{ __html: news.content.replace(/\n/g, '<br>') }}
                 />
               </div>
+
+              {/* Mid-Content Banner */}
+              <div className="my-8">
+                <SponsorBannerBar position="content" autoPlay={true} showNavigation={false} bannerCount={1} />
+              </div>
             </article>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Sidebar Banner */}
+            <div className="hidden lg:block">
+              <SponsorBannerBar position="sidebar" autoPlay={true} showNavigation={false} bannerCount={2} />
+            </div>
+
             {/* Related News */}
             <Card>
               <CardContent className="p-6">
@@ -321,7 +338,17 @@ const NewsDetail = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Bottom Sidebar Banner */}
+            <div className="hidden lg:block">
+              <SponsorBannerBar position="footer" autoPlay={true} showNavigation={false} bannerCount={1} />
+            </div>
           </div>
+        </div>
+
+        {/* Bottom Content Banner - Mobile Friendly */}
+        <div className="mt-8 lg:hidden">
+          <SponsorBannerBar position="footer" autoPlay={true} showNavigation={false} bannerCount={2} />
         </div>
       </main>
 
