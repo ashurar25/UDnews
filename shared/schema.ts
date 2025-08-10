@@ -215,3 +215,61 @@ export const insertCommentSchema = createInsertSchema(comments).pick({
 
 export type Comment = typeof comments.$inferSelect;
 export type InsertComment = typeof comments.$inferInsert;
+
+// Newsletter Subscribers Table
+export const newsletterSubscribers = pgTable("newsletter_subscribers", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  name: varchar("name", { length: 100 }),
+  isActive: boolean("is_active").default(true).notNull(),
+  subscriptionDate: timestamp("subscription_date").defaultNow().notNull(),
+  preferences: text("preferences").default('{"daily": true, "weekly": true}').notNull(),
+});
+
+export const insertNewsletterSubscriberSchema = createInsertSchema(newsletterSubscribers).pick({
+  email: true,
+  name: true,
+  preferences: true,
+});
+
+export type NewsletterSubscriber = typeof newsletterSubscribers.$inferSelect;
+export type InsertNewsletterSubscriber = typeof newsletterSubscribers.$inferInsert;
+
+// Push Notifications Table
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: serial("id").primaryKey(),
+  endpoint: text("endpoint").notNull(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  userId: integer("user_id"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions).pick({
+  endpoint: true,
+  p256dh: true,
+  auth: true,
+  userId: true,
+});
+
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type InsertPushSubscription = typeof pushSubscriptions.$inferInsert;
+
+// News Ratings Table
+export const newsRatings = pgTable("news_ratings", {
+  id: serial("id").primaryKey(),
+  newsId: integer("news_id").references(() => news.id).notNull(),
+  rating: varchar("rating", { length: 10 }).notNull(), // 'like' or 'dislike'
+  ipAddress: varchar("ip_address", { length: 45 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertNewsRatingSchema = createInsertSchema(newsRatings).pick({
+  newsId: true,
+  rating: true,
+  ipAddress: true,
+});
+
+export type NewsRating = typeof newsRatings.$inferSelect;
+export type InsertNewsRating = typeof newsRatings.$inferInsert;

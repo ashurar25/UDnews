@@ -1,5 +1,5 @@
-import { users, rssFeeds, newsArticles, sponsorBanners, rssProcessingHistory, siteSettings, contactMessages, newsViews, dailyStats, type InsertUser, type User, type InsertRssFeed, type RssFeed, type InsertNews, type NewsArticle, type InsertSponsorBanner, type SponsorBanner, type InsertRssHistory, type RssProcessingHistory, type InsertSiteSetting, type SiteSetting, type InsertContactMessage, type ContactMessage, type NewsView, type DailyStats } from "@shared/schema";
-import { eq, sql, desc } from "drizzle-orm";
+import { users, rssFeeds, newsArticles, sponsorBanners, rssProcessingHistory, siteSettings, contactMessages, newsViews, dailyStats, comments, newsletterSubscribers, pushSubscriptions, newsRatings, type InsertUser, type User, type InsertRssFeed, type RssFeed, type InsertNews, type NewsArticle, type InsertSponsorBanner, type SponsorBanner, type InsertRssHistory, type RssProcessingHistory, type InsertSiteSetting, type SiteSetting, type InsertContactMessage, type ContactMessage, type NewsView, type DailyStats, type Comment, type InsertComment, type NewsletterSubscriber, type InsertNewsletterSubscriber, type PushSubscription, type InsertPushSubscription, type NewsRating, type InsertNewsRating } from "@shared/schema";
+import { eq, sql, desc, and, or, ilike, gte, lte } from "drizzle-orm";
 import { db, backupDb } from "./db";
 
 // modify the interface with any CRUD methods
@@ -508,6 +508,160 @@ export class DatabaseStorage implements IStorage {
     // This would require application restart with different DATABASE_URL
     console.log('📝 Note: To switch to backup database, restart with DATABASE_URL pointing to Neon');
     return true;
+  }
+
+  // Comments System Implementation
+  async getCommentsByNewsId(newsId: number): Promise<Comment[]> {
+    try {
+      return await db.select().from(comments)
+        .where(eq(comments.newsId, newsId))
+        .orderBy(comments.createdAt);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      return [];
+    }
+  }
+
+  async createComment(insertComment: InsertComment): Promise<Comment> {
+    const [comment] = await db
+      .insert(comments)
+      .values(insertComment)
+      .returning();
+    return comment;
+  }
+
+  // Newsletter System Implementation
+  async createNewsletterSubscriber(insertSubscriber: InsertNewsletterSubscriber): Promise<NewsletterSubscriber> {
+    const [subscriber] = await db
+      .insert(newsletterSubscribers)
+      .values(insertSubscriber)
+      .returning();
+    return subscriber;
+  }
+
+  async getAllNewsletterSubscribers(): Promise<NewsletterSubscriber[]> {
+    return await db.select().from(newsletterSubscribers)
+      .where(eq(newsletterSubscribers.isActive, true))
+      .orderBy(newsletterSubscribers.subscriptionDate);
+  }
+
+  // Push Notifications Implementation
+  async createPushSubscription(insertSubscription: InsertPushSubscription): Promise<PushSubscription> {
+    const [subscription] = await db
+      .insert(pushSubscriptions)
+      .values(insertSubscription)
+      .returning();
+    return subscription;
+  }
+
+  async deactivatePushSubscription(endpoint: string): Promise<void> {
+    await db
+      .update(pushSubscriptions)
+      .set({ isActive: false })
+      .where(eq(pushSubscriptions.endpoint, endpoint));
+  }
+
+  // News Rating System Implementation
+  async getNewsRatings(newsId: number): Promise<{ likes: number; dislikes: number }> {
+    try {
+      const ratings = await db.select().from(newsRatings)
+        .where(eq(newsRatings.newsId, newsId));
+      
+      const likes = ratings.filter(r => r.rating === 'like').length;
+      const dislikes = ratings.filter(r => r.rating === 'dislike').length;
+      
+      return { likes, dislikes };
+    } catch (error) {
+      console.error('Error fetching ratings:', error);
+      return { likes: 0, dislikes: 0 };
+    }
+  }
+
+  async getUserRating(newsId: number, ipAddress: string): Promise<NewsRating | undefined> {
+    try {
+      const [rating] = await db.select().from(newsRatings)
+        .where(and(eq(newsRatings.newsId, newsId), eq(newsRatings.ipAddress, ipAddress)))
+        .limit(1);
+      return rating;
+    } catch (error) {
+      console.error('Error checking user rating:', error);
+      return undefined;
+    }
+  }
+
+  async createNewsRating(insertRating: InsertNewsRating): Promise<NewsRating> {
+    const [rating] = await db
+      .insert(newsRatings)
+      .values(insertRating)
+      .returning();
+    return rating;
+  }
+
+  // Advanced Search Implementation
+  async searchNews(params: {
+    query?: string;
+    category?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    sortBy?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<NewsArticle[]> {
+    try {
+      let query = db.select().from(newsArticles);
+      
+      const conditions = [];
+      
+      if (params.query) {
+        conditions.push(
+          or(
+            ilike(newsArticles.title, `%${params.query}%`),
+            ilike(newsArticles.content, `%${params.query}%`),
+            ilike(newsArticles.summary, `%${params.query}%`)
+          )
+        );
+      }
+      
+      if (params.category) {
+        conditions.push(eq(newsArticles.category, params.category));
+      }
+      
+      if (params.dateFrom) {
+        conditions.push(gte(newsArticles.createdAt, new Date(params.dateFrom)));
+      }
+      
+      if (params.dateTo) {
+        conditions.push(lte(newsArticles.createdAt, new Date(params.dateTo)));
+      }
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+      
+      // Sort by
+      if (params.sortBy === 'popularity') {
+        // Could join with view counts here if needed
+        query = query.orderBy(desc(newsArticles.createdAt));
+      } else {
+        query = query.orderBy(desc(newsArticles.createdAt));
+      }
+      
+      // Pagination
+      if (params.offset) {
+        query = query.offset(params.offset);
+      }
+      
+      if (params.limit) {
+        query = query.limit(params.limit);
+      } else {
+        query = query.limit(20); // Default limit
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error('Error searching news:', error);
+      return [];
+    }
   }
 }
 

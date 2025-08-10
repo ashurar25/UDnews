@@ -1,7 +1,17 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertRssFeedSchema, insertNewsSchema, insertSponsorBannerSchema, insertSiteSettingSchema, insertContactMessageSchema } from "@shared/schema";
+import { 
+  insertRssFeedSchema, 
+  insertNewsSchema, 
+  insertSponsorBannerSchema, 
+  insertSiteSettingSchema, 
+  insertContactMessageSchema,
+  insertCommentSchema,
+  insertNewsletterSubscriberSchema,
+  insertPushSubscriptionSchema,
+  insertNewsRatingSchema
+} from "@shared/schema";
 import { rssService } from "./rss-service";
 import { authMiddleware, generateToken } from "./middleware/auth";
 import rateLimit from "express-rate-limit";
@@ -696,6 +706,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timestamp: new Date().toISOString(),
         error: error.toString()
       });
+    }
+  });
+
+  // Comments API - New System 1
+  app.get("/api/comments/:newsId", async (req, res) => {
+    try {
+      const newsId = parseInt(req.params.newsId);
+      const comments = await storage.getCommentsByNewsId(newsId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      res.status(500).json({ message: "Failed to fetch comments" });
+    }
+  });
+
+  const commentLimiter = rateLimit({
+    windowMs: 5 * 60 * 1000,
+    max: 3,
+    message: { message: "คุณแสดงความคิดเห็นเร็วเกินไป กรุณารอ 5 นาที" },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
+  app.post("/api/comments", commentLimiter, async (req, res) => {
+    try {
+      const validatedData = insertCommentSchema.parse(req.body);
+      const comment = await storage.createComment(validatedData);
+      res.json(comment);
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      res.status(400).json({ message: "Failed to create comment" });
+    }
+  });
+
+  // Newsletter API - New System 2
+  app.post("/api/newsletter/subscribe", async (req, res) => {
+    try {
+      const validatedData = insertNewsletterSubscriberSchema.parse(req.body);
+      const subscriber = await storage.createNewsletterSubscriber(validatedData);
+      res.json(subscriber);
+    } catch (error) {
+      console.error("Error creating newsletter subscription:", error);
+      if (error.message && error.message.includes('unique')) {
+        res.status(400).json({ message: "อีเมลนี้ได้สมัครรับข่าวสารแล้ว" });
+      } else {
+        res.status(500).json({ message: "ไม่สามารถสมัครรับข่าวสารได้" });
+      }
+    }
+  });
+
+  // Push Notifications API - New System 3
+  app.post("/api/push/subscribe", async (req, res) => {
+    try {
+      const validatedData = insertPushSubscriptionSchema.parse(req.body);
+      const subscription = await storage.createPushSubscription(validatedData);
+      res.json(subscription);
+    } catch (error) {
+      console.error("Error creating push subscription:", error);
+      res.status(500).json({ message: "Failed to create subscription" });
+    }
+  });
+
+  // News Rating API - New System 4
+  app.get("/api/news/:id/ratings", async (req, res) => {
+    try {
+      const newsId = parseInt(req.params.id);
+      const ratings = await storage.getNewsRatings(newsId);
+      res.json(ratings);
+    } catch (error) {
+      console.error("Error fetching ratings:", error);
+      res.status(500).json({ message: "Failed to fetch ratings" });
+    }
+  });
+
+  const ratingLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 10,
+    message: { message: "คุณให้คะแนนเร็วเกินไป กรุณารอสักครู่" },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
+  app.post("/api/news/:id/rate", ratingLimiter, async (req, res) => {
+    try {
+      const newsId = parseInt(req.params.id);
+      const { rating } = req.body;
+      const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
+      
+      const existingRating = await storage.getUserRating(newsId, ipAddress);
+      if (existingRating) {
+        return res.status(400).json({ message: "คุณได้ให้คะแนนข่าวนี้แล้ว" });
+      }
+
+      const validatedData = insertNewsRatingSchema.parse({
+        newsId,
+        rating,
+        ipAddress
+      });
+      
+      const newRating = await storage.createNewsRating(validatedData);
+      res.json(newRating);
+    } catch (error) {
+      console.error("Error creating rating:", error);
+      res.status(500).json({ message: "Failed to create rating" });
+    }
+  });
+
+  // Advanced Search API - New System 5
+  app.get("/api/news/search", async (req, res) => {
+    try {
+      const { q, category, dateFrom, dateTo, sortBy, limit = 20, offset = 0 } = req.query;
+      
+      const searchParams = {
+        query: q as string,
+        category: category as string,
+        dateFrom: dateFrom as string,
+        dateTo: dateTo as string,
+        sortBy: (sortBy as string) || 'date',
+        limit: parseInt(limit as string),
+        offset: parseInt(offset as string)
+      };
+
+      const results = await storage.searchNews(searchParams);
+      res.json(results);
+    } catch (error) {
+      console.error("Error searching news:", error);
+      res.status(500).json({ message: "Failed to search news" });
     }
   });
 
