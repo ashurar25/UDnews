@@ -1,4 +1,4 @@
-import { users, rssFeeds, newsArticles, sponsorBanners, rssProcessingHistory, siteSettings, type InsertUser, type User, type InsertRssFeed, type RssFeed, type InsertNews, type NewsArticle, type InsertSponsorBanner, type SponsorBanner, type InsertRssHistory, type RssProcessingHistory, type InsertSiteSetting, type SiteSetting } from "@shared/schema";
+import { users, rssFeeds, newsArticles, sponsorBanners, rssProcessingHistory, siteSettings, contactMessages, type InsertUser, type User, type InsertRssFeed, type RssFeed, type InsertNews, type NewsArticle, type InsertSponsorBanner, type SponsorBanner, type InsertRssHistory, type RssProcessingHistory, type InsertSiteSetting, type SiteSetting, type InsertContactMessage, type ContactMessage } from "@shared/schema";
 import { eq, sql, desc } from "drizzle-orm";
 import { db } from "./db";
 
@@ -34,6 +34,7 @@ export interface IStorage {
     newsCount: number;
     rssFeedsCount: number;
     sponsorBannersCount: number;
+    contactMessagesCount: number;
     totalUsers: number;
     databaseProvider: string;
     databaseUrl: string;
@@ -43,6 +44,12 @@ export interface IStorage {
   insertSiteSetting(setting: InsertSiteSetting): Promise<SiteSetting>;
   updateSiteSetting(key: string, value: string): Promise<SiteSetting | null>;
   deleteSiteSetting(key: string): Promise<boolean>;
+  getAllContactMessages(): Promise<ContactMessage[]>;
+  getContactMessageById(id: number): Promise<ContactMessage | null>;
+  insertContactMessage(data: InsertContactMessage): Promise<ContactMessage>;
+  markContactMessageAsRead(id: number): Promise<ContactMessage | null>;
+  deleteContactMessage(id: number): Promise<boolean>;
+  getUnreadContactMessagesCount(): Promise<number>;
 }
 
 // MemStorage class removed - using only PostgreSQL database storage
@@ -199,25 +206,69 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(rssProcessingHistory).orderBy(rssProcessingHistory.processedAt);
   }
 
+  // Contact Messages CRUD operations
+  async getAllContactMessages(): Promise<ContactMessage[]> {
+    return await db.select().from(contactMessages).orderBy(desc(contactMessages.createdAt));
+  }
+
+  async getContactMessageById(id: number): Promise<ContactMessage | null> {
+    const result = await db.select().from(contactMessages).where(eq(contactMessages.id, id));
+    return result[0] || null;
+  }
+
+  async insertContactMessage(data: InsertContactMessage): Promise<ContactMessage> {
+    const result = await db.insert(contactMessages).values(data).returning();
+    return result[0];
+  }
+
+  async markContactMessageAsRead(id: number): Promise<ContactMessage | null> {
+    const result = await db
+      .update(contactMessages)
+      .set({ 
+        isRead: true,
+        updatedAt: new Date()
+      })
+      .where(eq(contactMessages.id, id))
+      .returning();
+    return result[0] || null;
+  }
+
+  async deleteContactMessage(id: number): Promise<boolean> {
+    const result = await db.delete(contactMessages).where(eq(contactMessages.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getUnreadContactMessagesCount(): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(contactMessages)
+      .where(eq(contactMessages.isRead, false));
+    return result[0]?.count || 0;
+  }
+
   // Get database statistics
   async getDatabaseStats(): Promise<{
     newsCount: number;
     rssFeedsCount: number;
     sponsorBannersCount: number;
+    contactMessagesCount: number;
     totalUsers: number;
     databaseProvider: string;
     databaseUrl: string;
   }> {
-    const [newsCount] = await db.select({ count: sql<number>`count(*)` }).from(newsArticles);
-    const [rssFeedsCount] = await db.select({ count: sql<number>`count(*)` }).from(rssFeeds);
-    const [sponsorBannersCount] = await db.select({ count: sql<number>`count(*)` }).from(sponsorBanners);
-    const [totalUsers] = await db.select({ count: sql<number>`count(*)` }).from(users);
+    const [newsCount, rssFeedsCount, sponsorBannersCount, contactMessagesCount] = await Promise.all([
+      db.select({ count: sql<number>`count(*)` }).from(newsArticles),
+      db.select({ count: sql<number>`count(*)` }).from(rssFeeds),
+      db.select({ count: sql<number>`count(*)` }).from(sponsorBanners),
+      db.select({ count: sql<number>`count(*)` }).from(contactMessages)
+    ]);
 
     return {
       newsCount: newsCount.count,
       rssFeedsCount: rssFeedsCount.count,
       sponsorBannersCount: sponsorBannersCount.count,
-      totalUsers: totalUsers.count,
+      contactMessagesCount: contactMessagesCount.count,
+      totalUsers: 0, // Placeholder since we don't have user management yet
       databaseProvider: "Render PostgreSQL",
       databaseUrl: "postgresql://udnews_user:qRNlOyrnlVbrRH16AQJ5itOkjluEebXk@dpg-d2a2dp2dbo4c73at42ug-a.singapore-postgres.render.com/udnewsdb_8d2c",
     };

@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertRssFeedSchema, insertNewsSchema, insertSponsorBannerSchema, insertSiteSettingSchema } from "@shared/schema";
+import { insertRssFeedSchema, insertNewsSchema, insertSponsorBannerSchema, insertSiteSettingSchema, insertContactMessageSchema } from "@shared/schema";
 import { rssService } from "./rss-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -421,6 +421,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ error: "Failed to delete setting" });
+    }
+  });
+
+  // Contact Messages routes
+  app.get("/api/contact-messages", async (req, res) => {
+    try {
+      const messages = await storage.getAllContactMessages();
+      res.json(messages);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch contact messages" });
+    }
+  });
+
+  app.get("/api/contact-messages/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const message = await storage.getContactMessageById(id);
+      if (!message) {
+        return res.status(404).json({ error: "Contact message not found" });
+      }
+      res.json(message);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch contact message" });
+    }
+  });
+
+  app.post("/api/contact-messages", async (req, res) => {
+    try {
+      const validatedData = insertContactMessageSchema.parse(req.body);
+      const message = await storage.insertContactMessage(validatedData);
+      res.status(201).json(message);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid contact message data" });
+    }
+  });
+
+  app.put("/api/contact-messages/:id/read", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const message = await storage.markContactMessageAsRead(id);
+      if (!message) {
+        return res.status(404).json({ error: "Contact message not found" });
+      }
+      res.json(message);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to mark message as read" });
+    }
+  });
+
+  app.delete("/api/contact-messages/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteContactMessage(id);
+      if (!success) {
+        return res.status(404).json({ error: "Contact message not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete contact message" });
+    }
+  });
+
+  app.get("/api/contact-messages/unread/count", async (req, res) => {
+    try {
+      const count = await storage.getUnreadContactMessagesCount();
+      res.json({ count });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get unread messages count" });
     }
   });
 

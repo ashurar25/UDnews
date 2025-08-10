@@ -6,8 +6,74 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Mail, Phone, MapPin, Clock } from "lucide-react";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const Contact = () => {
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    message: ""
+  });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+      toast({
+        title: "กรุณากรอกข้อมูลให้ครบถ้วน",
+        description: "ชื่อ อีเมล และข้อความเป็นข้อมูลที่จำเป็น",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/contact-messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "ส่งข้อความสำเร็จ!",
+          description: "ขอบคุณสำหรับข้อความของคุณ เราจะตอบกลับโดยเร็วที่สุด",
+        });
+        
+        // Reset form
+        setFormData({
+          name: "",
+          email: "",
+          message: ""
+        });
+      } else {
+        throw new Error("Failed to send message");
+      }
+    } catch (error) {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถส่งข้อความได้ กรุณาลองใหม่อีกครั้ง",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -23,20 +89,51 @@ const Contact = () => {
             <CardHeader>
               <CardTitle className="font-kanit">ส่งข้อความถึงเรา</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="font-sarabun text-sm">ชื่อ</label>
-                <Input placeholder="ใส่ชื่อของคุณ" className="font-sarabun" />
-              </div>
-              <div>
-                <label className="font-sarabun text-sm">อีเมล</label>
-                <Input type="email" placeholder="your@email.com" className="font-sarabun" />
-              </div>
-              <div>
-                <label className="font-sarabun text-sm">ข้อความ</label>
-                <Textarea placeholder="ข้อความของคุณ..." className="font-sarabun" rows={5} />
-              </div>
-              <Button className="w-full font-sarabun">ส่งข้อความ</Button>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="font-sarabun text-sm">ชื่อ *</label>
+                  <Input 
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    placeholder="ใส่ชื่อของคุณ" 
+                    className="font-sarabun"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="font-sarabun text-sm">อีเมล *</label>
+                  <Input 
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="your@email.com" 
+                    className="font-sarabun"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="font-sarabun text-sm">ข้อความ *</label>
+                  <Textarea 
+                    name="message"
+                    value={formData.message}
+                    onChange={handleInputChange}
+                    placeholder="ข้อความของคุณ..." 
+                    className="font-sarabun" 
+                    rows={5}
+                    required
+                  />
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full font-sarabun"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "กำลังส่ง..." : "ส่งข้อความ"}
+                </Button>
+              </form>
             </CardContent>
           </Card>
 

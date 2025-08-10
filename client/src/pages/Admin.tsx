@@ -19,13 +19,15 @@ import {
   Database,
   Sun,
   Moon,
-  Clock
+  Clock,
+  Mail
 } from "lucide-react"
 import { Link } from "wouter"
 import RSSManager from "@/components/RSSManager"
 import NewsManager from "@/components/NewsManager"
 import SponsorManager from "@/components/SponsorManager"
 import ThemeSettings from "@/components/ThemeSettings"
+import ContactMessagesManager from "@/components/ContactMessagesManager"
 import { useTheme } from "next-themes"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
@@ -136,10 +138,10 @@ const Admin = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-2xl font-bold">95%</p>
-                    <p className="text-sm opacity-90">อัพไทม์</p>
+                    <p className="text-2xl font-bold">{(databaseStats as any)?.contactMessagesCount || 0}</p>
+                    <p className="text-sm opacity-90">ข้อความติดต่อ</p>
                   </div>
-                  <Monitor className="h-8 w-8 opacity-80" />
+                  <Mail className="h-8 w-8 opacity-80" />
                 </div>
               </CardContent>
             </Card>
@@ -225,6 +227,22 @@ const Admin = () => {
                   </CardHeader>
                   <CardContent className="p-6">
                     <SponsorManager />
+                  </CardContent>
+                </Card>
+
+                {/* Contact Messages Management */}
+                <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
+                  <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-xl">
+                    <CardTitle className="flex items-center gap-2 font-kanit text-blue-700">
+                      <Mail className="h-5 w-5" />
+                      จัดการข้อความติดต่อ
+                    </CardTitle>
+                    <CardDescription className="font-sarabun">
+                      ดูและจัดการข้อความจากผู้เยี่ยมชม
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <ContactMessagesManager />
                   </CardContent>
                 </Card>
               </div>

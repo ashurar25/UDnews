@@ -134,5 +134,24 @@ export type InsertSponsorBanner = z.infer<typeof insertSponsorBannerSchema>;
 export type SponsorBanner = typeof sponsorBanners.$inferSelect;
 export type InsertRssHistory = z.infer<typeof insertRssHistorySchema>;
 export type RssProcessingHistory = typeof rssProcessingHistory.$inferSelect;
+// Contact Messages Table
+export const contactMessages = pgTable("contact_messages", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  message: text("message").notNull(),
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertContactMessageSchema = createInsertSchema(contactMessages).pick({
+  name: true,
+  email: true,
+  message: true,
+});
+
 export type InsertSiteSetting = z.infer<typeof insertSiteSettingSchema>;
 export type SiteSetting = typeof siteSettings.$inferSelect;
+export type InsertContactMessage = z.infer<typeof insertContactMessageSchema>;
+export type ContactMessage = typeof contactMessages.$inferSelect;
