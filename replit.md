@@ -8,6 +8,14 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes (ล่าสุด)
 
+## Migration to Replit Complete + News Content Reduced (10 สิงหาคม 2568)
+- ✅ Successfully migrated project from Replit Agent to Replit environment
+- ✅ Fixed build process: client built successfully and deployed to server/public
+- ✅ Application running cleanly on port 5000 without errors
+- ✅ Reduced homepage news display from 21 articles to 5 articles total (2 featured + 3 latest)
+- ✅ Maintained proper security practices with client/server separation
+- ✅ All checklist items completed in migration progress tracker
+
 ## UI Improvements and RSS System Enhanced (10 สิงหาคม 2568)
 - ✅ Removed unwanted header sponsor banner from main page as requested by user
 - ✅ Fixed build and deployment process with automated build-and-deploy.sh script

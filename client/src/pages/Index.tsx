@@ -112,10 +112,10 @@ const Index = () => {
     return `${diffInDays} วันที่แล้ว`;
   };
 
-  // Process news data
+  // Process news data - Limited to 5 articles total
   const allNews = newsData || [];
   const breakingNews = allNews.filter((news: NewsItem) => news.isBreaking).map((news: NewsItem) => news.title);
-  const featuredNews = allNews.slice(0, 3).map((news: NewsItem) => ({
+  const featuredNews = allNews.slice(0, 2).map((news: NewsItem) => ({
     id: news.id,
     title: news.title,
     summary: news.summary,
@@ -127,7 +127,7 @@ const Index = () => {
     size: "large" as const
   }));
   
-  const latestNews = allNews.slice(3, 21).map((news: NewsItem, index: number) => ({
+  const latestNews = allNews.slice(2, 5).map((news: NewsItem, index: number) => ({
     id: news.id,
     title: news.title,
     summary: news.summary,
