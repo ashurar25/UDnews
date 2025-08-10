@@ -28,7 +28,7 @@ const NewsDetail = () => {
 
   // Scroll to top when page loads
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }, [id]);
 
   // Fetch news detail
@@ -128,7 +128,7 @@ const NewsDetail = () => {
         <div className="container mx-auto px-4 py-8 text-center">
           <h1 className="text-2xl font-bold mb-4">ไม่พบข่าวที่ต้องการ</h1>
           <Button onClick={() => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo({ top: 0, behavior: 'instant' });
             setLocation('/');
           }}>
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -148,7 +148,7 @@ const NewsDetail = () => {
         {/* Back Button */}
         <div className="mb-6">
           <Button variant="ghost" onClick={() => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo({ top: 0, behavior: 'instant' });
             setLocation('/');
           }} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
@@ -248,7 +248,7 @@ const NewsDetail = () => {
                       key={item.id}
                       className="cursor-pointer group"
                       onClick={() => {
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        window.scrollTo({ top: 0, behavior: 'instant' });
                         setLocation(`/news/${item.id}`);
                       }}
                     >

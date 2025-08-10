@@ -61,7 +61,10 @@ const NewsCard = ({
   const handleClick = () => {
     if (id) {
       // Scroll to top immediately when clicking news
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      setLocation(`/news/${id}`);
+    }
+  };avior: 'smooth' });
       setLocation(`/news/${id}`);
     }
   };
