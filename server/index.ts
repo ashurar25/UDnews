@@ -2,11 +2,13 @@
 if (process.env.NODE_ENV === 'development') {
   // Set environment variables for Replit compatibility
   process.env.DANGEROUSLY_DISABLE_HOST_CHECK = 'true';
-  process.env.WDS_SOCKET_HOST = '0.0.0.0';
+  process.env.WDS_SOCKET_HOST = process.env.REPL_SLUG ? `${process.env.REPL_SLUG}--${process.env.REPL_OWNER}.replit.dev` : '0.0.0.0';
   process.env.WDS_SOCKET_PORT = '443';
   process.env.CHOKIDAR_USEPOLLING = 'true';
+  process.env.FAST_REFRESH = 'false';
   
   console.log('✓ Replit development environment configured');
+  console.log(`HMR Host: ${process.env.WDS_SOCKET_HOST}`);
 }
 
 import express, { type Request, Response, NextFunction } from "express";

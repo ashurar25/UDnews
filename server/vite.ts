@@ -21,12 +21,21 @@ export function log(message: string, source = "express") {
 }
 
 export async function setupVite(app: Express, server: Server) {
+  const isReplit = process.env.REPL_ID !== undefined;
+  
   const serverOptions = {
     middlewareMode: true,
-    hmr: { server },
-    host: true,
-    port: 8080
+    hmr: isReplit ? {
+      server,
+      host: process.env.REPL_SLUG ? `${process.env.REPL_SLUG}--${process.env.REPL_OWNER}.replit.dev` : '0.0.0.0',
+      port: 443,
+      clientPort: 443
+    } : { server },
+    host: '0.0.0.0',
+    port: 8080,
+    cors: true
   };
+</old_str>
 
   const vite = await createViteServer({
     ...viteConfig,
