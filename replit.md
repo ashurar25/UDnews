@@ -8,6 +8,13 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes (ล่าสุด)
 
+## Donation Support System Added (10 สิงหาคม 2568)
+- ✅ Added prominent donation button in website header with heart icon and animation
+- ✅ Created comprehensive donation page (/donate) with QR code placeholder for future bank account integration  
+- ✅ Implemented donation support tiers (100, 500, 1000+ THB) with clear explanations
+- ✅ Added responsive donation buttons in both top bar and main header sections
+- ✅ Enhanced website monetization with donation system alongside banner advertising
+
 ## Sponsor Banners Added to News Reading Pages (10 สิงหาคม 2568)
 - ✅ Added comprehensive sponsor banner system to news detail pages
 - ✅ Implemented strategic banner placements: top banner, mid-content banner, sidebar banners

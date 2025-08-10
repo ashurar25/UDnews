@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, Search, Rss, Clock } from "lucide-react";
+import { Menu, Search, Rss, Clock, Heart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Link, useLocation } from "wouter";
 import { useTheme } from "next-themes";
@@ -88,6 +88,20 @@ const Header = () => {
               <span className="font-sarabun">✉️ kenginol.ar@gmail.com</span>
             </div>
           </div>
+          
+          {/* Donation Button */}
+          <div className="flex items-center gap-2">
+            <Link to="/donate">
+              <Button 
+                size="sm" 
+                className="bg-red-500 hover:bg-red-600 text-white border-0 font-sarabun text-xs px-3 py-1 h-6 gap-1 animate-pulse hover:animate-none transition-all duration-300 shadow-md hover:shadow-lg"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              >
+                <Heart className="h-3 w-3 fill-current" />
+                สนับสนุน
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -112,8 +126,8 @@ const Header = () => {
             </div>
           </Link>
 
-          {/* Search Bar - Desktop */}
-          <div className="hidden md:flex items-center gap-6">
+          {/* Right Side - Search & Donate */}
+          <div className="hidden md:flex items-center gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input 
@@ -121,6 +135,16 @@ const Header = () => {
                 className="pl-10 w-64 font-sarabun"
               />
             </div>
+            <Link to="/donate">
+              <Button 
+                size="sm" 
+                className="bg-red-500 hover:bg-red-600 text-white font-sarabun gap-2 animate-pulse hover:animate-none transition-all duration-300 shadow-md hover:shadow-lg"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              >
+                <Heart className="h-4 w-4 fill-current" />
+                สนับสนุนข่าวอุดร
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}

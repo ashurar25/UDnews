@@ -16,6 +16,7 @@ import Admin from "./pages/Admin";
 import NewsDetail from "./pages/NewsDetail";
 import AllNews from "./pages/AllNews";
 import CategoryNews from "./pages/CategoryNews";
+import Donate from "./pages/Donate";
 import NotFound from "./pages/NotFound";
 
 const App = () => (
@@ -37,6 +38,7 @@ const App = () => (
           <Route path="/news" component={AllNews} />
           <Route path="/news/:id" component={NewsDetail} />
           <Route path="/category/:category" component={CategoryNews} />
+          <Route path="/donate" component={Donate} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route component={NotFound} />
         </Switch>
