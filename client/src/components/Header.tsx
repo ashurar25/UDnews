@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, Search, Rss, Clock, Heart } from "lucide-react";
+import { Menu, Search, Rss, Clock, Heart, Key } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Link, useLocation } from "wouter";
 import { useTheme } from "next-themes";
@@ -8,7 +8,7 @@ import { getCurrentThaiSpecialDay } from "@/lib/thai-special-days";
 import { ThemeToggle } from "./ThemeToggle";
 import WeatherWidget from "./WeatherWidget";
 import SearchBar from "./SearchBar";
-import { DisasterAlertWidget } from "./DisasterAlertWidget";
+import DisasterAlertWidget from "./DisasterAlertWidget";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

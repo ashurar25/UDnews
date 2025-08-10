@@ -18,7 +18,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import Link from "next/link";
+import { Link } from "wouter";
 
 interface DisasterAlert {
   id: string;
@@ -57,7 +57,7 @@ const DisasterAlertWidget = ({ compact = false }: DisasterAlertWidgetProps) => {
   );
 
   const getIcon = (type: string) => {
-    const icons = {
+    const icons: Record<string, any> = {
       earthquake: Mountain,
       flood: Waves,
       storm: CloudRain,
@@ -71,7 +71,7 @@ const DisasterAlertWidget = ({ compact = false }: DisasterAlertWidgetProps) => {
   };
 
   const getSeverityColor = (severity: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       low: 'bg-blue-500',
       medium: 'bg-yellow-500', 
       high: 'bg-orange-500',
@@ -81,7 +81,7 @@ const DisasterAlertWidget = ({ compact = false }: DisasterAlertWidgetProps) => {
   };
 
   const getSeverityText = (severity: string) => {
-    const texts = {
+    const texts: Record<string, string> = {
       low: 'ต่ำ',
       medium: 'ปานกลาง',
       high: 'สูง',
@@ -91,7 +91,7 @@ const DisasterAlertWidget = ({ compact = false }: DisasterAlertWidgetProps) => {
   };
 
   const getDisasterTypeName = (type: string) => {
-    const types = {
+    const types: Record<string, string> = {
       earthquake: 'แผ่นดินไหว',
       flood: 'น้ำท่วม',
       storm: 'พายุฝนฟ้าคะนอง',
@@ -127,8 +127,8 @@ const DisasterAlertWidget = ({ compact = false }: DisasterAlertWidgetProps) => {
 
   // Compact mode for header
   if (compact) {
-    const criticalAlerts = activeAlerts.filter(alert => alert.severity === 'critical');
-    const highAlerts = activeAlerts.filter(alert => alert.severity === 'high');
+    const criticalAlerts = activeAlerts.filter((alert: DisasterAlert) => alert.severity === 'critical');
+    const highAlerts = activeAlerts.filter((alert: DisasterAlert) => alert.severity === 'high');
     const urgentAlerts = [...criticalAlerts, ...highAlerts];
     
     if (urgentAlerts.length === 0) return null;
@@ -143,7 +143,7 @@ const DisasterAlertWidget = ({ compact = false }: DisasterAlertWidgetProps) => {
             </span>
           )}
         </div>
-        <Link href="/disaster-alert/latest" className="text-sm text-red-600 hover:underline">
+        <Link to="/disaster-alert/latest" className="text-sm text-red-600 hover:underline">
           ภัยพิบัติ
         </Link>
       </div>
