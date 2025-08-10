@@ -147,15 +147,15 @@ const SponsorBannerBar = ({
 
   return (
     <div className={`sponsor-banner-bar ${className}`}>
-      <div className={`relative overflow-hidden p-4 ${getBarStyles()}`}>
+      <div className="relative overflow-hidden p-4">
         {/* Header without contact button */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-3">
-            <Badge variant="secondary" className="font-sarabun text-xs bg-primary/20 text-primary">
+            <Badge variant="secondary" className="font-sarabun text-xs bg-yellow-600/80 text-white">
               สปอนเซอร์
             </Badge>
             {banners.length > 1 && (
-              <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+              <div className="flex items-center space-x-1 text-xs text-gray-600">
                 <span className="font-sarabun">{currentIndex + 1}</span>
                 <span>/</span>
                 <span className="font-sarabun">{banners.length}</span>
@@ -192,48 +192,33 @@ const SponsorBannerBar = ({
           >
             {banners.map((banner, index) => (
               <div key={banner.id} className="w-full flex-shrink-0">
-                <Card
-                  className={`relative overflow-hidden cursor-pointer group hover:shadow-xl transition-all duration-300 ${getBannerSize()} mx-1`}
+                <div
+                  className={`relative overflow-hidden cursor-pointer group hover:shadow-xl transition-all duration-300 ${getBannerSize()} mx-1 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-lg border border-yellow-300 flex flex-col items-center justify-center`}
                   onClick={() => handleBannerClick(banner)}
                 >
                   <div className="absolute top-2 left-2 z-10">
-                    <Badge variant="secondary" className="text-xs font-sarabun bg-black/30 text-white backdrop-blur-sm">
+                    <Badge variant="secondary" className="text-xs font-sarabun bg-gray-800/70 text-white">
                       สปอนเซอร์
                     </Badge>
                   </div>
                   
-                  <div className="absolute top-2 right-2 z-10 flex items-center gap-1 text-white/90 text-xs bg-black/20 backdrop-blur-sm rounded px-2 py-1">
+                  <div className="absolute top-2 right-2 z-10 flex items-center gap-1 text-gray-800 text-xs bg-white/80 rounded px-2 py-1">
                     <Eye className="h-3 w-3" />
                     <span className="font-sarabun">{banner.clickCount}</span>
                   </div>
 
-                  <img
-                    src={banner.imageUrl}
-                    alt={banner.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDQwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMDAgMTAwTDE2MCA4MEwyMDAgNjBMMjQwIDgwTDIwMCAxMDBaIiBmaWxsPSIjOUI5QkE0Ii8+PHRleHQgeD0iMjAwIiB5PSIxMzAiIGZpbGw9IiM5QjlCQTQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCII+nBopaHnrrrguYfguKPguZzguKjguJrguK3guKrgu4zguYDguILguK3guLI8L3RleHQ+PC9zdmc+';
-                    }}
-                  />
-
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  
-                  <div className="absolute bottom-2 left-2 right-2 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                    <div className="flex items-center justify-between text-white">
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-kanit font-semibold truncate mb-1">
-                          {banner.title}
-                        </div>
-                        {banner.linkUrl && (
-                          <div className="text-xs font-sarabun text-white/80 truncate">
-                            {new URL(banner.linkUrl).hostname}
-                          </div>
-                        )}
+                  <div className="text-center p-4">
+                    <div className="text-gray-800 font-sarabun text-base font-medium mb-3">
+                      {banner.title}
+                    </div>
+                    <div className="bg-white px-4 py-2 rounded-full shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex items-center gap-2 text-gray-700 text-sm font-sarabun">
+                        <Phone className="h-4 w-4" />
+                        <span>ติดต่อสปอนเซอร์</span>
                       </div>
-                      <ExternalLink className="h-4 w-4 ml-2 flex-shrink-0" />
                     </div>
                   </div>
-                </Card>
+                </div>
               </div>
             ))}
           </div>
@@ -248,8 +233,8 @@ const SponsorBannerBar = ({
                 onClick={() => setCurrentIndex(index)}
                 className={`w-2 h-2 rounded-full transition-all duration-300 ${
                   index === currentIndex
-                    ? 'bg-primary w-4'
-                    : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                    ? 'bg-yellow-600 w-4'
+                    : 'bg-gray-400/30 hover:bg-gray-400/50'
                 }`}
               />
             ))}
