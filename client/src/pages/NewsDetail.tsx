@@ -10,6 +10,55 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Clock, Eye, Share2, ExternalLink } from "lucide-react";
 import { useState, useEffect } from "react";
 
+// Assuming MetaTags component exists and is imported
+// import MetaTags from '@/components/MetaTags';
+
+// Placeholder for MetaTags component if it's not provided or needs definition
+const MetaTags = ({ title, description, image, url, type }: any) => {
+  useEffect(() => {
+    document.title = title;
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', description);
+    } else {
+      const newMeta = document.createElement('meta');
+      newMeta.name = 'description';
+      newMeta.content = description;
+      document.head.appendChild(newMeta);
+    }
+
+    // Add Open Graph meta tags
+    const addOrUpdateMeta = (property: string, content: string) => {
+      let element = document.querySelector(`meta[property="${property}"]`);
+      if (element) {
+        element.setAttribute('content', content);
+      } else {
+        element = document.createElement('meta');
+        element.setAttribute('property', property);
+        element.setAttribute('content', content);
+        document.head.appendChild(element);
+      }
+    };
+
+    addOrUpdateMeta('og:title', title);
+    addOrUpdateMeta('og:description', description);
+    addOrUpdateMeta('og:image', image || '');
+    addOrUpdateMeta('og:url', url);
+    addOrUpdateMeta('og:type', type);
+    addOrUpdateMeta('og:site_name', 'Your News Site'); // Replace with your site name
+
+    // Add Twitter card meta tags
+    addOrUpdateMeta('twitter:card', 'summary_large_image');
+    addOrUpdateMeta('twitter:title', title);
+    addOrUpdateMeta('twitter:description', description);
+    addOrUpdateMeta('twitter:image', image || '');
+
+  }, [title, description, image, url, type]);
+
+  return null; // This component doesn't render any DOM elements
+};
+
+
 interface NewsItem {
   id: number;
   title: string;
@@ -21,12 +70,13 @@ interface NewsItem {
   isBreaking: boolean;
   createdAt: string;
   updatedAt: string;
+  description?: string; // Added for potential meta description
 }
 
 const NewsDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
-  const [viewCount, setViewCount] = useState(Math.floor(Math.random() * 5000 + 1000));
+  const [viewCount, setViewCount] = useState(0); // Initialize viewCount to 0
 
   // Scroll to top when page loads or ID changes
   useEffect(() => {
@@ -42,7 +92,12 @@ const NewsDetail = () => {
     queryFn: async () => {
       const response = await fetch(`/api/news/${id}`);
       if (!response.ok) throw new Error('Failed to fetch news');
-      return response.json();
+      const data = await response.json();
+      // Ensure description is available for meta tags, fallback to content
+      if (!data.description && data.content) {
+        data.description = data.content.substring(0, 160) + '...';
+      }
+      return data;
     },
     enabled: !!id,
     staleTime: 10 * 60 * 1000, // 10 minutes
@@ -51,7 +106,7 @@ const NewsDetail = () => {
 
   // Fetch related news - limited to 3 items for better performance
   const { data: relatedNews } = useQuery({
-    queryKey: ['/api/news'],
+    queryKey: ['/api/news', news?.category], // Include category in query key
     queryFn: async () => {
       const response = await fetch('/api/news');
       if (!response.ok) throw new Error('Failed to fetch news');
@@ -61,20 +116,40 @@ const NewsDetail = () => {
         .sort((a: NewsItem, b: NewsItem) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .slice(0, 3);
     },
-    enabled: !!news,
+    enabled: !!news, // Only fetch related news if `news` data is available
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
+
+  // Update view count and record view analytics
+  useEffect(() => {
+    if (news) {
+      setViewCount(prevCount => prevCount + 1); // Increment view count locally
+
+      // Record view analytics
+      fetch(`/api/analytics/view/${news.id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }).catch(error => {
+        console.error('Failed to record view:', error);
+      });
+    }
+  }, [news]); // Depend on `news` object to trigger fetch
 
   const getTimeAgo = (dateString: string) => {
     const now = new Date();
     const created = new Date(dateString);
-    const diffInHours = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) return 'เมื่อสักครู่';
+    const diffInSeconds = Math.floor((now.getTime() - created.getTime()) / 1000);
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    if (diffInSeconds < 60) return 'เมื่อสักครู่';
+    if (diffInMinutes === 1) return '1 นาทีที่แล้ว';
+    if (diffInMinutes < 60) return `${diffInMinutes} นาทีที่แล้ว`;
     if (diffInHours === 1) return '1 ชั่วโมงที่แล้ว';
     if (diffInHours < 24) return `${diffInHours} ชั่วโมงที่แล้ว`;
-    
-    const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays === 1) return '1 วันที่แล้ว';
     return `${diffInDays} วันที่แล้ว`;
   };
@@ -102,11 +177,24 @@ const NewsDetail = () => {
         });
       } catch (error) {
         console.log('Error sharing:', error);
+        // Fallback to copy to clipboard if sharing fails or is not supported
+        try {
+          await navigator.clipboard.writeText(window.location.href);
+          alert('ลิงก์ถูกคัดลอกแล้ว');
+        } catch (clipboardError) {
+          console.error('Failed to copy link:', clipboardError);
+          alert('ไม่สามารถคัดลอกลิงก์ได้');
+        }
       }
     } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
-      alert('ลิงก์ถูกคัดลอกแล้ว');
+      // Fallback: copy to clipboard if navigator.share is not available
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        alert('ลิงก์ถูกคัดลอกแล้ว');
+      } catch (clipboardError) {
+        console.error('Failed to copy link:', clipboardError);
+        alert('ไม่สามารถคัดลอกลิงก์ได้');
+      }
     }
   };
 
@@ -151,8 +239,17 @@ const NewsDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {news && (
+        <MetaTags
+          title={news.title}
+          description={news.description || news.content?.substring(0, 160) + '...' || ''}
+          image={news.imageUrl}
+          url={`/news/${news.id}`}
+          type="article"
+        />
+      )}
       <Header />
-      
+
       <main className="container mx-auto px-4 py-8">
         {/* Top Banner */}
         <div className="mb-6">
@@ -186,11 +283,11 @@ const NewsDetail = () => {
                     </Badge>
                   )}
                 </div>
-                
+
                 <h1 className="text-3xl md:text-4xl font-bold font-kanit leading-tight">
                   {news.title}
                 </h1>
-                
+
                 <div className="flex items-center gap-4 text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Clock className="h-4 w-4" />
@@ -221,8 +318,8 @@ const NewsDetail = () => {
               {/* Featured Image */}
               {news.imageUrl && (
                 <div className="relative overflow-hidden rounded-lg">
-                  <img 
-                    src={news.imageUrl} 
+                  <img
+                    src={news.imageUrl}
                     alt={news.title}
                     className="w-full h-auto object-cover"
                     onError={(e) => {
@@ -242,7 +339,7 @@ const NewsDetail = () => {
 
               {/* Article Content */}
               <div className="prose prose-lg max-w-none">
-                <div 
+                <div
                   className="font-sarabun text-lg leading-relaxed whitespace-pre-line"
                   dangerouslySetInnerHTML={{ __html: news.content.replace(/\n/g, '<br>') }}
                 />
@@ -268,7 +365,7 @@ const NewsDetail = () => {
                 <h3 className="text-xl font-bold font-kanit mb-4">ข่าวที่เกี่ยวข้อง (3 ข่าว)</h3>
                 <div className="space-y-4">
                   {relatedNews?.slice(0, 3).map((item: NewsItem) => (
-                    <div 
+                    <div
                       key={item.id}
                       className="cursor-pointer group"
                       onClick={() => {
@@ -279,8 +376,8 @@ const NewsDetail = () => {
                       <div className="flex gap-3">
                         {item.imageUrl && (
                           <div className="flex-shrink-0">
-                            <img 
-                              src={item.imageUrl} 
+                            <img
+                              src={item.imageUrl}
                               alt={item.title}
                               className="w-16 h-16 object-cover rounded group-hover:scale-105 transition-transform"
                               onError={(e) => {

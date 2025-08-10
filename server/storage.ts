@@ -1,4 +1,4 @@
-import { users, rssFeeds, newsArticles, sponsorBanners, rssProcessingHistory, siteSettings, contactMessages, type InsertUser, type User, type InsertRssFeed, type RssFeed, type InsertNews, type NewsArticle, type InsertSponsorBanner, type SponsorBanner, type InsertRssHistory, type RssProcessingHistory, type InsertSiteSetting, type SiteSetting, type InsertContactMessage, type ContactMessage } from "@shared/schema";
+import { users, rssFeeds, newsArticles, sponsorBanners, rssProcessingHistory, siteSettings, contactMessages, newsViews, dailyStats, type InsertUser, type User, type InsertRssFeed, type RssFeed, type InsertNews, type NewsArticle, type InsertSponsorBanner, type SponsorBanner, type InsertRssHistory, type RssProcessingHistory, type InsertSiteSetting, type SiteSetting, type InsertContactMessage, type ContactMessage, type NewsView, type DailyStats } from "@shared/schema";
 import { eq, sql, desc } from "drizzle-orm";
 import { db, backupDb } from "./db";
 
@@ -50,6 +50,17 @@ export interface IStorage {
   markContactMessageAsRead(id: number): Promise<ContactMessage | null>;
   deleteContactMessage(id: number): Promise<boolean>;
   getUnreadContactMessagesCount(): Promise<number>;
+  recordNewsView(newsId: number, ipAddress?: string, userAgent?: string, referrer?: string): Promise<NewsView>;
+  getNewsViewCount(newsId: number): Promise<number>;
+  getPopularNews(limit?: number): Promise<(typeof newsArticles.$inferSelect & { viewCount: number })[]>;
+  getDailyStats(date: string): Promise<DailyStats | null>;
+  updateDailyStats(date: string, totalViews: number, uniqueVisitors: number, popularNewsId?: number): Promise<DailyStats>;
+  getAnalyticsSummary(): Promise<{
+    totalViews: number;
+    totalNews: number;
+    todayViews: number;
+    popularNews: any[];
+  }>;
   backupToSecondaryDatabase(): Promise<{ success: boolean; message: string; }>;
   switchToPrimaryDatabase(): Promise<boolean>;
   switchToBackupDatabase(): Promise<boolean>;
@@ -227,7 +238,7 @@ export class DatabaseStorage implements IStorage {
   async markContactMessageAsRead(id: number): Promise<ContactMessage | null> {
     const result = await db
       .update(contactMessages)
-      .set({ 
+      .set({
         isRead: true,
         updatedAt: new Date()
       })
@@ -242,12 +253,129 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUnreadContactMessagesCount(): Promise<number> {
-    const result = await db
+    const result = await this.db
       .select({ count: sql<number>`count(*)` })
       .from(contactMessages)
       .where(eq(contactMessages.isRead, false));
+
     return result[0]?.count || 0;
   }
+
+  // Analytics methods
+  async recordNewsView(newsId: number, ipAddress?: string, userAgent?: string, referrer?: string): Promise<NewsView> {
+    const [view] = await this.db
+      .insert(newsViews)
+      .values({
+        newsId,
+        ipAddress,
+        userAgent,
+        referrer
+      })
+      .returning();
+    return view;
+  }
+
+  async getNewsViewCount(newsId: number): Promise<number> {
+    const result = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(newsViews)
+      .where(eq(newsViews.newsId, newsId));
+
+    return result[0]?.count || 0;
+  }
+
+  async getPopularNews(limit: number = 10): Promise<(typeof newsArticles.$inferSelect & { viewCount: number })[]> {
+    const result = await this.db
+      .select({
+        id: newsArticles.id,
+        title: newsArticles.title,
+        description: newsArticles.description,
+        content: newsArticles.content,
+        imageUrl: newsArticles.imageUrl,
+        sourceUrl: newsArticles.sourceUrl,
+        category: newsArticles.category,
+        publishedAt: newsArticles.publishedAt,
+        isBreaking: newsArticles.isBreaking,
+        createdAt: newsArticles.createdAt,
+        viewCount: sql<number>`count(${newsViews.id})`
+      })
+      .from(newsArticles)
+      .leftJoin(newsViews, eq(newsArticles.id, newsViews.newsId))
+      .groupBy(newsArticles.id)
+      .orderBy(sql`count(${newsViews.id}) desc`)
+      .limit(limit);
+
+    return result;
+  }
+
+  async getDailyStats(date: string): Promise<DailyStats | null> {
+    const [stats] = await this.db
+      .select()
+      .from(dailyStats)
+      .where(eq(dailyStats.date, date));
+
+    return stats || null;
+  }
+
+  async updateDailyStats(date: string, totalViews: number, uniqueVisitors: number, popularNewsId?: number): Promise<DailyStats> {
+    const existing = await this.getDailyStats(date);
+
+    if (existing) {
+      const [updated] = await this.db
+        .update(dailyStats)
+        .set({
+          totalViews,
+          uniqueVisitors,
+          popularNewsId
+        })
+        .where(eq(dailyStats.date, date))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await this.db
+        .insert(dailyStats)
+        .values({
+          date,
+          totalViews,
+          uniqueVisitors,
+          popularNewsId
+        })
+        .returning();
+      return created;
+    }
+  }
+
+  async getAnalyticsSummary(): Promise<{
+    totalViews: number;
+    totalNews: number;
+    todayViews: number;
+    popularNews: any[];
+  }> {
+    const today = new Date().toISOString().split('T')[0];
+
+    const [totalViewsResult] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(newsViews);
+
+    const [totalNewsResult] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(newsArticles);
+
+    const [todayViewsResult] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(newsViews)
+      .where(sql`DATE(${newsViews.viewedAt}) = ${today}`);
+
+    const popularNews = await this.getPopularNews(5);
+
+    return {
+      totalViews: totalViewsResult?.count || 0,
+      totalNews: totalNewsResult?.count || 0,
+      todayViews: todayViewsResult?.count || 0,
+      popularNews
+    };
+  }
+
 
   // Get database statistics
   async getDatabaseStats(): Promise<{
@@ -298,7 +426,7 @@ export class DatabaseStorage implements IStorage {
   async updateSiteSetting(key: string, value: string): Promise<SiteSetting | null> {
     const [updatedSetting] = await db
       .update(siteSettings)
-      .set({ 
+      .set({
         settingValue: value,
         updatedAt: sql`NOW()`
       })
@@ -318,7 +446,7 @@ export class DatabaseStorage implements IStorage {
   async backupToSecondaryDatabase(): Promise<{ success: boolean; message: string; }> {
     try {
       console.log('🔄 Starting backup to Neon database...');
-      
+
       // Get all data from primary database
       const [news, feeds, banners, settings, contacts] = await Promise.all([
         db.select().from(newsArticles),
@@ -347,25 +475,25 @@ export class DatabaseStorage implements IStorage {
       ]);
 
       const failed = results.filter(r => r.status === 'rejected');
-      
+
       if (failed.length > 0) {
         console.error('❌ Some backup operations failed:', failed);
-        return { 
-          success: false, 
-          message: `Backup partially failed. ${failed.length} operations failed.` 
+        return {
+          success: false,
+          message: `Backup partially failed. ${failed.length} operations failed.`
         };
       }
 
       console.log('✅ Backup completed successfully');
-      return { 
-        success: true, 
-        message: `Backup completed: ${news.length} news, ${feeds.length} feeds, ${banners.length} banners, ${settings.length} settings, ${contacts.length} messages` 
+      return {
+        success: true,
+        message: `Backup completed: ${news.length} news, ${feeds.length} feeds, ${banners.length} banners, ${settings.length} settings, ${contacts.length} messages`
       };
     } catch (error) {
       console.error('❌ Backup failed:', error);
-      return { 
-        success: false, 
-        message: `Backup failed: ${error}` 
+      return {
+        success: false,
+        message: `Backup failed: ${error}`
       };
     }
   }

@@ -1,6 +1,13 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+// Placeholder for news table, assuming it exists elsewhere and is needed for foreign keys
+// In a real scenario, 'news' would be imported or defined here.
+const news = pgTable("news", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+});
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -137,21 +144,40 @@ export type RssProcessingHistory = typeof rssProcessingHistory.$inferSelect;
 // Contact Messages Table
 export const contactMessages = pgTable("contact_messages", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull(),
+  subject: varchar("subject", { length: 255 }).notNull(),
   message: text("message").notNull(),
-  isRead: boolean("is_read").notNull().default(false),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  isRead: boolean("is_read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertContactMessageSchema = createInsertSchema(contactMessages).pick({
-  name: true,
-  email: true,
-  message: true,
+export const newsViews = pgTable("news_views", {
+  id: serial("id").primaryKey(),
+  newsId: integer("news_id").references(() => news.id).notNull(),
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
+  referrer: text("referrer"),
+  viewedAt: timestamp("viewed_at").defaultNow().notNull(),
+});
+
+export const dailyStats = pgTable("daily_stats", {
+  id: serial("id").primaryKey(),
+  date: date("date").notNull(),
+  totalViews: integer("total_views").default(0).notNull(),
+  uniqueVisitors: integer("unique_visitors").default(0).notNull(),
+  popularNewsId: integer("popular_news_id").references(() => news.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export type InsertSiteSetting = z.infer<typeof insertSiteSettingSchema>;
 export type SiteSetting = typeof siteSettings.$inferSelect;
-export type InsertContactMessage = z.infer<typeof insertContactMessageSchema>;
-export type ContactMessage = typeof contactMessages.$inferSelect;
+export type InsertContactMessage = z.Insert<typeof contactMessages>;
+
+export const insertNewsViewSchema = createInsertSchema(newsViews);
+export type NewsView = typeof newsViews.$inferSelect;
+export type InsertNewsView = typeof newsViews.$inferInsert;
+
+export const insertDailyStatsSchema = createInsertSchema(dailyStats);
+export type DailyStats = typeof dailyStats.$inferSelect;
+export type InsertDailyStats = typeof dailyStats.$inferInsert;

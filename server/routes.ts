@@ -424,6 +424,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Analytics routes
+  app.post("/api/analytics/view/:newsId", async (req, res) => {
+    try {
+      const newsId = parseInt(req.params.newsId);
+      const ipAddress = req.ip || req.connection.remoteAddress || '';
+      const userAgent = req.get('User-Agent') || '';
+      const referrer = req.get('Referer') || '';
+      
+      const view = await storage.recordNewsView(newsId, ipAddress, userAgent, referrer);
+      res.status(201).json(view);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to record view" });
+    }
+  });
+
+  app.get("/api/analytics/news/:newsId/views", async (req, res) => {
+    try {
+      const newsId = parseInt(req.params.newsId);
+      const viewCount = await storage.getNewsViewCount(newsId);
+      res.json({ viewCount });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get view count" });
+    }
+  });
+
+  app.get("/api/analytics/popular", async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const popularNews = await storage.getPopularNews(limit);
+      res.json(popularNews);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get popular news" });
+    }
+  });
+
+  app.get("/api/analytics/summary", async (req, res) => {
+    try {
+      const summary = await storage.getAnalyticsSummary();
+      res.json(summary);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get analytics summary" });
+    }
+  });
+
   // Contact Messages routes
   app.get("/api/contact-messages", async (req, res) => {
     try {
@@ -489,6 +533,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ count });
     } catch (error) {
       res.status(500).json({ error: "Failed to get unread messages count" });
+    }
+  });
+
+  // SEO Routes - Sitemap and Robots.txt
+  app.get("/sitemap.xml", async (req, res) => {
+    try {
+      const { SitemapGenerator } = await import("./sitemap-generator");
+      const sitemap = await SitemapGenerator.generateSitemap();
+      
+      res.set({
+        'Content-Type': 'application/xml',
+        'Cache-Control': 'public, max-age=3600' // Cache for 1 hour
+      });
+      res.send(sitemap);
+    } catch (error) {
+      console.error('Error generating sitemap:', error);
+      res.status(500).send('Error generating sitemap');
+    }
+  });
+
+  app.get("/robots.txt", async (req, res) => {
+    try {
+      const { SitemapGenerator } = await import("./sitemap-generator");
+      const robotsTxt = await SitemapGenerator.generateRobotsTxt();
+      
+      res.set({
+        'Content-Type': 'text/plain',
+        'Cache-Control': 'public, max-age=86400' // Cache for 24 hours
+      });
+      res.send(robotsTxt);
+    } catch (error) {
+      console.error('Error generating robots.txt:', error);
+      res.status(500).send('Error generating robots.txt');
     }
   });
 

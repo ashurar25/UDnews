@@ -28,22 +28,23 @@ import NewsManager from "@/components/NewsManager"
 import SponsorManager from "@/components/SponsorManager"
 import ThemeSettings from "@/components/ThemeSettings"
 import ContactMessagesManager from "@/components/ContactMessagesManager"
+import AnalyticsDashboard from "@/components/AnalyticsDashboard" // Assuming this component exists
 import { useTheme } from "next-themes"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 
 const Admin = () => {
   const { setTheme } = useTheme()
-  
+
   // Fetch real database stats
   const { data: newsData } = useQuery({
     queryKey: ['/api/news']
   })
-  
+
   const { data: rssFeedsData } = useQuery({
     queryKey: ['/api/rss-feeds']
   })
-  
+
   const { data: sponsorBannersData } = useQuery({
     queryKey: ['/api/sponsor-banners']
   })
@@ -60,7 +61,7 @@ const Admin = () => {
 
   // Admin tabs state
   const [activeTab, setActiveTab] = useState("stats")
-  
+
   const newsStats = Array.isArray(newsData) ? newsData.length : 0
   const rssFeeds = Array.isArray(rssFeedsData) ? rssFeedsData.length : 0
   const sponsorBanners = Array.isArray(sponsorBannersData) ? sponsorBannersData.length : 0
@@ -153,32 +154,85 @@ const Admin = () => {
         {/* Main Admin Interface with Tabs */}
         <section>
           <Tabs defaultValue="content" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-white border border-orange-200 rounded-lg p-1 mb-6">
-              <TabsTrigger 
-                value="content" 
-                className="flex items-center gap-2 font-sarabun data-[state=active]:bg-orange-100 data-[state=active]:text-orange-800"
-              >
-                <FileText className="h-4 w-4" />
-                จัดการเนื้อหา
-              </TabsTrigger>
-              <TabsTrigger 
-                value="appearance" 
-                className="flex items-center gap-2 font-sarabun data-[state=active]:bg-orange-100 data-[state=active]:text-orange-800"
-              >
-                <Palette className="h-4 w-4" />
-                รูปลักษณ์
-              </TabsTrigger>
-              <TabsTrigger 
-                value="system" 
-                className="flex items-center gap-2 font-sarabun data-[state=active]:bg-orange-100 data-[state=active]:text-orange-800"
-              >
-                <Settings className="h-4 w-4" />
-                ระบบ
-              </TabsTrigger>
-            </TabsList>
+            <TabsList className="grid w-full grid-cols-7">
+            <TabsTrigger value="overview">ภาพรวม</TabsTrigger>
+            <TabsTrigger value="analytics">สถิติ</TabsTrigger>
+            <TabsTrigger value="news">จัดการข่าว</TabsTrigger>
+            <TabsTrigger value="rss">RSS Feeds</TabsTrigger>
+            <TabsTrigger value="sponsors">แบนเนอร์</TabsTrigger>
+            <TabsTrigger value="themes">ธีม</TabsTrigger>
+            <TabsTrigger value="messages">ข้อความ</TabsTrigger>
+          </TabsList>
+
+            {/* Overview Tab (assuming it's the default content for 'overview') */}
+            <TabsContent value="overview" className="space-y-6">
+              <div className="flex items-center gap-2 mb-6">
+                <BarChart3 className="h-6 w-6 text-primary" />
+                <h2 className="text-2xl font-bold">ภาพรวมระบบ</h2>
+              </div>
+              {/* Quick Stats Overview (repeating for clarity in this tab context) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-2xl font-bold">{(databaseStats as any)?.newsCount || newsStats}</p>
+                        <p className="text-sm opacity-90">ข่าวทั้งหมด</p>
+                      </div>
+                      <Newspaper className="h-8 w-8 opacity-80" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-2xl font-bold">1,234</p>
+                        <p className="text-sm opacity-90">ผู้เข้าชมวันนี้</p>
+                      </div>
+                      <Users className="h-8 w-8 opacity-80" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-2xl font-bold">{(databaseStats as any)?.rssFeedsCount || rssFeeds}</p>
+                        <p className="text-sm opacity-90">RSS Feeds</p>
+                      </div>
+                      <Rss className="h-8 w-8 opacity-80" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-2xl font-bold">{(databaseStats as any)?.contactMessagesCount || 0}</p>
+                        <p className="text-sm opacity-90">ข้อความติดต่อ</p>
+                      </div>
+                      <Mail className="h-8 w-8 opacity-80" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* Analytics Tab */}
+            <TabsContent value="analytics" className="space-y-6">
+            <div className="flex items-center gap-2 mb-6">
+              <BarChart3 className="h-6 w-6 text-primary" />
+              <h2 className="text-2xl font-bold">สถิติและการวิเคราะห์</h2>
+            </div>
+            <AnalyticsDashboard />
+          </TabsContent>
 
             {/* Content Management Tab */}
-            <TabsContent value="content">
+            <TabsContent value="news">
               <div className="space-y-6">
                 <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการเนื้อหาและข้อมูล</h3>
 
@@ -248,8 +302,50 @@ const Admin = () => {
               </div>
             </TabsContent>
 
+            {/* RSS Feeds Tab */}
+            <TabsContent value="rss">
+              <div className="space-y-6">
+                <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการ RSS Feeds</h3>
+                <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
+                  <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-t-xl">
+                    <CardTitle className="flex items-center gap-2 font-kanit text-purple-700">
+                      <Rss className="h-5 w-5" />
+                      จัดการ RSS Feeds
+                    </CardTitle>
+                    <CardDescription className="font-sarabun">
+                      จัดการแหล่งข่าวอัตโนมัติ
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <RSSManager />
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* Sponsors Tab */}
+            <TabsContent value="sponsors">
+              <div className="space-y-6">
+                <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการแบนเนอร์สปอนเซอร์</h3>
+                <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
+                  <CardHeader className="bg-gradient-to-r from-green-50 to-teal-50 rounded-t-xl">
+                    <CardTitle className="flex items-center gap-2 font-kanit text-green-700">
+                      <Image className="h-5 w-5" />
+                      จัดการแบนเนอร์สปอนเซอร์
+                    </CardTitle>
+                    <CardDescription className="font-sarabun">
+                      จัดการโฆษณาและแบนเนอร์
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <SponsorManager />
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
             {/* Appearance Tab */}
-            <TabsContent value="appearance">
+            <TabsContent value="themes">
               <div className="space-y-6">
                 <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">การตั้งค่ารูปลักษณ์</h3>
 
@@ -644,6 +740,11 @@ const Admin = () => {
                   </Card>
                 </div>
               </div>
+            </TabsContent>
+
+            {/* Messages Tab */}
+            <TabsContent value="messages" className="space-y-6">
+              <ContactMessagesManager />
             </TabsContent>
           </Tabs>
         </section>
