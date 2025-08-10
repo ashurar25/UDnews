@@ -492,6 +492,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Database Backup Management Routes
+  app.post("/api/backup/create", async (req, res) => {
+    try {
+      console.log('🔄 Backup request received from admin');
+      const result = await storage.backupToSecondaryDatabase();
+      
+      if (result.success) {
+        res.json({
+          success: true,
+          message: result.message,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: result.message,
+          timestamp: new Date().toISOString()
+        });
+      }
+    } catch (error) {
+      console.error('❌ Backup API error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Backup process failed",
+        error: error.toString(),
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  app.get("/api/backup/status", async (req, res) => {
+    try {
+      res.json({
+        primaryDatabase: "Render PostgreSQL",
+        backupDatabase: "Neon PostgreSQL",
+        lastBackup: "Manual trigger only",
+        status: "Available",
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get backup status" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

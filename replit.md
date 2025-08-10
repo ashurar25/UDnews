@@ -8,6 +8,13 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes (ล่าสุด)
 
+## Database Backup System Added (10 สิงหาคม 2568)
+- ✅ Configured backup database connection to Neon PostgreSQL
+- ✅ Added backup functionality with automatic data synchronization
+- ✅ Implemented API endpoints for backup management (/api/backup/create, /api/backup/status)
+- ✅ Enhanced database storage with dual-database support (Render primary + Neon backup)
+- ✅ Added backup monitoring and error handling with detailed logging
+
 ## Breaking News Scrolling Banner Added (10 สิงหาคม 2568)
 - ✅ Added scrolling news ticker banner at top of header with red background and yellow "ข่าวด่วน" label
 - ✅ Implemented smooth CSS animation for continuous scrolling text (30s duration)

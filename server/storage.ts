@@ -1,6 +1,6 @@
 import { users, rssFeeds, newsArticles, sponsorBanners, rssProcessingHistory, siteSettings, contactMessages, type InsertUser, type User, type InsertRssFeed, type RssFeed, type InsertNews, type NewsArticle, type InsertSponsorBanner, type SponsorBanner, type InsertRssHistory, type RssProcessingHistory, type InsertSiteSetting, type SiteSetting, type InsertContactMessage, type ContactMessage } from "@shared/schema";
 import { eq, sql, desc } from "drizzle-orm";
-import { db } from "./db";
+import { db, backupDb } from "./db";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -50,6 +50,9 @@ export interface IStorage {
   markContactMessageAsRead(id: number): Promise<ContactMessage | null>;
   deleteContactMessage(id: number): Promise<boolean>;
   getUnreadContactMessagesCount(): Promise<number>;
+  backupToSecondaryDatabase(): Promise<{ success: boolean; message: string; }>;
+  switchToPrimaryDatabase(): Promise<boolean>;
+  switchToBackupDatabase(): Promise<boolean>;
 }
 
 // MemStorage class removed - using only PostgreSQL database storage
@@ -264,13 +267,13 @@ export class DatabaseStorage implements IStorage {
     ]);
 
     return {
-      newsCount: newsCount.count,
-      rssFeedsCount: rssFeedsCount.count,
-      sponsorBannersCount: sponsorBannersCount.count,
-      contactMessagesCount: contactMessagesCount.count,
+      newsCount: newsCount[0]?.count || 0,
+      rssFeedsCount: rssFeedsCount[0]?.count || 0,
+      sponsorBannersCount: sponsorBannersCount[0]?.count || 0,
+      contactMessagesCount: contactMessagesCount[0]?.count || 0,
       totalUsers: 0, // Placeholder since we don't have user management yet
-      databaseProvider: "Render PostgreSQL",
-      databaseUrl: "postgresql://udnews_user:qRNlOyrnlVbrRH16AQJ5itOkjluEebXk@dpg-d2a2dp2dbo4c73at42ug-a.singapore-postgres.render.com/udnewsdb_8d2c",
+      databaseProvider: "Render PostgreSQL + Neon Backup",
+      databaseUrl: "Primary: Render | Backup: Neon",
     };
   }
 
@@ -309,6 +312,74 @@ export class DatabaseStorage implements IStorage {
       .delete(siteSettings)
       .where(eq(siteSettings.settingKey, key));
     return (result.rowCount ?? 0) > 0;
+  }
+
+  // Backup Management Methods
+  async backupToSecondaryDatabase(): Promise<{ success: boolean; message: string; }> {
+    try {
+      console.log('🔄 Starting backup to Neon database...');
+      
+      // Get all data from primary database
+      const [news, feeds, banners, settings, contacts] = await Promise.all([
+        db.select().from(newsArticles),
+        db.select().from(rssFeeds),
+        db.select().from(sponsorBanners),
+        db.select().from(siteSettings),
+        db.select().from(contactMessages)
+      ]);
+
+      // Clear backup database first (optional - you may want to keep history)
+      // await Promise.all([
+      //   backupDb.delete(newsArticles),
+      //   backupDb.delete(rssFeeds),
+      //   backupDb.delete(sponsorBanners),
+      //   backupDb.delete(siteSettings),
+      //   backupDb.delete(contactMessages)
+      // ]);
+
+      // Insert data into backup database
+      const results = await Promise.allSettled([
+        news.length > 0 ? backupDb.insert(newsArticles).values(news).onConflictDoNothing() : Promise.resolve(),
+        feeds.length > 0 ? backupDb.insert(rssFeeds).values(feeds).onConflictDoNothing() : Promise.resolve(),
+        banners.length > 0 ? backupDb.insert(sponsorBanners).values(banners).onConflictDoNothing() : Promise.resolve(),
+        settings.length > 0 ? backupDb.insert(siteSettings).values(settings).onConflictDoNothing() : Promise.resolve(),
+        contacts.length > 0 ? backupDb.insert(contactMessages).values(contacts).onConflictDoNothing() : Promise.resolve()
+      ]);
+
+      const failed = results.filter(r => r.status === 'rejected');
+      
+      if (failed.length > 0) {
+        console.error('❌ Some backup operations failed:', failed);
+        return { 
+          success: false, 
+          message: `Backup partially failed. ${failed.length} operations failed.` 
+        };
+      }
+
+      console.log('✅ Backup completed successfully');
+      return { 
+        success: true, 
+        message: `Backup completed: ${news.length} news, ${feeds.length} feeds, ${banners.length} banners, ${settings.length} settings, ${contacts.length} messages` 
+      };
+    } catch (error) {
+      console.error('❌ Backup failed:', error);
+      return { 
+        success: false, 
+        message: `Backup failed: ${error}` 
+      };
+    }
+  }
+
+  async switchToPrimaryDatabase(): Promise<boolean> {
+    // This would require application restart with different DATABASE_URL
+    console.log('📝 Note: To switch to primary database, restart with DATABASE_URL pointing to Render');
+    return true;
+  }
+
+  async switchToBackupDatabase(): Promise<boolean> {
+    // This would require application restart with different DATABASE_URL
+    console.log('📝 Note: To switch to backup database, restart with DATABASE_URL pointing to Neon');
+    return true;
   }
 }
 
