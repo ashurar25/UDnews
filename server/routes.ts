@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertRssFeedSchema, insertNewsSchema, insertSponsorBannerSchema } from "@shared/schema";
+import { insertRssFeedSchema, insertNewsSchema, insertSponsorBannerSchema, insertSiteSettingSchema } from "@shared/schema";
 import { rssService } from "./rss-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -364,7 +364,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Site Settings routes for theme management
+  app.get("/api/site-settings", async (req, res) => {
+    try {
+      const settings = await storage.getAllSiteSettings();
+      res.json(settings);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch site settings" });
+    }
+  });
 
+  app.get("/api/site-settings/:key", async (req, res) => {
+    try {
+      const key = req.params.key;
+      const setting = await storage.getSiteSettingByKey(key);
+      if (!setting) {
+        return res.status(404).json({ error: "Setting not found" });
+      }
+      res.json(setting);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch setting" });
+    }
+  });
+
+  app.post("/api/site-settings", async (req, res) => {
+    try {
+      const validatedData = insertSiteSettingSchema.parse(req.body);
+      const setting = await storage.insertSiteSetting(validatedData);
+      res.status(201).json(setting);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid setting data" });
+    }
+  });
+
+  app.put("/api/site-settings/:key", async (req, res) => {
+    try {
+      const key = req.params.key;
+      const { settingValue } = req.body;
+      const setting = await storage.updateSiteSetting(key, settingValue);
+      if (!setting) {
+        return res.status(404).json({ error: "Setting not found" });
+      }
+      res.json(setting);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid setting data" });
+    }
+  });
+
+  app.delete("/api/site-settings/:key", async (req, res) => {
+    try {
+      const key = req.params.key;
+      const success = await storage.deleteSiteSetting(key);
+      if (!success) {
+        return res.status(404).json({ error: "Setting not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete setting" });
+    }
+  });
 
   const httpServer = createServer(app);
 

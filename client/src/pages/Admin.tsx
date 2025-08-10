@@ -25,6 +25,7 @@ import { Link } from "wouter"
 import RSSManager from "@/components/RSSManager"
 import NewsManager from "@/components/NewsManager"
 import SponsorManager from "@/components/SponsorManager"
+import ThemeSettings from "@/components/ThemeSettings"
 import { useTheme } from "next-themes"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
@@ -234,11 +235,14 @@ const Admin = () => {
               <div className="space-y-6">
                 <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">การตั้งค่ารูปลักษณ์</h3>
 
+                {/* Advanced Theme Settings */}
+                <ThemeSettings />
+
                 <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
                   <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-t-xl">
                     <CardTitle className="flex items-center gap-2 font-kanit text-pink-700">
                       <Palette className="h-5 w-5" />
-                      การตั้งค่าธีม
+                      การตั้งค่าธีมพื้นฐาน
                     </CardTitle>
                     <CardDescription className="font-sarabun">
                       เปลี่ยนธีมสีของเว็บไซต์ และทดสอบธีมวันสำคัญ

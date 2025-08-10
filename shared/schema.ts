@@ -104,6 +104,26 @@ export const insertRssHistorySchema = createInsertSchema(rssProcessingHistory).p
   errorMessage: true,
 });
 
+// Site Theme Settings Table
+export const siteSettings = pgTable("site_settings", {
+  id: serial("id").primaryKey(),
+  settingKey: text("setting_key").notNull().unique(),
+  settingValue: text("setting_value").notNull(),
+  settingType: text("setting_type", { enum: ["color", "theme", "general", "layout"] }).notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertSiteSettingSchema = createInsertSchema(siteSettings).pick({
+  settingKey: true,
+  settingValue: true,
+  settingType: true,
+  description: true,
+  isActive: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertRssFeed = z.infer<typeof insertRssFeedSchema>;
@@ -114,3 +134,5 @@ export type InsertSponsorBanner = z.infer<typeof insertSponsorBannerSchema>;
 export type SponsorBanner = typeof sponsorBanners.$inferSelect;
 export type InsertRssHistory = z.infer<typeof insertRssHistorySchema>;
 export type RssProcessingHistory = typeof rssProcessingHistory.$inferSelect;
+export type InsertSiteSetting = z.infer<typeof insertSiteSettingSchema>;
+export type SiteSetting = typeof siteSettings.$inferSelect;

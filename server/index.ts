@@ -96,11 +96,7 @@ app.use((req, res, next) => {
   // It is the only port that is not firewalled.
   const port = 5000;
   const host = "0.0.0.0"; // Explicitly bind to all interfaces for Replit
-  server.listen({
-    port,
-    host,
-    reusePort: true,
-  }, () => {
+  server.listen(port, host, () => {
     log(`serving on port ${port}`);
     
     // Start automatic RSS processing after server is ready

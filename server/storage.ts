@@ -1,4 +1,4 @@
-import { users, rssFeeds, newsArticles, sponsorBanners, rssProcessingHistory, type InsertUser, type User, type InsertRssFeed, type RssFeed, type InsertNews, type NewsArticle, type InsertSponsorBanner, type SponsorBanner, type InsertRssHistory, type RssProcessingHistory } from "@shared/schema";
+import { users, rssFeeds, newsArticles, sponsorBanners, rssProcessingHistory, siteSettings, type InsertUser, type User, type InsertRssFeed, type RssFeed, type InsertNews, type NewsArticle, type InsertSponsorBanner, type SponsorBanner, type InsertRssHistory, type RssProcessingHistory, type InsertSiteSetting, type SiteSetting } from "@shared/schema";
 import { eq, sql, desc } from "drizzle-orm";
 import { db } from "./db";
 
@@ -38,6 +38,11 @@ export interface IStorage {
     databaseProvider: string;
     databaseUrl: string;
   }>;
+  getAllSiteSettings(): Promise<SiteSetting[]>;
+  getSiteSettingByKey(key: string): Promise<SiteSetting | null>;
+  insertSiteSetting(setting: InsertSiteSetting): Promise<SiteSetting>;
+  updateSiteSetting(key: string, value: string): Promise<SiteSetting | null>;
+  deleteSiteSetting(key: string): Promise<boolean>;
 }
 
 // MemStorage class removed - using only PostgreSQL database storage
@@ -216,6 +221,43 @@ export class DatabaseStorage implements IStorage {
       databaseProvider: "Render PostgreSQL",
       databaseUrl: "postgresql://udnews_user:qRNlOyrnlVbrRH16AQJ5itOkjluEebXk@dpg-d2a2dp2dbo4c73at42ug-a.singapore-postgres.render.com/udnewsdb_8d2c",
     };
+  }
+
+  // Site Settings Methods
+  async getAllSiteSettings(): Promise<SiteSetting[]> {
+    return await db.select().from(siteSettings).where(eq(siteSettings.isActive, true));
+  }
+
+  async getSiteSettingByKey(key: string): Promise<SiteSetting | null> {
+    const [setting] = await db.select().from(siteSettings).where(eq(siteSettings.settingKey, key));
+    return setting || null;
+  }
+
+  async insertSiteSetting(setting: InsertSiteSetting): Promise<SiteSetting> {
+    const [newSetting] = await db
+      .insert(siteSettings)
+      .values(setting)
+      .returning();
+    return newSetting;
+  }
+
+  async updateSiteSetting(key: string, value: string): Promise<SiteSetting | null> {
+    const [updatedSetting] = await db
+      .update(siteSettings)
+      .set({ 
+        settingValue: value,
+        updatedAt: sql`NOW()`
+      })
+      .where(eq(siteSettings.settingKey, key))
+      .returning();
+    return updatedSetting || null;
+  }
+
+  async deleteSiteSetting(key: string): Promise<boolean> {
+    const result = await db
+      .delete(siteSettings)
+      .where(eq(siteSettings.settingKey, key));
+    return (result.rowCount ?? 0) > 0;
   }
 }
 
