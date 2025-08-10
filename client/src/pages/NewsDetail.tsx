@@ -47,7 +47,7 @@ const NewsDetail = () => {
     gcTime: 30 * 60 * 1000, // 30 minutes
   });
 
-  // Fetch related news - reduced to 3 items for better performance
+  // Fetch related news - limited to 3 items for better performance
   const { data: relatedNews } = useQuery({
     queryKey: ['/api/news'],
     queryFn: async () => {
@@ -56,9 +56,11 @@ const NewsDetail = () => {
       const allNews = await response.json();
       return allNews
         .filter((item: NewsItem) => item.id !== parseInt(id || '0') && item.category === news?.category)
+        .sort((a: NewsItem, b: NewsItem) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .slice(0, 3);
     },
-    enabled: !!news
+    enabled: !!news,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
   const getTimeAgo = (dateString: string) => {
