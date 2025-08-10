@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import NodeCache from 'node-cache';
 import { 
   insertRssFeedSchema, 
   insertNewsSchema, 
@@ -15,6 +16,10 @@ import {
 import { rssService } from "./rss-service";
 import { authMiddleware, generateToken } from "./middleware/auth";
 import rateLimit from "express-rate-limit";
+
+// Cache configuration for faster news loading
+const newsCache = new NodeCache({ stdTTL: 300, checkperiod: 60 }); // 5 minutes
+const individualNewsCache = new NodeCache({ stdTTL: 1800, checkperiod: 120 }); // 30 minutes
 
 // Rate limiting configuration
 const generalLimiter = rateLimit({
@@ -144,7 +149,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = parseInt(req.query.limit as string) || 50;
       const offset = parseInt(req.query.offset as string) || 0;
       
-      const news = await storage.getAllNews();
+      // Create cache key
+      const cacheKey = `news:all:${limit}:${offset}`;
+      
+      // Try to get from cache first
+      let news = newsCache.get<any[]>(cacheKey);
+      
+      if (!news) {
+        // If not in cache, fetch from database
+        news = await storage.getAllNews(limit, offset);
+        
+        // Store in cache for faster subsequent requests
+        newsCache.set(cacheKey, news);
+      }
+      
       res.json(news);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch news" });
@@ -160,10 +178,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const id = parseInt(req.params.id);
-      const article = await storage.getNewsById(id);
+      const cacheKey = `news:${id}`;
+      
+      // Try to get from cache first
+      let article = individualNewsCache.get<any>(cacheKey);
+      
       if (!article) {
-        return res.status(404).json({ error: "News article not found" });
+        // If not in cache, fetch from database
+        article = await storage.getNewsById(id);
+        if (!article) {
+          return res.status(404).json({ error: "News article not found" });
+        }
+        
+        // Store in cache for faster subsequent requests
+        individualNewsCache.set(cacheKey, article);
       }
+      
       res.json(article);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch news article" });
@@ -174,6 +204,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertNewsSchema.parse(req.body);
       const article = await storage.insertNews(validatedData);
+      
+      // Clear cache when new news is added
+      newsCache.flushAll();
+      
       res.status(201).json(article);
     } catch (error) {
       res.status(400).json({ error: "Invalid news article data" });

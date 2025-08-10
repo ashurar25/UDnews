@@ -8,6 +8,15 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes (ล่าสุด)
 
+## Performance Optimization - News Loading Speed Enhanced (10 สิงหาคม 2568)
+- ✅ Implemented comprehensive caching system with NodeCache for faster news loading
+- ✅ Added cache layers: 5-minute cache for news lists, 30-minute cache for individual articles
+- ✅ Enhanced database queries with proper limit/offset pagination support
+- ✅ Added HTTP cache headers (Cache-Control, ETag) for browser caching
+- ✅ Optimized /api/news endpoints with intelligent cache invalidation
+- ✅ Header design improvements: removed fire emoji, reduced title size, added key emoji for admin login
+- ✅ Fixed AdminLogin component causing React error #310 by consolidating into Login page
+
 ## Complete System Testing and Hot Reload Fix (10 สิงหาคม 2568)
 - ✅ Fixed Vite development server host configuration issues with Replit environment
 - ✅ Resolved all TypeScript errors in TestSystems.tsx and DisasterAlertWidget components

@@ -15,7 +15,7 @@ export interface IStorage {
   updateRssFeed(id: number, feed: Partial<InsertRssFeed>): Promise<RssFeed | null>;
   updateRssFeedLastProcessed(id: number): Promise<boolean>;
   deleteRssFeed(id: number): Promise<boolean>;
-  getAllNews(): Promise<NewsArticle[]>;
+  getAllNews(limit?: number, offset?: number): Promise<NewsArticle[]>;
   getNewsById(id: number): Promise<NewsArticle | null>;
   getNewsByUrl(url: string): Promise<NewsArticle | null>;
   insertNews(news: InsertNews): Promise<NewsArticle>;
@@ -146,17 +146,27 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount ?? 0) > 0;
   }
 
-  async getAllNews(): Promise<NewsArticle[]> {
-    return await db.select().from(newsArticles).orderBy(desc(newsArticles.createdAt));
+  async getAllNews(limit?: number, offset?: number): Promise<NewsArticle[]> {
+    let query = db.select().from(newsArticles).orderBy(desc(newsArticles.createdAt));
+    
+    if (limit) {
+      query = query.limit(limit);
+    }
+    
+    if (offset) {
+      query = query.offset(offset);
+    }
+    
+    return await query;
   }
 
   async getNewsById(id: number): Promise<NewsArticle | null> {
-    const result = await this.db.select().from(newsArticles).where(eq(newsArticles.id, id));
+    const result = await db.select().from(newsArticles).where(eq(newsArticles.id, id));
     return result[0] || null;
   }
 
   async getNewsByUrl(url: string): Promise<NewsArticle | null> {
-    const result = await this.db.select().from(newsArticles).where(eq(newsArticles.originalUrl, url));
+    const result = await db.select().from(newsArticles).where(eq(newsArticles.originalUrl, url));
     return result[0] || null;
   }
 

@@ -1,65 +1,63 @@
+import NodeCache from 'node-cache';
 
-import NodeCache from "node-cache";
+// Create cache instances with different TTL settings
+export const newsCache = new NodeCache({ 
+  stdTTL: 300, // 5 minutes for news list
+  checkperiod: 60, // Check for expired keys every minute
+  useClones: false // Better performance, but be careful with object mutations
+});
 
-class CacheService {
-  private cache: NodeCache;
+export const individualNewsCache = new NodeCache({ 
+  stdTTL: 1800, // 30 minutes for individual news articles
+  checkperiod: 120,
+  useClones: false
+});
 
-  constructor() {
-    // Cache for 5 minutes by default
-    this.cache = new NodeCache({ 
-      stdTTL: 300,
-      checkperiod: 60 
-    });
-  }
+export const popularNewsCache = new NodeCache({ 
+  stdTTL: 600, // 10 minutes for popular news
+  checkperiod: 60,
+  useClones: false
+});
 
-  get<T>(key: string): T | undefined {
-    return this.cache.get<T>(key);
-  }
+export const categoryCacheNews = new NodeCache({ 
+  stdTTL: 600, // 10 minutes for category news
+  checkperiod: 60,
+  useClones: false
+});
 
-  set<T>(key: string, value: T, ttl?: number): boolean {
-    return this.cache.set(key, value, ttl || 300);
-  }
+// Cache key generators
+export const cacheKeys = {
+  allNews: (limit?: number, offset?: number) => 
+    `news:all:${limit || 'unlimited'}:${offset || 0}`,
+  newsById: (id: number) => `news:${id}`,
+  newsByCategory: (category: string, limit?: number) => 
+    `news:category:${category}:${limit || 'unlimited'}`,
+  popularNews: (limit?: number) => `news:popular:${limit || 10}`,
+  breakingNews: () => 'news:breaking',
+  latestNews: (limit?: number) => `news:latest:${limit || 10}`
+};
 
-  del(key: string): number {
-    return this.cache.del(key);
-  }
+// Cache clearing functions
+export const clearNewsCache = () => {
+  newsCache.flushAll();
+  individualNewsCache.flushAll();
+  popularNewsCache.flushAll();
+  categoryCacheNews.flushAll();
+};
 
-  keys(): string[] {
-    return this.cache.keys();
-  }
+export const clearNewsCacheByCategory = (category: string) => {
+  const keys = categoryCacheNews.keys();
+  keys.forEach(key => {
+    if (key.includes(`category:${category}`)) {
+      categoryCacheNews.del(key);
+    }
+  });
+};
 
-  flushAll(): void {
-    this.cache.flushAll();
-  }
-
-  getStats() {
-    return this.cache.getStats();
-  }
-
-  // News specific cache methods
-  cacheNews(news: any[], category?: string): void {
-    const key = category ? `news:${category}` : 'news:all';
-    this.set(key, news, 300); // 5 minutes
-  }
-
-  getCachedNews(category?: string): any[] | undefined {
-    const key = category ? `news:${category}` : 'news:all';
-    return this.get<any[]>(key);
-  }
-
-  invalidateNewsCache(): void {
-    const newsKeys = this.keys().filter(key => key.startsWith('news:'));
-    newsKeys.forEach(key => this.del(key));
-  }
-
-  // Popular news cache
-  cachePopularNews(news: any[]): void {
-    this.set('popular:news', news, 600); // 10 minutes
-  }
-
-  getCachedPopularNews(): any[] | undefined {
-    return this.get<any[]>('popular:news');
-  }
-}
-
-export const cacheService = new CacheService();
+export const clearNewsCacheById = (id: number) => {
+  individualNewsCache.del(cacheKeys.newsById(id));
+  // Also clear related caches
+  newsCache.flushAll();
+  popularNewsCache.flushAll();
+  categoryCacheNews.flushAll();
+};
