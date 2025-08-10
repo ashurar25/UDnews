@@ -332,10 +332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Remove duplicate system-info routes
-  // (Fixed duplicate routes that were causing conflicts)
-
-  // Database stats route
+  // Database stats route (single, non-duplicate version)
   app.get("/api/database/stats", async (req, res) => {
     try {
       const stats = await storage.getDatabaseStats();
@@ -345,33 +342,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // System information route
-  app.get("/api/system-info", async (req, res) => {
-    try {
-      const databaseUrl = process.env.DATABASE_URL || 'Not configured';
-      const parsedUrl = new URL(databaseUrl);
-      
-      const systemInfo = {
-        database: {
-          provider: 'PostgreSQL',
-          host: parsedUrl.hostname,
-          port: parsedUrl.port || '5432',
-          database: parsedUrl.pathname.substring(1),
-          ssl: parsedUrl.protocol === 'postgres:' ? 'Disabled' : 'Enabled'
-        },
-        environment: process.env.NODE_ENV || 'development',
-        server: {
-          platform: process.platform,
-          nodeVersion: process.version,
-          uptime: Math.floor(process.uptime())
-        }
-      };
-      
-      res.json(systemInfo);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch system information" });
-    }
-  });
+
 
   const httpServer = createServer(app);
 

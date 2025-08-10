@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Eye, Heart } from "lucide-react";
 import { useLocation } from "wouter";
-import { Link } from "wouter-preact";
+import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { th } from "date-fns/locale";
 

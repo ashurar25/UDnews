@@ -99,7 +99,7 @@ const Admin = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-2xl font-bold">{newsStats}</p>
+                    <p className="text-2xl font-bold">{(databaseStats as any)?.newsCount || newsStats}</p>
                     <p className="text-sm opacity-90">ข่าวทั้งหมด</p>
                   </div>
                   <Newspaper className="h-8 w-8 opacity-80" />
@@ -123,7 +123,7 @@ const Admin = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-2xl font-bold">{rssFeeds}</p>
+                    <p className="text-2xl font-bold">{(databaseStats as any)?.rssFeedsCount || rssFeeds}</p>
                     <p className="text-sm opacity-90">RSS Feeds</p>
                   </div>
                   <Rss className="h-8 w-8 opacity-80" />
@@ -576,7 +576,9 @@ const Admin = () => {
                             </div>
                             <div className="flex justify-between">
                               <span className="text-orange-600">เซิร์ฟเวอร์:</span>
-<span className="text-orange-800 font-mono text-xs">{(systemInfo as any)?.database?.host ?? "Loading..."}</span>
+              <span className="text-orange-800 font-mono text-xs">
+                                {(systemInfo as any)?.database?.host || "dpg-d2a2dp2dbo4c73at42ug-a.singapore-postgres.render.com"}
+                              </span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-orange-600">พอร์ต:</span>
@@ -586,7 +588,9 @@ const Admin = () => {
                           <div className="space-y-2">
                             <div className="flex justify-between">
                               <span className="text-orange-600">ฐานข้อมูล:</span>
-<span className="text-orange-800 font-mono text-xs">{(systemInfo as any)?.database?.database ?? "Loading..."}</span>
+              <span className="text-orange-800 font-mono text-xs">
+                                {(systemInfo as any)?.database?.database || "udnewsdb_8d2c"}
+                              </span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-orange-600">SSL:</span>
