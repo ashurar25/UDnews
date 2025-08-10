@@ -445,7 +445,7 @@ const Index = () => {
                         {currentWeather.rainStatus}
                       </p>
                     </div>
-                    
+
                     {/* Rain probability bar */}
                     <div className="w-full bg-white/20 rounded-full h-2 mb-2">
                       <div 
@@ -461,7 +461,7 @@ const Index = () => {
                         style={{ width: `${currentWeather.rainChance}%` }}
                       ></div>
                     </div>
-                    
+
                     <p className="text-xs font-sarabun text-muted-foreground">
                       {currentWeather.rainChance >= 70 
                         ? 'แนะนำพกร่ม' 
@@ -484,18 +484,7 @@ const Index = () => {
               </div>
             </div>
 
-            {/* RSS Feed */}
-            <div className="bg-card rounded-lg p-6 shadow-news">
-              <h3 className="text-xl font-bold font-kanit mb-4">
-                RSS Feed
-              </h3>
-              <p className="text-sm text-muted-foreground font-sarabun mb-4">
-                ติดตามข่าวสารผ่าน RSS Feed
-              </p>
-              <Button variant="outline" className="w-full">
-                <span className="font-sarabun">สมัครรับข่าว RSS</span>
-              </Button>
-            </div>
+            {/* Admin & Social */}
           </div>
         </section>
       </main>
