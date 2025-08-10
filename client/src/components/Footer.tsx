@@ -4,7 +4,7 @@ import { Facebook, Twitter, Youtube, Mail, Phone, MapPin, Rss, Key } from "lucid
 import SponsorBanner from "./SponsorBanner";
 import SponsorBannerBar from "./SponsorBannerBar";
 import { Separator } from "@/components/ui/separator";
-import { Link } from "react-router-dom";
+import { Link } from "wouter";
 
 const Footer = () => {
   return (
