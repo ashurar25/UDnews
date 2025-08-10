@@ -182,9 +182,9 @@ const Header = () => {
                 ))}
               </nav>
               
-              {/* Login Button */}
+              {/* Admin Login Button */}
               <div className="border-t border-orange-200 dark:border-gray-600 pt-4 mt-4">
-                <Link to="/login">
+                <Link to="/admin">
                   <Button
                     className="w-full bg-orange-600 hover:bg-orange-700 text-white font-sarabun"
                     onClick={() => {
@@ -192,7 +192,7 @@ const Header = () => {
                       setIsMenuOpen(false);
                     }}
                   >
-                    เข้าสู่ระบบ / สมัครสมาชิก
+                    เข้าสู่ระบบแอดมิน
                   </Button>
                 </Link>
               </div>
