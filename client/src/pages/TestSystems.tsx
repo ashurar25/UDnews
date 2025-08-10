@@ -1,4 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import CommentsSection from "@/components/CommentsSection";
 import NewsletterSignup from "@/components/NewsletterSignup";
 import AdvancedSearch from "@/components/AdvancedSearch";
@@ -7,6 +9,8 @@ import SocialShare from "@/components/SocialShare";
 
 // Test page for all new systems
 export default function TestSystems() {
+  const { toast } = useToast();
+  
   // Sample news article data for testing
   const sampleNewsArticle = {
     id: 1,
@@ -40,7 +44,7 @@ export default function TestSystems() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <AdvancedSearch onResults={handleSearchResults} />
+            <AdvancedSearch />
           </CardContent>
         </Card>
 
