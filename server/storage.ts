@@ -35,7 +35,8 @@ export interface IStorage {
     rssFeedsCount: number;
     sponsorBannersCount: number;
     totalUsers: number;
-    databaseSize: string;
+    databaseProvider: string;
+    databaseUrl: string;
   }>;
 }
 
@@ -54,7 +55,7 @@ export class MemStorage implements IStorage {
     this.sponsorBanners = new Map();
     this.rssHistory = new Map();
     this.currentId = 1;
-    
+
     // Add some sample data for demonstration
     this.initializeSampleData();
   }
@@ -73,7 +74,7 @@ export class MemStorage implements IStorage {
         title: "Voice TV",
         url: "https://www.voicetv.co.th/rss/news.xml",
         description: "ข่าวจาก Voice TV",
-        category: "ข่าวทั่วไป", 
+        category: "ข่าวทั่วไป",
         isActive: true
       },
       {
@@ -172,9 +173,9 @@ export class MemStorage implements IStorage {
   async insertRssFeed(feed: InsertRssFeed): Promise<RssFeed> {
     const id = this.currentId++;
     const now = new Date();
-    const rssFeed: RssFeed = { 
-      ...feed, 
-      id, 
+    const rssFeed: RssFeed = {
+      ...feed,
+      id,
       description: feed.description ?? null,
       isActive: feed.isActive ?? true,
       lastProcessed: null,
@@ -188,9 +189,9 @@ export class MemStorage implements IStorage {
   async updateRssFeed(id: number, feed: Partial<InsertRssFeed>): Promise<RssFeed | null> {
     const existing = this.rssFeeds.get(id);
     if (!existing) return null;
-    const updated = { 
-      ...existing, 
-      ...feed, 
+    const updated = {
+      ...existing,
+      ...feed,
       description: feed.description ?? existing.description,
       updatedAt: new Date()
     };
@@ -216,7 +217,7 @@ export class MemStorage implements IStorage {
 
   // News methods
   async getAllNews(): Promise<NewsArticle[]> {
-    return Array.from(this.news.values()).sort((a, b) => 
+    return Array.from(this.news.values()).sort((a, b) =>
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
   }
@@ -228,9 +229,9 @@ export class MemStorage implements IStorage {
   async insertNews(newsData: InsertNews): Promise<NewsArticle> {
     const id = this.currentId++;
     const now = new Date();
-    const newsArticle: NewsArticle = { 
-      ...newsData, 
-      id, 
+    const newsArticle: NewsArticle = {
+      ...newsData,
+      id,
       imageUrl: newsData.imageUrl || null,
       sourceUrl: newsData.sourceUrl || null,
       rssFeedId: newsData.rssFeedId || null,
@@ -245,9 +246,9 @@ export class MemStorage implements IStorage {
   async updateNews(id: number, newsData: Partial<InsertNews>): Promise<NewsArticle | null> {
     const existing = this.news.get(id);
     if (!existing) return null;
-    const updated = { 
-      ...existing, 
-      ...newsData, 
+    const updated = {
+      ...existing,
+      ...newsData,
       imageUrl: newsData.imageUrl ?? existing.imageUrl,
       sourceUrl: newsData.sourceUrl ?? existing.sourceUrl,
       rssFeedId: newsData.rssFeedId ?? existing.rssFeedId,
@@ -363,14 +364,16 @@ export class MemStorage implements IStorage {
     rssFeedsCount: number;
     sponsorBannersCount: number;
     totalUsers: number;
-    databaseSize: string;
+    databaseProvider: string;
+    databaseUrl: string;
   }> {
     return {
       newsCount: this.news.size,
       rssFeedsCount: this.rssFeeds.size,
       sponsorBannersCount: this.sponsorBanners.size,
       totalUsers: this.users.size,
-      databaseSize: "In-Memory"
+      databaseProvider: "In-Memory",
+      databaseUrl: "In-Memory"
     };
   }
 }
@@ -533,19 +536,21 @@ export class DatabaseStorage implements IStorage {
     rssFeedsCount: number;
     sponsorBannersCount: number;
     totalUsers: number;
-    databaseSize: string;
+    databaseProvider: string;
+    databaseUrl: string;
   }> {
-    const newsCount = await db.select().from(newsArticles);
-    const rssFeedsCount = await db.select().from(rssFeeds);
-    const sponsorBannersCount = await db.select().from(sponsorBanners);
-    const usersCount = await db.select().from(users);
-    
+    const [newsCount] = await db.select({ count: sql<number>`count(*)` }).from(newsArticles);
+    const [rssFeedsCount] = await db.select({ count: sql<number>`count(*)` }).from(rssFeeds);
+    const [sponsorBannersCount] = await db.select({ count: sql<number>`count(*)` }).from(sponsorBanners);
+    const [totalUsers] = await db.select({ count: sql<number>`count(*)` }).from(users);
+
     return {
-      newsCount: newsCount.length,
-      rssFeedsCount: rssFeedsCount.length,
-      sponsorBannersCount: sponsorBannersCount.length,
-      totalUsers: usersCount.length,
-      databaseSize: "PostgreSQL (Replit)"
+      newsCount: newsCount.count,
+      rssFeedsCount: rssFeedsCount.count,
+      sponsorBannersCount: sponsorBannersCount.count,
+      totalUsers: totalUsers.count,
+      databaseProvider: "Render PostgreSQL",
+      databaseUrl: "postgresql://udnews_user:qRNlOyrnlVbrRH16AQJ5itOkjluEebXk@dpg-d2a2dp2dbo4c73at42ug-a.singapore-postgres.render.com/udnewsdb_8d2c",
     };
   }
 }

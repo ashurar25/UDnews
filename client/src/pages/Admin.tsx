@@ -559,9 +559,12 @@ const Admin = () => {
                       </div>
                       <div className="mt-4 p-3 bg-orange-50 rounded-lg text-center">
                         <div className="text-lg font-bold text-orange-700">
-                          {databaseStats?.databaseSize ?? "PostgreSQL (Replit)"}
+                          {databaseStats?.databaseProvider ?? "Render PostgreSQL"}
                         </div>
-                        <div className="text-sm font-sarabun text-orange-600">ประเภทฐานข้อมูล</div>
+                        <div className="text-sm font-sarabun text-orange-600">ผู้ให้บริการฐานข้อมูล</div>
+                        <div className="text-xs font-sarabun text-orange-500 mt-1">
+                          Singapore Region
+                        </div>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-6">
                         <Button size="sm" variant="outline" className="font-sarabun border-purple-300 text-purple-600 hover:bg-purple-50">
