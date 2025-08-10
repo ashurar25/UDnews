@@ -19,12 +19,12 @@ const Footer = () => {
               className="h-16 w-16 rounded-full shadow-lg animate-pulse border-2 border-primary/20" 
             />
             <span className="font-bold font-kanit text-3xl bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 bg-clip-text text-transparent animate-gradient">
-              UD News
+              อัพเดทข่าวอุดร - UD News Update
             </span>
           </div>
           <p className="text-base text-muted-foreground font-sarabun max-w-2xl mx-auto leading-relaxed">
             แหล่งข่าวสารที่เชื่อถือได้ อัปเดตข่าวใหม่ตลอด 24 ชั่วโมง<br />
-            ระบบ RSS ปรับปรุงใหม่ เพื่อประสบการณ์การอ่านข่าวที่ดีที่สุด
+            มั่นใจในเรา เพื่อข่าวที่เป็นประโยชน์
           </p>
         </div>
 
