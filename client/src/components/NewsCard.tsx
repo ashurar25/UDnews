@@ -64,9 +64,6 @@ const NewsCard = ({
       window.scrollTo({ top: 0, behavior: 'instant' });
       setLocation(`/news/${id}`);
     }
-  };avior: 'smooth' });
-      setLocation(`/news/${id}`);
-    }
   };
 
   return (
