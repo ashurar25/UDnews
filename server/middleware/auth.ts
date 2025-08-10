@@ -75,3 +75,6 @@ export const validateInput = (schema: any) => {
     }
   };
 };
+
+// Admin authentication middleware (ใช้สำหรับ protected routes)
+export const authMiddleware = authenticateToken;

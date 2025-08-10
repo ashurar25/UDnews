@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertRssFeedSchema, insertNewsSchema, insertSponsorBannerSchema, insertSiteSettingSchema, insertContactMessageSchema } from "@shared/schema";
 import { rssService } from "./rss-service";
-import { authMiddleware } from "./middleware/auth";
+import { authMiddleware, generateToken } from "./middleware/auth";
 import rateLimit from "express-rate-limit";
 
 // Rate limiting configuration
@@ -31,6 +31,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Apply rate limiting
   app.use('/api/', apiLimiter);
   app.use('/admin', adminLimiter);
+
+  // Admin Login Route
+  app.post("/api/admin/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      // Simple hardcoded admin credentials (แนะนำให้เปลี่ยนใน production)
+      const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
+      const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'udnews2024';
+      
+      if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+        const token = generateToken({ id: 1, username: ADMIN_USERNAME });
+        res.json({ 
+          success: true, 
+          token,
+          message: 'Login successful' 
+        });
+      } else {
+        res.status(401).json({ 
+          success: false, 
+          message: 'Invalid credentials' 
+        });
+      }
+    } catch (error) {
+      res.status(500).json({ 
+        success: false, 
+        message: 'Server error' 
+      });
+    }
+  });
   // Public RSS Feeds routes (read-only)
   app.get("/api/rss-feeds", async (req, res) => {
     try {
@@ -637,6 +667,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to get backup status" });
+    }
+  });
+
+  // Health Check Endpoint
+  app.get("/api/health", async (req, res) => {
+    try {
+      // ตรวจสอบการเชื่อมต่อฐานข้อมูล
+      const dbCheck = await storage.getDatabaseStats();
+      
+      res.json({
+        status: "healthy",
+        timestamp: new Date().toISOString(),
+        services: {
+          database: dbCheck ? "connected" : "disconnected",
+          api: "running",
+          cache: "active"
+        },
+        uptime: Math.floor(process.uptime()),
+        memory: {
+          used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB',
+          total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + 'MB'
+        }
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: "unhealthy",
+        timestamp: new Date().toISOString(),
+        error: error.toString()
+      });
     }
   });
 
