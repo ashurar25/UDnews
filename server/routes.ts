@@ -3,9 +3,35 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertRssFeedSchema, insertNewsSchema, insertSponsorBannerSchema, insertSiteSettingSchema, insertContactMessageSchema } from "@shared/schema";
 import { rssService } from "./rss-service";
+import { authMiddleware } from "./middleware/auth";
+import rateLimit from "express-rate-limit";
+
+// Rate limiting configuration
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 50, // limit each IP to 50 API requests per windowMs
+  message: 'Too many API requests from this IP, please try again later.',
+});
+
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // limit each IP to 20 admin requests per windowMs
+  message: 'Too many admin requests from this IP, please try again later.',
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // RSS Feeds routes
+  // Apply rate limiting
+  app.use('/api/', apiLimiter);
+  app.use('/admin', adminLimiter);
+  // Public RSS Feeds routes (read-only)
   app.get("/api/rss-feeds", async (req, res) => {
     try {
       const feeds = await storage.getAllRssFeeds();
@@ -28,7 +54,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/rss-feeds", async (req, res) => {
+  // Protected RSS Feeds routes (admin only)
+  app.post("/api/rss-feeds", authMiddleware, async (req, res) => {
     try {
       const validatedData = insertRssFeedSchema.parse(req.body);
       const feed = await storage.insertRssFeed(validatedData);
@@ -38,7 +65,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/rss-feeds/:id", async (req, res) => {
+  app.put("/api/rss-feeds/:id", authMiddleware, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const validatedData = insertRssFeedSchema.partial().parse(req.body);
@@ -52,7 +79,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/rss-feeds/:id", async (req, res) => {
+  app.delete("/api/rss-feeds/:id", authMiddleware, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteRssFeed(id);
