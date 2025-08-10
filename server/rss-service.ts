@@ -4,7 +4,12 @@ import { storage } from './storage';
 import { type InsertNews } from '@shared/schema';
 
 const parser = new Parser({
-  timeout: 10000,
+  timeout: 8000,
+  headers: {
+    'User-Agent': 'Mozilla/5.0 (compatible; UD News RSS Reader/1.0)',
+    'Accept': 'application/rss+xml, application/xml, text/xml',
+    'Accept-Language': 'th,en;q=0.9'
+  },
   customFields: {
     item: [
       ['media:content', 'mediaContent'],
@@ -194,9 +199,11 @@ export class RSSService {
       
       // Add user agent for better compatibility
       const customParser = new Parser({
-        timeout: 5000, // Reduced timeout for faster processing
+        timeout: 8000, // Reasonable timeout for reliable processing
         headers: {
           'User-Agent': 'Mozilla/5.0 (compatible; UD News RSS Reader/1.0)',
+          'Accept': 'application/rss+xml, application/xml, text/xml',
+          'Accept-Language': 'th,en;q=0.9'
         },
         customFields: {
           item: [
@@ -207,11 +214,11 @@ export class RSSService {
         }
       });
 
-      // Add timeout and better error handling with faster timeout
+      // Add timeout and better error handling
       const feed = await Promise.race([
         customParser.parseURL(feedUrl),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('RSS fetch timeout')), 6000)
+          setTimeout(() => reject(new Error('RSS fetch timeout')), 10000)
         )
       ]) as any;
 
@@ -291,10 +298,7 @@ export class RSSService {
 
   // Generate a unique hash for article content
   private generateContentHash(title: string, link: string): string {
-    import('crypto').then(crypto => {
-      return crypto.createHash('md5').update(`${title}:${link}`).digest('hex');
-    });
-    // For now, use simpler approach
+    // Use simpler approach for better performance
     return Buffer.from(`${title}:${link}`).toString('base64').slice(0, 16);
   }
 
