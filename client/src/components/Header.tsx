@@ -53,7 +53,7 @@ const Header = () => {
       {/* Sponsor Banner at Top */}
       <SponsorBannerBar 
         position="header" 
-        className="border-b border-orange-200/30" 
+        className="border-b border-orange-200/30 bg-yellow-100 p-2" 
         autoPlay={true}
         showNavigation={true}
         bannerCount={3}
