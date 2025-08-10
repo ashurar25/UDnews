@@ -26,15 +26,30 @@ const AllNews = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [allLoadedNews, setAllLoadedNews] = useState<NewsItem[]>([]);
 
-  // Fetch all news
-  const { data: allNews, isLoading } = useQuery({
-    queryKey: ['/api/news'],
+  const itemsPerPage = 100;
+
+  // Fetch news with pagination
+  const { data: newsData, isLoading, isFetching } = useQuery({
+    queryKey: ['/api/news', currentPage],
     queryFn: async (): Promise<NewsItem[]> => {
-      const response = await fetch('/api/news');
+      const offset = (currentPage - 1) * itemsPerPage;
+      const response = await fetch(`/api/news?limit=${itemsPerPage}&offset=${offset}`);
       if (!response.ok) throw new Error('Failed to fetch news');
-      return response.json();
-    }
+      const newNews = await response.json();
+      
+      // เพิ่มข่าวใหม่เข้าไปในรายการเดิม
+      if (currentPage === 1) {
+        setAllLoadedNews(newNews);
+      } else {
+        setAllLoadedNews(prev => [...prev, ...newNews]);
+      }
+      
+      return newNews;
+    },
+    enabled: true
   });
 
   // Helper function to calculate time ago
@@ -53,7 +68,7 @@ const AllNews = () => {
   };
 
   // Filter and sort news
-  const filteredNews = allNews ? allNews
+  const filteredNews = allLoadedNews
     .filter(news => {
       const matchesSearch = news.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            news.summary.toLowerCase().includes(searchTerm.toLowerCase());
@@ -71,7 +86,18 @@ const AllNews = () => {
         default: // newest
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       }
-    }) : [];
+    });
+  
+  // ฟังก์ชันโหลดข่าวเพิ่มเติม
+  const loadMoreNews = () => {
+    setCurrentPage(prev => prev + 1);
+  };
+  
+  // รีเซ็ตเมื่อมีการค้นหาหรือเปลี่ยนหมวดหมู่
+  const handleSearchOrFilterChange = () => {
+    setCurrentPage(1);
+    setAllLoadedNews([]);
+  };
 
   // Get unique categories
   const categories = allNews ? Array.from(new Set(allNews.map(news => news.category))) : [];
@@ -125,13 +151,19 @@ const AllNews = () => {
               <Input
                 placeholder="ค้นหาข่าว..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  handleSearchOrFilterChange();
+                }}
                 className="pl-10 font-sarabun"
               />
             </div>
 
             {/* Category Filter */}
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <Select value={selectedCategory} onValueChange={(value) => {
+              setSelectedCategory(value);
+              handleSearchOrFilterChange();
+            }}>
               <SelectTrigger className="w-full md:w-48">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="หมวดหมู่" />
@@ -190,11 +222,38 @@ const AllNews = () => {
         </div>
 
         {/* News Grid */}
-        {processedNews.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {processedNews.map((news) => (
-              <NewsCard key={news.id} {...news} />
-            ))}
+        {filteredNews.length > 0 ? (
+          <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredNews.map((news) => (
+                <NewsCard key={news.id} {...news} />
+              ))}
+            </div>
+            
+            {/* Load More Button */}
+            {!isFetching && newsData && newsData.length === itemsPerPage && (
+              <div className="text-center mt-8">
+                <Button 
+                  onClick={loadMoreNews}
+                  variant="outline"
+                  size="lg"
+                  className="font-sarabun px-8 py-3"
+                  disabled={isFetching}
+                >
+                  {isFetching ? 'กำลังโหลด...' : 'โหลดข่าวเพิ่มเติม (100 ข่าวต่อครั้ง)'}
+                </Button>
+              </div>
+            )}
+            
+            {/* Loading indicator */}
+            {isFetching && (
+              <div className="text-center mt-8">
+                <div className="inline-flex items-center gap-2 text-muted-foreground">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  <span className="font-sarabun">กำลังโหลดข่าวเพิ่มเติม...</span>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="text-center py-12">

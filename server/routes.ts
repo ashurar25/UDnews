@@ -146,7 +146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'ETag': `"news-${Date.now()}"`
       });
 
-      const limit = parseInt(req.query.limit as string) || 50;
+      const limit = parseInt(req.query.limit as string) || 100;
       const offset = parseInt(req.query.offset as string) || 0;
       
       // Create cache key

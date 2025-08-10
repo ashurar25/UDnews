@@ -113,11 +113,11 @@ const Index = () => {
     rainStatus: 'กำลังโหลด...'
   };
 
-  // Fetch real news data from API with performance optimization
+  // Fetch real news data from API with performance optimization - first 100 news items
   const { data: newsData, isLoading: isLoadingNews } = useQuery({
     queryKey: ['/api/news'],
     queryFn: async (): Promise<NewsItem[]> => {
-      const response = await fetch('/api/news');
+      const response = await fetch('/api/news?limit=100&offset=0');
       if (!response.ok) throw new Error('Failed to fetch news');
       return response.json();
     },
