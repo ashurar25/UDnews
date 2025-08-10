@@ -174,6 +174,13 @@ export type InsertSiteSetting = z.infer<typeof insertSiteSettingSchema>;
 export type SiteSetting = typeof siteSettings.$inferSelect;
 export type InsertContactMessage = z.Insert<typeof contactMessages>;
 
+export const insertContactMessageSchema = createInsertSchema(contactMessages).pick({
+  name: true,
+  email: true,
+  subject: true,
+  message: true,
+});
+
 export const insertNewsViewSchema = createInsertSchema(newsViews);
 export type NewsView = typeof newsViews.$inferSelect;
 export type InsertNewsView = typeof newsViews.$inferInsert;
