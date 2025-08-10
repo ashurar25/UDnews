@@ -39,7 +39,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Simple hardcoded admin credentials (แนะนำให้เปลี่ยนใน production)
       const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-      const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'udnews2024';
+      const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'udnews2025secure';
       
       if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
         const token = generateToken({ id: 1, username: ADMIN_USERNAME });
