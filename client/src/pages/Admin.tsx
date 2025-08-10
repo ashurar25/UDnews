@@ -43,6 +43,11 @@ const Admin = () => {
   const { data: sponsorBannersData } = useQuery({
     queryKey: ['/api/sponsor-banners']
   })
+
+  const { data: databaseStats } = useQuery({
+    queryKey: ['/api/database/stats'],
+    refetchInterval: 30000
+  })
   
   const newsStats = Array.isArray(newsData) ? newsData.length : 0
   const rssFeeds = Array.isArray(rssFeedsData) ? rssFeedsData.length : 0
@@ -528,21 +533,35 @@ const Admin = () => {
                     <CardContent className="p-6">
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="text-center p-3 bg-purple-50 rounded-lg">
-                          <div className="text-2xl font-bold text-purple-700">127</div>
+                          <div className="text-2xl font-bold text-purple-700">
+                            {databaseStats?.newsCount ?? newsStats}
+                          </div>
                           <div className="text-sm font-sarabun text-purple-600">ข่าวทั้งหมด</div>
                         </div>
                         <div className="text-center p-3 bg-blue-50 rounded-lg">
-                          <div className="text-2xl font-bold text-blue-700">8</div>
+                          <div className="text-2xl font-bold text-blue-700">
+                            {databaseStats?.rssFeedsCount ?? rssFeeds}
+                          </div>
                           <div className="text-sm font-sarabun text-blue-600">RSS Feeds</div>
                         </div>
                         <div className="text-center p-3 bg-green-50 rounded-lg">
-                          <div className="text-2xl font-bold text-green-700">45</div>
+                          <div className="text-2xl font-bold text-green-700">
+                            {databaseStats?.sponsorBannersCount ?? sponsorBanners}
+                          </div>
                           <div className="text-sm font-sarabun text-green-600">แบนเนอร์</div>
                         </div>
                         <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                          <div className="text-2xl font-bold text-yellow-700">2.1GB</div>
-                          <div className="text-sm font-sarabun text-yellow-600">ขนาดฐานข้อมูล</div>
+                          <div className="text-2xl font-bold text-yellow-700">
+                            {databaseStats?.totalUsers ?? 0}
+                          </div>
+                          <div className="text-sm font-sarabun text-yellow-600">ผู้ใช้งาน</div>
                         </div>
+                      </div>
+                      <div className="mt-4 p-3 bg-orange-50 rounded-lg text-center">
+                        <div className="text-lg font-bold text-orange-700">
+                          {databaseStats?.databaseSize ?? "PostgreSQL (Replit)"}
+                        </div>
+                        <div className="text-sm font-sarabun text-orange-600">ประเภทฐานข้อมูล</div>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-6">
                         <Button size="sm" variant="outline" className="font-sarabun border-purple-300 text-purple-600 hover:bg-purple-50">

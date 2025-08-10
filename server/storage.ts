@@ -30,6 +30,13 @@ export interface IStorage {
   insertRssHistory(history: InsertRssHistory): Promise<RssProcessingHistory>;
   getRssHistoryByFeedId(feedId: number): Promise<RssProcessingHistory[]>;
   getAllRssHistory(): Promise<RssProcessingHistory[]>;
+  getDatabaseStats(): Promise<{
+    newsCount: number;
+    rssFeedsCount: number;
+    sponsorBannersCount: number;
+    totalUsers: number;
+    databaseSize: string;
+  }>;
 }
 
 export class MemStorage implements IStorage {
@@ -349,6 +356,23 @@ export class MemStorage implements IStorage {
     return Array.from(this.rssHistory.values())
       .sort((a, b) => new Date(b.processedAt).getTime() - new Date(a.processedAt).getTime());
   }
+
+  // Get database statistics
+  async getDatabaseStats(): Promise<{
+    newsCount: number;
+    rssFeedsCount: number;
+    sponsorBannersCount: number;
+    totalUsers: number;
+    databaseSize: string;
+  }> {
+    return {
+      newsCount: this.news.size,
+      rssFeedsCount: this.rssFeeds.size,
+      sponsorBannersCount: this.sponsorBanners.size,
+      totalUsers: this.users.size,
+      databaseSize: "In-Memory"
+    };
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -501,6 +525,28 @@ export class DatabaseStorage implements IStorage {
 
   async getAllRssHistory(): Promise<RssProcessingHistory[]> {
     return await db.select().from(rssProcessingHistory).orderBy(rssProcessingHistory.processedAt);
+  }
+
+  // Get database statistics
+  async getDatabaseStats(): Promise<{
+    newsCount: number;
+    rssFeedsCount: number;
+    sponsorBannersCount: number;
+    totalUsers: number;
+    databaseSize: string;
+  }> {
+    const newsCount = await db.select().from(newsArticles);
+    const rssFeedsCount = await db.select().from(rssFeeds);
+    const sponsorBannersCount = await db.select().from(sponsorBanners);
+    const usersCount = await db.select().from(users);
+    
+    return {
+      newsCount: newsCount.length,
+      rssFeedsCount: rssFeedsCount.length,
+      sponsorBannersCount: sponsorBannersCount.length,
+      totalUsers: usersCount.length,
+      databaseSize: "PostgreSQL (Replit)"
+    };
   }
 }
 

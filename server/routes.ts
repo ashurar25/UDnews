@@ -273,6 +273,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Database stats route
+  app.get("/api/database/stats", async (req, res) => {
+    try {
+      const stats = await storage.getDatabaseStats();
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch database stats" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
