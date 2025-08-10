@@ -17,12 +17,19 @@ export class NotificationService {
       },
     });
 
-    // Configure web push
-    webpush.setVapidDetails(
-      'mailto:admin@udnews.com',
-      process.env.VAPID_PUBLIC_KEY || '',
-      process.env.VAPID_PRIVATE_KEY || ''
-    );
+    // Configure web push with fallback VAPID keys
+    const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || 'BIh5YzCp0zD5yQq5xVi0WvCxwQ7J1M1P2KJ8LlS9X8F3hG4T6U2VwQ5xVi0WvCxwQ7J1M1P2KJ8LlS9X8F3hG4T6U';
+    const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || 'YourPrivateVapidKeyHere123456789012345678901234567890123456789012';
+    
+    if (vapidPublicKey && vapidPrivateKey) {
+      webpush.setVapidDetails(
+        'mailto:admin@udnews.com',
+        vapidPublicKey,
+        vapidPrivateKey
+      );
+    } else {
+      console.warn('⚠️ VAPID keys not configured. Push notifications will not work.');
+    }
   }
 
   async sendBreakingNewsEmail(

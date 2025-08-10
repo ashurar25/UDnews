@@ -1,155 +1,416 @@
-import { Button } from "@/components/ui/button";
-import { Share2, Copy, Facebook, Twitter, Mail, MessageCircle } from "lucide-react";
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Copy, Share2, Facebook, Twitter, MessageCircle, Mail, Link, QrCode, Download } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useMutation } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 
 interface SocialShareProps {
+  newsId: string;
   title: string;
-  url: string;
-  description?: string;
+  description: string;
+  imageUrl?: string;
+  url?: string;
+  compact?: boolean;
 }
 
-const SocialShare = ({ title, url, description }: SocialShareProps) => {
+const SocialShare: React.FC<SocialShareProps> = ({
+  newsId,
+  title,
+  description,
+  imageUrl,
+  url,
+  compact = false
+}) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [customMessage, setCustomMessage] = useState('');
   const { toast } = useToast();
 
-  const shareData = {
-    title,
-    text: description || title,
-    url: url,
-  };
+  const currentUrl = url || `${window.location.origin}/news/${newsId}`;
+  const encodedUrl = encodeURIComponent(currentUrl);
+  const encodedTitle = encodeURIComponent(title);
+  const encodedDescription = encodeURIComponent(description);
 
-  const handleNativeShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch (error) {
-        console.log('Error sharing:', error);
-      }
-    } else {
-      setIsOpen(!isOpen);
-    }
-  };
-
-  const copyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(url);
-      toast({
-        title: "คัดลอกลิงก์แล้ว",
-        description: "ลิงก์ถูกคัดลอกไปยังคลิปบอร์ดแล้ว",
+  // Track social shares
+  const trackShareMutation = useMutation({
+    mutationFn: async (platform: string) => {
+      return apiRequest('/api/analytics/social-share', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          newsId,
+          platform,
+          url: currentUrl
+        })
       });
-      setIsOpen(false);
-    } catch (error) {
-      console.error('Error copying to clipboard:', error);
+    },
+    onError: (error) => {
+      console.error('Error tracking share:', error);
+    }
+  });
+
+  const shareUrls = {
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedTitle}`,
+    twitter: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}&hashtags=UDNews,อุดรธานี,ข่าว`,
+    line: `https://social-plugins.line.me/lineit/share?url=${encodedUrl}&text=${encodedTitle}`,
+    whatsapp: `https://wa.me/?text=${encodedTitle}%20${encodedUrl}`,
+    telegram: `https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`,
+    email: `mailto:?subject=${encodedTitle}&body=${encodedDescription}%0A%0A${encodedUrl}`,
+  };
+
+  const handleShare = async (platform: string) => {
+    trackShareMutation.mutate(platform);
+
+    if (platform === 'copy') {
+      try {
+        await navigator.clipboard.writeText(currentUrl);
+        toast({
+          title: "คัดลอกลิงก์แล้ว",
+          description: "ลิงก์ข่าวได้รับการคัดลอกไปยังคลิปบอร์ดแล้ว",
+        });
+      } catch (error) {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = currentUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        toast({
+          title: "คัดลอกลิงก์แล้ว",
+          description: "ลิงก์ข่าวได้รับการคัดลอกแล้ว",
+        });
+      }
+      return;
+    }
+
+    if (platform === 'native' && navigator.share) {
+      try {
+        await navigator.share({
+          title: title,
+          text: description,
+          url: currentUrl,
+        });
+        toast({
+          title: "แชร์สำเร็จ",
+          description: "ข่าวได้รับการแชร์แล้ว",
+        });
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          toast({
+            title: "ไม่สามารถแชร์ได้",
+            description: "กรุณาลองใช้วิธีอื่น",
+            variant: "destructive",
+          });
+        }
+      }
+      return;
+    }
+
+    const url = shareUrls[platform as keyof typeof shareUrls];
+    if (url) {
+      const width = 600;
+      const height = 400;
+      const left = (window.innerWidth - width) / 2;
+      const top = (window.innerHeight - height) / 2;
+      
+      window.open(
+        url,
+        'share',
+        `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
+      );
     }
   };
 
-  const shareToFacebook = () => {
-    const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(title)}`;
-    window.open(fbUrl, '_blank', 'width=600,height=400');
-    setIsOpen(false);
+  const generateQRCode = () => {
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodedUrl}`;
+    return qrCodeUrl;
   };
 
-  const shareToTwitter = () => {
-    const tweetText = `${title} ${url}`;
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
-    window.open(twitterUrl, '_blank', 'width=600,height=400');
-    setIsOpen(false);
+  const downloadQRCode = () => {
+    const qrCodeUrl = generateQRCode();
+    const link = document.createElement('a');
+    link.href = qrCodeUrl;
+    link.download = `qr-code-${newsId}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    trackShareMutation.mutate('qr-download');
+    toast({
+      title: "ดาวน์โหลด QR Code แล้ว",
+      description: "QR Code ได้รับการบันทึกแล้ว",
+    });
   };
 
-  const shareToLine = () => {
-    const lineUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`;
-    window.open(lineUrl, '_blank', 'width=600,height=400');
-    setIsOpen(false);
-  };
+  const socialPlatforms = [
+    {
+      name: 'Facebook',
+      platform: 'facebook',
+      icon: Facebook,
+      color: 'bg-blue-600 hover:bg-blue-700',
+      description: 'แชร์ไปยัง Facebook'
+    },
+    {
+      name: 'Twitter',
+      platform: 'twitter',
+      icon: Twitter,
+      color: 'bg-sky-500 hover:bg-sky-600',
+      description: 'แชร์ไปยัง Twitter (X)'
+    },
+    {
+      name: 'LINE',
+      platform: 'line',
+      icon: MessageCircle,
+      color: 'bg-green-500 hover:bg-green-600',
+      description: 'แชร์ไปยัง LINE'
+    },
+    {
+      name: 'WhatsApp',
+      platform: 'whatsapp',
+      icon: MessageCircle,
+      color: 'bg-green-600 hover:bg-green-700',
+      description: 'แชร์ไปยัง WhatsApp'
+    },
+    {
+      name: 'Telegram',
+      platform: 'telegram',
+      icon: MessageCircle,
+      color: 'bg-blue-500 hover:bg-blue-600',
+      description: 'แชร์ไปยัง Telegram'
+    },
+    {
+      name: 'Email',
+      platform: 'email',
+      icon: Mail,
+      color: 'bg-gray-600 hover:bg-gray-700',
+      description: 'ส่งทางอีเมล'
+    }
+  ];
 
-  const shareByEmail = () => {
-    const subject = encodeURIComponent(`ข่าว: ${title}`);
-    const body = encodeURIComponent(`ฉันคิดว่าคุณอาจสนใจข่าวนี้:\n\n${title}\n\n${description || ''}\n\n${url}`);
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
-    setIsOpen(false);
-  };
+  if (compact) {
+    return (
+      <div className="flex items-center gap-2">
+        {navigator.share && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleShare('native')}
+            className="gap-2"
+          >
+            <Share2 className="h-4 w-4" />
+            แชร์
+          </Button>
+        )}
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleShare('copy')}
+          className="gap-2"
+        >
+          <Copy className="h-4 w-4" />
+          คัดลอก
+        </Button>
+
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Share2 className="h-4 w-4" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-kanit">แชร์ข่าวนี้</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-3">
+              {socialPlatforms.map((social) => {
+                const IconComponent = social.icon;
+                return (
+                  <Button
+                    key={social.platform}
+                    variant="outline"
+                    className={`${social.color} text-white border-0 gap-2`}
+                    onClick={() => handleShare(social.platform)}
+                  >
+                    <IconComponent className="h-4 w-4" />
+                    {social.name}
+                  </Button>
+                );
+              })}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
 
   return (
-    <div className="relative">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleNativeShare}
-        className="gap-2"
-      >
-        <Share2 className="h-4 w-4" />
-        แชร์
-      </Button>
-
-      {isOpen && !navigator.share && (
-        <div className="absolute top-full mt-2 right-0 bg-white dark:bg-gray-800 border rounded-lg shadow-lg p-2 z-50 min-w-48">
-          <div className="flex flex-col gap-2">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 font-kanit">
+          <Share2 className="h-5 w-5 text-primary" />
+          แชร์ข่าวนี้
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Quick Actions */}
+        <div className="flex flex-wrap gap-2">
+          {navigator.share && (
             <Button
-              variant="ghost"
-              size="sm"
-              onClick={shareToFacebook}
-              className="justify-start gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              onClick={() => handleShare('native')}
+              className="gap-2 bg-primary hover:bg-primary/90"
             >
-              <div className="w-4 h-4 bg-blue-600 rounded flex items-center justify-center">
-                <span className="text-white text-xs font-bold">f</span>
+              <Share2 className="h-4 w-4" />
+              แชร์
+            </Button>
+          )}
+          
+          <Button
+            variant="outline"
+            onClick={() => handleShare('copy')}
+            className="gap-2"
+          >
+            <Copy className="h-4 w-4" />
+            คัดลอกลิงก์
+          </Button>
+        </div>
+
+        <Separator />
+
+        {/* Social Platforms */}
+        <div>
+          <h4 className="font-semibold font-kanit mb-3">แชร์ไปยังโซเชียลมีเดีย</h4>
+          <div className="grid grid-cols-2 gap-3">
+            {socialPlatforms.map((social) => {
+              const IconComponent = social.icon;
+              return (
+                <Button
+                  key={social.platform}
+                  variant="outline"
+                  className={`${social.color} text-white border-0 gap-2 h-auto py-3 flex-col`}
+                  onClick={() => handleShare(social.platform)}
+                >
+                  <IconComponent className="h-5 w-5" />
+                  <span className="font-sarabun text-sm">{social.name}</span>
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* QR Code */}
+        <div>
+          <h4 className="font-semibold font-kanit mb-3">QR Code</h4>
+          <div className="flex items-center gap-4">
+            <img
+              src={generateQRCode()}
+              alt="QR Code"
+              className="w-20 h-20 border rounded"
+            />
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground font-sarabun mb-2">
+                สแกน QR Code เพื่ออ่านข่าวบนมือถือ
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={downloadQRCode}
+                className="gap-2 font-sarabun"
+              >
+                <Download className="h-4 w-4" />
+                ดาวน์โหลด QR Code
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Custom Message */}
+        <div>
+          <h4 className="font-semibold font-kanit mb-3">ข้อความกำกับ</h4>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="customMessage" className="font-sarabun">
+                เพิ่มข้อความของคุณ (ไม่จำเป็น)
+              </Label>
+              <Textarea
+                id="customMessage"
+                value={customMessage}
+                onChange={(e) => setCustomMessage(e.target.value)}
+                placeholder="เพิ่มความคิดเห็นของคุณเกี่ยวกับข่าวนี้..."
+                rows={3}
+                className="font-sarabun"
+              />
+            </div>
+            
+            <div className="bg-muted p-3 rounded-lg">
+              <Label className="font-sarabun text-sm text-muted-foreground">
+                ตัวอย่างข้อความที่จะแชร์:
+              </Label>
+              <div className="mt-2 p-2 bg-background rounded border text-sm font-sarabun">
+                {customMessage && (
+                  <>
+                    <div className="mb-2 text-primary">{customMessage}</div>
+                    <Separator className="my-2" />
+                  </>
+                )}
+                <div className="font-semibold">{title}</div>
+                <div className="text-muted-foreground mt-1">{description.substring(0, 100)}...</div>
+                <div className="text-primary text-xs mt-2">{currentUrl}</div>
               </div>
-              Facebook
-            </Button>
+            </div>
+          </div>
+        </div>
 
+        {/* Share URL */}
+        <div>
+          <Label className="font-sarabun text-sm">ลิงก์ข่าว</Label>
+          <div className="flex gap-2 mt-1">
+            <Input
+              value={currentUrl}
+              readOnly
+              className="font-mono text-sm"
+            />
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              onClick={shareToLine}
-              className="justify-start gap-2 text-green-500 hover:text-green-600 hover:bg-green-50"
-            >
-              <MessageCircle className="h-4 w-4" />
-              LINE
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={shareToTwitter}
-              className="justify-start gap-2 text-blue-400 hover:text-blue-500 hover:bg-blue-50"
-            >
-              <Twitter className="h-4 w-4" />
-              Twitter
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={shareByEmail}
-              className="justify-start gap-2 text-gray-600 hover:text-gray-700 hover:bg-gray-50"
-            >
-              <Mail className="h-4 w-4" />
-              อีเมล
-            </Button>
-
-            <hr className="my-1" />
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={copyToClipboard}
-              className="justify-start gap-2 text-gray-600 hover:text-gray-700 hover:bg-gray-50"
+              onClick={() => handleShare('copy')}
+              className="gap-1 whitespace-nowrap"
             >
               <Copy className="h-4 w-4" />
-              คัดลอกลิงก์
+              คัดลอก
             </Button>
           </div>
         </div>
-      )}
 
-      {/* Backdrop to close the menu */}
-      {isOpen && (
-        <div 
-          className="fixed inset-0 z-40" 
-          onClick={() => setIsOpen(false)}
-        />
-      )}
-    </div>
+        {/* Share Stats */}
+        <div className="bg-muted/30 p-3 rounded-lg">
+          <div className="flex items-center justify-between text-sm font-sarabun">
+            <span className="text-muted-foreground">สถิติการแชร์</span>
+            <div className="flex gap-4">
+              <span>Facebook: 0</span>
+              <span>Twitter: 0</span>
+              <span>LINE: 0</span>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
