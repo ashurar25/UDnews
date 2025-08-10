@@ -116,10 +116,10 @@ const Index = () => {
     return `${diffInDays} วันที่แล้ว`;
   };
 
-  // Process news data - Limited to 5 articles total
+  // Process news data - Increased to 15 articles total
   const allNews = newsData || [];
   const breakingNews = allNews.filter((news: NewsItem) => news.isBreaking).map((news: NewsItem) => news.title);
-  const featuredNews = allNews.slice(0, 2).map((news: NewsItem) => ({
+  const featuredNews = allNews.slice(0, 3).map((news: NewsItem) => ({
     id: news.id,
     title: news.title,
     summary: news.summary,
@@ -131,7 +131,7 @@ const Index = () => {
     size: "large" as const
   }));
 
-  const latestNews = allNews.slice(2, 5).map((news: NewsItem, index: number) => ({
+  const latestNews = allNews.slice(3, 15).map((news: NewsItem, index: number) => ({
     id: news.id,
     title: news.title,
     summary: news.summary,
@@ -260,7 +260,7 @@ const Index = () => {
                 ยอดนิยมวันนี้
               </h3>
               <div className="space-y-4">
-                {latestNews.slice(0, 8).map((news, index) => (
+                {latestNews.slice(0, 12).map((news, index) => (
                   <div key={index} className="flex gap-3 p-3 rounded hover:bg-accent transition-colors cursor-pointer">
                     <span className="text-primary font-bold font-kanit text-lg">
                       {index + 1}

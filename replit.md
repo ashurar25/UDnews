@@ -31,11 +31,12 @@ Preferred communication style: Simple, everyday language.
 - ✅ Enhanced storage interface with site settings methods (getAllSiteSettings, updateSiteSetting, etc.)
 - ✅ Application supports real-time theme switching across entire website
 
-## Migration to Replit Complete + News Content Reduced (10 สิงหาคม 2568)
+## News Content Increased + Migration to Replit Complete (10 สิงหาคม 2568)
 - ✅ Successfully migrated project from Replit Agent to Replit environment
 - ✅ Fixed build process: client built successfully and deployed to server/public
 - ✅ Application running cleanly on port 5000 without errors
-- ✅ Reduced homepage news display from 21 articles to 5 articles total (2 featured + 3 latest)
+- ✅ Increased homepage news display from 5 articles to 15 articles total (3 featured + 12 latest)
+- ✅ Enhanced sidebar popular news section to show 12 articles instead of 8
 - ✅ Maintained proper security practices with client/server separation
 - ✅ All checklist items completed in migration progress tracker
 
