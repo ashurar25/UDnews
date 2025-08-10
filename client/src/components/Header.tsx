@@ -70,24 +70,7 @@ const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-orange-50/40 dark:bg-gray-900/40 backdrop-blur-md supports-[backdrop-filter]:bg-orange-100/20 dark:supports-[backdrop-filter]:bg-gray-800/20">
-      {/* Breaking News Banner */}
-      <div className="bg-red-600 text-white py-2 overflow-hidden relative">
-        <div className="flex items-center">
-          <div className="bg-yellow-500 text-red-900 px-4 py-1 font-bold text-sm font-kanit rounded-r-lg whitespace-nowrap flex-shrink-0">
-            ข่าวด่วน
-          </div>
-          <div className="flex-1 ml-4 relative overflow-hidden">
-            <div className="animate-scroll whitespace-nowrap">
-              <span className="font-sarabun text-sm">
-                🔴 มท.1 มอบสารเนื่องในวันกำนันผู้ใหญ่บ้าน ประจำปี 2568 ติดต่อหน่วยงานสำคัญของหมู่บาน/ชุมชนในจังหวัด
-              </span>
-              <span className="ml-8 font-sarabun text-sm">
-                🟡 มอบดิน/แดงเดือด กัน
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+      
 
       {/* Top Bar */}
       <div className={themeClasses.topBar}>
