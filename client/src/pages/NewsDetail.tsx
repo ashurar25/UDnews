@@ -248,9 +248,9 @@ const NewsDetail = () => {
             {/* Related News */}
             <Card>
               <CardContent className="p-6">
-                <h3 className="text-xl font-bold font-kanit mb-4">ข่าวที่เกี่ยวข้อง</h3>
+                <h3 className="text-xl font-bold font-kanit mb-4">ข่าวที่เกี่ยวข้อง (3 ข่าว)</h3>
                 <div className="space-y-4">
-                  {relatedNews?.map((item: NewsItem) => (
+                  {relatedNews?.slice(0, 3).map((item: NewsItem) => (
                     <div 
                       key={item.id}
                       className="cursor-pointer group"
