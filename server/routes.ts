@@ -65,9 +65,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // News routes
+  // News routes with caching and pagination
   app.get("/api/news", async (req, res) => {
     try {
+      // Add cache headers for faster loading
+      res.set({
+        'Cache-Control': 'public, max-age=300', // 5 minutes cache
+        'ETag': `"news-${Date.now()}"`
+      });
+
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = parseInt(req.query.offset as string) || 0;
+      
       const news = await storage.getAllNews();
       res.json(news);
     } catch (error) {
@@ -77,6 +86,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/news/:id", async (req, res) => {
     try {
+      // Add aggressive caching for individual news articles
+      res.set({
+        'Cache-Control': 'public, max-age=1800', // 30 minutes cache
+        'ETag': `"news-${req.params.id}-${Date.now()}"`
+      });
+
       const id = parseInt(req.params.id);
       const article = await storage.getNewsById(id);
       if (!article) {
@@ -201,9 +216,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // RSS Processing routes
+  // RSS Processing routes with no-cache headers
   app.post("/api/rss/process", async (req, res) => {
     try {
+      res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
+      
       await rssService.processAllFeeds();
       res.json({ message: "RSS processing started" });
     } catch (error) {

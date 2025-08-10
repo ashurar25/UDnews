@@ -34,7 +34,7 @@ const NewsDetail = () => {
     }, 50);
   }, [id]);
 
-  // Fetch news detail
+  // Fetch news detail with aggressive caching
   const { data: news, isLoading, error } = useQuery({
     queryKey: ['/api/news', id],
     queryFn: async () => {
@@ -42,7 +42,9 @@ const NewsDetail = () => {
       if (!response.ok) throw new Error('Failed to fetch news');
       return response.json();
     },
-    enabled: !!id
+    enabled: !!id,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
   });
 
   // Fetch related news

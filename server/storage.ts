@@ -1,5 +1,5 @@
 import { users, rssFeeds, newsArticles, sponsorBanners, rssProcessingHistory, type InsertUser, type User, type InsertRssFeed, type RssFeed, type InsertNews, type NewsArticle, type InsertSponsorBanner, type SponsorBanner, type InsertRssHistory, type RssProcessingHistory } from "@shared/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, desc } from "drizzle-orm";
 import { db } from "./db";
 
 // modify the interface with any CRUD methods
@@ -101,7 +101,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllNews(): Promise<NewsArticle[]> {
-    return await db.select().from(newsArticles).orderBy(newsArticles.createdAt);
+    return await db.select().from(newsArticles).orderBy(desc(newsArticles.createdAt));
   }
 
   async getNewsById(id: number): Promise<NewsArticle | null> {

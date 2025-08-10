@@ -84,14 +84,17 @@ const Index = () => {
     city: 'อุดรธานี'
   };
 
-  // Fetch real news data from API
+  // Fetch real news data from API with performance optimization
   const { data: newsData, isLoading: isLoadingNews } = useQuery({
     queryKey: ['/api/news'],
     queryFn: async (): Promise<NewsItem[]> => {
       const response = await fetch('/api/news');
       if (!response.ok) throw new Error('Failed to fetch news');
       return response.json();
-    }
+    },
+    staleTime: 1 * 60 * 1000, // 1 minute fresh data
+    gcTime: 3 * 60 * 1000, // 3 minutes cache
+    refetchInterval: 3 * 60 * 1000, // Auto refresh every 3 minutes
   });
 
   // Helper function to calculate time ago

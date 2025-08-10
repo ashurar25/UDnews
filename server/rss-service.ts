@@ -194,7 +194,7 @@ export class RSSService {
       
       // Add user agent for better compatibility
       const customParser = new Parser({
-        timeout: 8000,
+        timeout: 5000, // Reduced timeout for faster processing
         headers: {
           'User-Agent': 'Mozilla/5.0 (compatible; UD News RSS Reader/1.0)',
         },
@@ -207,11 +207,11 @@ export class RSSService {
         }
       });
 
-      // Add timeout and better error handling
+      // Add timeout and better error handling with faster timeout
       const feed = await Promise.race([
         customParser.parseURL(feedUrl),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('RSS fetch timeout')), 10000)
+          setTimeout(() => reject(new Error('RSS fetch timeout')), 6000)
         )
       ]) as any;
 
@@ -388,17 +388,24 @@ export class RSSService {
 
       let totalProcessed = 0;
       
-      for (const feed of activeFeeds) {
+      // Process feeds in parallel for faster performance
+      const feedPromises = activeFeeds.map(async (feed, index) => {
         try {
+          // Stagger requests to avoid overwhelming servers
+          await new Promise(resolve => setTimeout(resolve, index * 500));
           const count = await this.processFeed(feed.id, feed.url, feed.category);
-          totalProcessed += count;
-          
-          // Add delay between feeds to be respectful
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await storage.updateRssFeedLastProcessed(feed.id);
+          return count;
         } catch (error) {
           console.error(`Failed to process feed ${feed.title}:`, error);
+          return 0;
         }
-      }
+      });
+
+      const results = await Promise.allSettled(feedPromises);
+      totalProcessed = results.reduce((sum, result) => {
+        return sum + (result.status === 'fulfilled' ? result.value : 0);
+      }, 0);
 
       console.log(`RSS processing complete. Total articles processed: ${totalProcessed}`);
     } catch (error) {
@@ -431,13 +438,13 @@ export class RSSService {
       console.error('Error in initial RSS processing:', error);
     });
 
-    // Set up interval for every 30 minutes (30 * 60 * 1000 ms)
+    // Set up interval for every 15 minutes for faster updates (15 * 60 * 1000 ms)
     this.intervalId = setInterval(() => {
       console.log('Starting scheduled RSS processing...');
       this.processAllFeeds().catch(error => {
         console.error('Error in scheduled RSS processing:', error);
       });
-    }, 30 * 60 * 1000);
+    }, 15 * 60 * 1000);
   }
 
   // Stop automatic RSS processing
