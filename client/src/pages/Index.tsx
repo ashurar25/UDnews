@@ -121,7 +121,7 @@ const Index = () => {
 
   // Process news data - Increased to 15 articles total
   const allNews = newsData || [];
-  const breakingNews = allNews.filter((news: NewsItem) => news.isBreaking).map((news: NewsItem) => news.title);
+  const breakingNews = allNews.filter((news: NewsItem) => news.isBreaking);
   const featuredNews = allNews.slice(0, 3).map((news: NewsItem) => ({
     id: news.id,
     title: news.title,
@@ -147,19 +147,22 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       {/* Breaking News Banner */}
-      <div className="bg-red-600 text-white py-2 overflow-hidden">
-        <div className="animate-scroll whitespace-nowrap">
-          <span className="bg-yellow-400 text-red-800 px-2 py-1 rounded font-bold mr-4">
-            ข่าวด่วน
-          </span>
-          {breakingNews.map((news, index) => (
-            <span key={index} className="mr-8">
-              📢 {news.title}
+      {breakingNews.length > 0 && (
+        <div className="bg-red-600 text-white py-2 overflow-hidden">
+          <div className="animate-scroll whitespace-nowrap">
+            <span className="bg-yellow-400 text-red-800 px-2 py-1 rounded font-bold mr-4 font-sarabun">
+              ข่าวด่วน
             </span>
-          ))}
+            {breakingNews.map((news, index) => (
+              <span key={index} className="mr-8 font-sarabun">
+                📢 {news.title}
+              </span>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Disaster Alert Widget */}
       <DisasterAlertWidget />
