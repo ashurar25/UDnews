@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Clock, Calendar } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { getWeatherForecast } from "@/lib/weather-api";
 import heroImage from "@/assets/news-hero.jpg";
 import localImage from "@/assets/news-local.jpg";
@@ -17,6 +16,29 @@ import sportsImage from "@/assets/news-sports.jpg";
 import PushNotificationSetup from "@/components/PushNotificationSetup";
 import NewsletterSignup from "@/components/NewsletterSignup";
 import DisasterAlertWidget from "@/components/DisasterAlertWidget";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+
+// Component wrapper ที่แสดง DisasterAlertWidget เมื่อมีการเตือนเท่านั้น
+const ConditionalDisasterAlertWidget = () => {
+  const { data: alerts = [], isLoading } = useQuery({
+    queryKey: ['/api/disaster-alerts/active'],
+    queryFn: () => apiRequest('/api/disaster-alerts/active'),
+    refetchInterval: 5 * 60 * 1000, // รีเฟรชทุก 5 นาที
+  });
+
+  // ไม่แสดงอะไรถ้าไม่มีการเตือนหรือกำลังโหลด
+  if (isLoading || alerts.length === 0) {
+    return null;
+  }
+
+  // แสดง DisasterAlertWidget พร้อมข้อมูลการเตือน
+  return (
+    <div className="container mx-auto px-4 py-4">
+      <DisasterAlertWidget />
+    </div>
+  );
+};
 
 interface WeatherData {
   temp: number;
@@ -164,8 +186,8 @@ const Index = () => {
         </div>
       )}
 
-      {/* Disaster Alert Widget */}
-      <DisasterAlertWidget />
+      {/* Disaster Alert Widget - แสดงเมื่อมีการเตือนเท่านั้น */}
+      <ConditionalDisasterAlertWidget />
 
       {/* Hero News Section */}
       <section className="relative h-48 md:h-64 overflow-hidden">
