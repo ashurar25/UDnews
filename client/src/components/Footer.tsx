@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Facebook, Twitter, Youtube, Mail, Phone, MapPin, Key } from "lucide-react";
+import { Facebook, Twitter, Youtube, Mail, Phone, MapPin } from "lucide-react";
 import SponsorBanner from "./SponsorBanner";
 import SponsorBannerBar from "./SponsorBannerBar";
 import { Separator } from "@/components/ui/separator";
@@ -116,12 +116,7 @@ const Footer = () => {
               ระบบ
             </h3>
             <div className="space-y-4">
-              <Link to="/admin" data-testid="link-admin" className="block">
-                <Button variant="outline" size="sm" className="w-full lg:w-auto flex items-center gap-2 hover:bg-primary/10 transition-colors">
-                  <Key className="h-4 w-4" />
-                  <span className="font-sarabun">เข้าสู่ระบบ</span>
-                </Button>
-              </Link>
+
               
               {/* Social Media Icons */}
               <div className="flex justify-center lg:justify-start space-x-3 pt-2">
