@@ -218,7 +218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!feed) {
         return res.status(404).json({ error: "RSS feed not found" });
       }
-      
+
       const count = await rssService.processFeed(id, feed.url, feed.category);
       res.json({ message: `Processed ${count} articles from ${feed.title}` });
     } catch (error) {
@@ -246,7 +246,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         interval: "30 minutes"
       });
     } catch (error) {
-      res.status(500).json({ error: "Failed to get auto-processing status" });
+      console.error('Error getting RSS status:', error);
+      res.status(500).json({ error: 'Failed to get RSS status' });
     }
   });
 

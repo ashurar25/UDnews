@@ -26,9 +26,12 @@ const NewsDetail = () => {
   const [, setLocation] = useLocation();
   const [viewCount, setViewCount] = useState(Math.floor(Math.random() * 5000 + 1000));
 
-  // Scroll to top when page loads
+  // Scroll to top when page loads or ID changes
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    // Use setTimeout to ensure DOM is ready
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 50);
   }, [id]);
 
   // Fetch news detail
