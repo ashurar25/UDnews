@@ -96,15 +96,15 @@ const Footer = () => {
             <div className="space-y-3 text-sm font-sarabun text-muted-foreground">
               <div className="flex items-center justify-center lg:justify-start gap-2">
                 <Mail className="h-4 w-4 text-primary" />
-                <span>news@udnews.com</span>
+                <span>kenginol.ar@gmail.com</span>
               </div>
               <div className="flex items-center justify-center lg:justify-start gap-2">
                 <Phone className="h-4 w-4 text-primary" />
-                <span>02-XXX-XXXX</span>
+                <span>092-443-4311</span>
               </div>
               <div className="flex items-center justify-center lg:justify-start gap-2">
                 <MapPin className="h-4 w-4 text-primary" />
-                <span>กรุงเทพมหานคร ประเทศไทย</span>
+                <span>อุดรธานี ประเทศไทย</span>
               </div>
             </div>
           </div>
@@ -118,7 +118,7 @@ const Footer = () => {
               <Link to="/admin" data-testid="link-admin" className="block">
                 <Button variant="outline" size="sm" className="w-full lg:w-auto flex items-center gap-2 hover:bg-primary/10 transition-colors">
                   <Key className="h-4 w-4" />
-                  <span className="font-sarabun">เข้าสู่ระบบแอดมิน</span>
+                  <span className="font-sarabun">เข้าสู่ระบบ</span>
                 </Button>
               </Link>
               
@@ -147,7 +147,7 @@ const Footer = () => {
         <div className="text-center space-y-4">
           <div className="flex flex-col md:flex-row justify-center items-center space-y-2 md:space-y-0 md:space-x-8">
             <p className="text-sm text-muted-foreground font-sarabun">
-              © 2024 UD News. สงวนลิขสิทธิ์.
+              © 2024 UD News. สงวนลิขสิทธิ์โดย ASHURA STUDIO.
             </p>
             <div className="flex flex-wrap justify-center gap-4 text-sm font-sarabun">
               <Link to="/privacy" className="text-muted-foreground hover:text-primary transition-colors">
@@ -161,7 +161,7 @@ const Footer = () => {
           </div>
           
           <p className="text-xs text-muted-foreground font-sarabun opacity-70">
-            พัฒนาด้วย ❤️ เพื่อประชาชนไทย | ระบบข่าวอัตโนมัติ RSS Feed
+            พัฒนาด้วย ❤️ เพื่อประชาชนไทย | 
           </p>
         </div>
       </div>
