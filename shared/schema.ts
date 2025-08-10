@@ -188,3 +188,30 @@ export type InsertNewsView = typeof newsViews.$inferInsert;
 export const insertDailyStatsSchema = createInsertSchema(dailyStats);
 export type DailyStats = typeof dailyStats.$inferSelect;
 export type InsertDailyStats = typeof dailyStats.$inferInsert;
+
+// Comments Table
+export const comments = pgTable("comments", {
+  id: serial("id").primaryKey(),
+  newsId: integer("news_id").references(() => news.id).notNull(),
+  parentId: integer("parent_id").references(() => comments.id),
+  authorName: varchar("author_name", { length: 100 }).notNull(),
+  authorEmail: varchar("author_email", { length: 255 }),
+  content: text("content").notNull(),
+  isApproved: boolean("is_approved").default(false).notNull(),
+  isReported: boolean("is_reported").default(false).notNull(),
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertCommentSchema = createInsertSchema(comments).pick({
+  newsId: true,
+  parentId: true,
+  authorName: true,
+  authorEmail: true,
+  content: true,
+});
+
+export type Comment = typeof comments.$inferSelect;
+export type InsertComment = typeof comments.$inferInsert;

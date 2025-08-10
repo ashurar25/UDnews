@@ -5,6 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Link, useLocation } from "wouter";
 import { useTheme } from "next-themes";
 import { getCurrentThaiSpecialDay } from "@/lib/thai-special-days";
+import { ThemeToggle } from "./ThemeToggle";
+import WeatherWidget from "./WeatherWidget";
+import SearchBar from "./SearchBar";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -88,7 +91,7 @@ const Header = () => {
               <span className="font-sarabun">✉️ kenginol.ar@gmail.com</span>
             </div>
           </div>
-          
+
           {/* Donation Button */}
           <div className="flex items-center gap-2">
             <Link to="/donate">
@@ -127,25 +130,13 @@ const Header = () => {
           </Link>
 
           {/* Right Side - Search & Donate */}
-          <div className="hidden md:flex items-center gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input 
-                placeholder="ค้นหาข่าว..." 
-                className="pl-10 w-64 font-sarabun"
-              />
+          <div className="flex items-center space-x-4">
+              <div className="hidden md:block">
+                <SearchBar className="w-80" placeholder="ค้นหาข่าว..." />
+              </div>
+              <ThemeToggle />
+              <WeatherWidget />
             </div>
-            <Link to="/donate">
-              <Button 
-                size="sm" 
-                className="bg-red-500 hover:bg-red-600 text-white font-sarabun gap-2 animate-pulse hover:animate-none transition-all duration-300 shadow-md hover:shadow-lg"
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              >
-                <Heart className="h-4 w-4 fill-current" />
-                สนับสนุนข่าวอุดร
-              </Button>
-            </Link>
-          </div>
 
           {/* Mobile Menu Button */}
           <Button

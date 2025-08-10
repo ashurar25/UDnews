@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
-import { Router, Route, Switch } from "wouter";
+import { Router, Route } from "wouter";
 import { navItems } from "./nav-items";
 import Local from "./pages/Local";
 import Politics from "./pages/Politics";
@@ -18,6 +18,7 @@ import AllNews from "./pages/AllNews";
 import CategoryNews from "./pages/CategoryNews";
 import Donate from "./pages/Donate";
 import NotFound from "./pages/NotFound";
+import Search from "./pages/Search";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -39,6 +40,8 @@ const App = () => (
           <Route path="/news/:id" component={NewsDetail} />
           <Route path="/category/:category" component={CategoryNews} />
           <Route path="/donate" component={Donate} />
+          <Route path="/search" component={Search} />
+          <Route path="/admin" component={Admin} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route component={NotFound} />
         </Switch>
