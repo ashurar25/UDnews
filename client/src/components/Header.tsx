@@ -93,18 +93,8 @@ const Header = () => {
             </div>
           </div>
 
-          {/* Donation Button */}
           <div className="flex items-center gap-2">
-            <Link to="/donate">
-              <Button 
-                size="sm" 
-                className="bg-red-500 hover:bg-red-600 text-white border-0 font-sarabun text-xs px-3 py-1 h-6 gap-1 animate-pulse hover:animate-none transition-all duration-300 shadow-md hover:shadow-lg"
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              >
-                <Heart className="h-3 w-3 fill-current" />
-                สนับสนุน
-              </Button>
-            </Link>
+            {/* Empty space where donation button was */}
           </div>
         </div>
       </div>
@@ -182,8 +172,24 @@ const Header = () => {
                 ))}
               </nav>
               
-              {/* Admin Login Button */}
+              {/* Donation Button */}
               <div className="border-t border-orange-200 dark:border-gray-600 pt-4 mt-4">
+                <Link to="/donate">
+                  <Button
+                    className="w-full bg-red-500 hover:bg-red-600 text-white font-sarabun gap-2"
+                    onClick={() => {
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    <Heart className="h-4 w-4 fill-current" />
+                    สนับสนุนเรา
+                  </Button>
+                </Link>
+              </div>
+
+              {/* Admin Login Button */}
+              <div className="pt-2">
                 <Link to="/admin">
                   <Button
                     className="w-full bg-orange-600 hover:bg-orange-700 text-white font-sarabun"

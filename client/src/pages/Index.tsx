@@ -148,39 +148,6 @@ const Index = () => {
 
       <ThaiSpecialDayBanner />
 
-      {/* Breaking News Ticker */}
-      <div className="bg-red-600 text-white py-2 overflow-hidden">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center gap-4">
-            <Badge className="bg-white text-red-600 whitespace-nowrap font-kanit flex-shrink-0">
-              ข่าวด่วน
-            </Badge>
-            <div className="flex-1 overflow-hidden">
-              <div className="animate-scroll-slow whitespace-nowrap">
-                {breakingNews.length > 0 ? (
-                  breakingNews.map((news, index) => (
-                    <span key={index} className="inline-block mr-16 font-sarabun">
-                      🔥 {news}
-                    </span>
-                  )).concat(
-                    // Duplicate content for seamless scrolling
-                    breakingNews.map((news, index) => (
-                      <span key={`duplicate-${index}`} className="inline-block mr-16 font-sarabun">
-                        🔥 {news}
-                      </span>
-                    ))
-                  )
-                ) : (
-                  <span className="inline-block font-sarabun">
-                    🔥 ไม่มีข่าวด่วนในขณะนี้
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Hero Section - Now directly under header */}
       <section className="relative h-48 md:h-64 overflow-hidden">
         <img 
