@@ -169,8 +169,8 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Hero Section */}
-      <section className="relative h-96 overflow-hidden">
+      {/* Hero Section - Reduced height and moved closer to header */}
+      <section className="relative h-48 md:h-64 overflow-hidden">
         <img 
           src={heroImage} 
           alt="UD News Hero"
@@ -178,12 +178,12 @@ const Index = () => {
           style={{ objectPosition: 'center 75%' }}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent">
-          <div className="container mx-auto px-4 h-full flex items-start pt-4">
+          <div className="container mx-auto px-4 h-full flex items-center justify-start">
             <div className="text-white max-w-2xl">
-              <h1 className="text-4xl md:text-6xl font-bold font-kanit mb-4 animate-fade-in">
+              <h1 className="text-3xl md:text-5xl font-bold font-kanit mb-3 animate-fade-in">
                 ข่าวสารอุดรธานี
               </h1>
-              <p className="text-lg md:text-xl font-sarabun mb-6 animate-fade-in">
+              <p className="text-base md:text-lg font-sarabun mb-4 animate-fade-in">
                 อัพเดทข่าวสารตลอด 24 ชั่วโมง ถูกต้อง รวดเร็ว น่าเชื่อถือ
               </p>
               <Button className="bg-gradient-primary hover:bg-primary-dark animate-bounce-in">
