@@ -35,6 +35,8 @@ export async function setupVite(app: Express, server: Server) {
     port: 8080,
     cors: true
   };
+</old_str>
+
   const vite = await createViteServer({
     ...viteConfig,
     configFile: false,
