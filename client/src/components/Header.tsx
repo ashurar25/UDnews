@@ -39,20 +39,20 @@ const Header = () => {
     if (specialDay && theme === "thai-special") {
       return {
         topBar: `bg-${specialDay.colors.primary}/60 backdrop-blur-md text-white py-1 border-b border-${specialDay.colors.secondary}/20`,
-        mainHeader: `container mx-auto px-6 py-6 bg-${specialDay.colors.primary}/25 backdrop-blur-md border-b border-${specialDay.colors.secondary}/30`,
+        mainHeader: `w-full px-8 py-6 bg-${specialDay.colors.primary}/25 backdrop-blur-md border-b border-${specialDay.colors.secondary}/30`,
         title: `text-3xl font-bold font-kanit text-white drop-shadow-lg shadow-orange-500`
       }
     }
     if (theme === "dark") {
       return {
         topBar: "bg-gray-800/60 backdrop-blur-md text-white py-1 border-b border-gray-700/20",
-        mainHeader: "container mx-auto px-6 py-6 bg-gray-900/25 backdrop-blur-md border-b border-gray-800/30",
+        mainHeader: "w-full px-8 py-6 bg-gray-900/25 backdrop-blur-md border-b border-gray-800/30",
         title: "text-3xl font-bold font-kanit text-white drop-shadow-lg shadow-orange-500"
       }
     }
     return {
       topBar: "bg-orange-600/60 backdrop-blur-md text-white py-1 border-b border-orange-300/20",
-      mainHeader: "container mx-auto px-6 py-6 bg-orange-500/25 backdrop-blur-md border-b border-orange-200/30",
+      mainHeader: "w-full px-8 py-6 bg-orange-500/25 backdrop-blur-md border-b border-orange-200/30",
       title: "text-3xl font-bold font-kanit text-white drop-shadow-lg shadow-orange-500"
     }
   }
@@ -75,7 +75,7 @@ const Header = () => {
 
       {/* Top Bar */}
       <div className={themeClasses.topBar}>
-        <div className="container mx-auto px-4 flex justify-between items-center text-xs">
+        <div className="w-full px-8 flex justify-between items-center text-xs">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
