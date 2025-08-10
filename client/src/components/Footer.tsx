@@ -10,28 +10,28 @@ const Footer = () => {
   return (
     <footer className="bg-gradient-subtle border-t border-border transition-colors duration-300">
       <div className="container py-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Logo and Description */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <img 
-                src="/logo.jpg" 
-                alt="UD News Logo" 
-                className="h-8 w-8 rounded" 
-              />
-              <span className="font-bold font-kanit text-lg bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                UD News
-              </span>
-            </div>
-            <p className="text-sm text-muted-foreground font-sarabun">
-              แหล่งข่าวสารที่เชื่อถือได้ อัปเดตข่าวใหม่ตลอด 24 ชั่วโมง
-            </p>
+        {/* Centered Logo and Description */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            <img 
+              src="/logo.jpg" 
+              alt="UD News Logo" 
+              className="h-12 w-12 rounded" 
+            />
+            <span className="font-bold font-kanit text-2xl bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              UD News
+            </span>
           </div>
+          <p className="text-sm text-muted-foreground font-sarabun max-w-md mx-auto">
+            แหล่งข่าวสารที่เชื่อถือได้ อัปเดตข่าวใหม่ตลอด 24 ชั่วโมง
+          </p>
+        </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Quick Links */}
           <div className="space-y-4">
-            <h3 className="font-semibold font-kanit text-foreground">ลิงก์ด่วน</h3>
-            <ul className="space-y-2 text-sm font-sarabun">
+            <h3 className="font-semibold font-kanit text-foreground text-center md:text-left">ลิงก์ด่วน</h3>
+            <ul className="space-y-2 text-sm font-sarabun text-center md:text-left">
               <li>
                 <Link to="/news/all" className="text-muted-foreground hover:text-primary transition-colors">
                   ข่าวทั้งหมด
@@ -57,8 +57,8 @@ const Footer = () => {
 
           {/* Categories */}
           <div className="space-y-4">
-            <h3 className="font-semibold font-kanit text-foreground">หมวดหมู่</h3>
-            <ul className="space-y-2 text-sm font-sarabun">
+            <h3 className="font-semibold font-kanit text-foreground text-center md:text-left">หมวดหมู่</h3>
+            <ul className="space-y-2 text-sm font-sarabun text-center md:text-left">
               <li>
                 <Link to="/news/sports" className="text-muted-foreground hover:text-primary transition-colors">
                   กีฬา
@@ -84,11 +84,24 @@ const Footer = () => {
 
           {/* Contact Info */}
           <div className="space-y-4">
-            <h3 className="font-semibold font-kanit text-foreground">ติดต่อเรา</h3>
-            <div className="space-y-2 text-sm font-sarabun text-muted-foreground">
+            <h3 className="font-semibold font-kanit text-foreground text-center md:text-left">ติดต่อเรา</h3>
+            <div className="space-y-2 text-sm font-sarabun text-muted-foreground text-center md:text-left">
               <p>📧 news@udnews.com</p>
               <p>📞 02-XXX-XXXX</p>
               <p>📍 กรุงเทพมหานคร ประเทศไทย</p>
+            </div>
+          </div>
+
+          {/* Admin Access */}
+          <div className="space-y-4">
+            <h3 className="font-semibold font-kanit text-foreground text-center md:text-left">ผู้ดูแลระบบ</h3>
+            <div className="text-center md:text-left">
+              <Link to="/admin" data-testid="link-admin">
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <Key className="h-4 w-4" />
+                  <span className="font-sarabun">เข้าสู่ระบบแอดมิน</span>
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -96,7 +109,7 @@ const Footer = () => {
         <Separator className="my-6 bg-border" />
 
         {/* Bottom Footer */}
-        <div className="flex flex-col md:flex-flex-row justify-between items-center space-y-4 md:space-y-0">
+        <div className="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-8 text-center">
           <p className="text-sm text-muted-foreground font-sarabun">
             © 2024 UD News. สงวนลิขสิทธิ์.
           </p>
