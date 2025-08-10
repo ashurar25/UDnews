@@ -65,5 +65,4 @@
 
 .animate-scroll-slow {
   animation: scroll-slow 60s linear infinite;
-  white-space: nowrap;
 }

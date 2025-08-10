@@ -152,13 +152,21 @@ const Index = () => {
               ข่าวด่วน
             </Badge>
             <div className="flex-1 overflow-hidden">
-              <div className="animate-scroll-slow">
-                {breakingNews.map((news, index) => (
-                  <span key={index} className="inline-block mr-12 font-sarabun">
-                    🔥 {news}
-                  </span>
-                ))}
-                {breakingNews.length === 0 && (
+              <div className="animate-scroll-slow whitespace-nowrap">
+                {breakingNews.length > 0 ? (
+                  breakingNews.map((news, index) => (
+                    <span key={index} className="inline-block mr-16 font-sarabun">
+                      🔥 {news}
+                    </span>
+                  )).concat(
+                    // Duplicate content for seamless scrolling
+                    breakingNews.map((news, index) => (
+                      <span key={`duplicate-${index}`} className="inline-block mr-16 font-sarabun">
+                        🔥 {news}
+                      </span>
+                    ))
+                  )
+                ) : (
                   <span className="inline-block font-sarabun">
                     🔥 ไม่มีข่าวด่วนในขณะนี้
                   </span>
