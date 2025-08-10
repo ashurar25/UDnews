@@ -88,8 +88,13 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // Use static serving to avoid Vite host issues in Replit
-  serveStatic(app);
+  // Use Vite development server to see detailed error messages
+  if (process.env.NODE_ENV === "development") {
+    await setupVite(app, server);
+    log('Vite development server enabled for debugging');
+  } else {
+    serveStatic(app);
+  }
 
   // Use environment port or default to 5000
   // this serves both the API and the client.
