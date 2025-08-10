@@ -27,6 +27,7 @@ import NewsManager from "@/components/NewsManager"
 import SponsorManager from "@/components/SponsorManager"
 import { useTheme } from "next-themes"
 import { useQuery } from "@tanstack/react-query"
+import { useState } from "react"
 
 const Admin = () => {
   const { setTheme } = useTheme()
@@ -53,6 +54,9 @@ const Admin = () => {
     queryKey: ['/api/system-info'],
     refetchInterval: 60000
   })
+
+  // Admin tabs state
+  const [activeTab, setActiveTab] = useState("stats")
   
   const newsStats = Array.isArray(newsData) ? newsData.length : 0
   const rssFeeds = Array.isArray(rssFeedsData) ? rssFeedsData.length : 0

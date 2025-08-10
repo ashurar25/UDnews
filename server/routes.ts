@@ -235,6 +235,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Auto-processing status endpoint (fix JSON error)
+  app.get("/api/rss/auto-processing/status", async (req, res) => {
+    try {
+      const status = rssService.getStatus();
+      res.json({
+        isRunning: status.autoProcessingEnabled || false,
+        isProcessing: status.isProcessing || false,
+        lastProcessed: status.lastProcessed || {},
+        interval: "30 minutes"
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get auto-processing status" });
+    }
+  });
+
   app.post("/api/rss/auto/start", async (req, res) => {
     try {
       rssService.startAutoProcessing();
@@ -272,6 +287,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch RSS history for feed" });
     }
   });
+
+  // System info endpoint (enhanced for admin panel)
+  app.get("/api/system-info", async (req, res) => {
+    try {
+      // Parse database URL to get connection details
+      const dbUrl = process.env.DATABASE_URL;
+      let dbInfo = {
+        provider: "PostgreSQL",
+        host: "Unknown",
+        port: "5432", 
+        database: "Unknown",
+        ssl: "Enabled"
+      };
+
+      if (dbUrl) {
+        try {
+          const url = new URL(dbUrl);
+          dbInfo = {
+            provider: "PostgreSQL",
+            host: url.hostname,
+            port: url.port || "5432",
+            database: url.pathname.slice(1),
+            ssl: "Enabled"
+          };
+        } catch (err) {
+          console.log("Could not parse database URL");
+        }
+      }
+
+      const systemInfo = {
+        database: dbInfo,
+        environment: process.env.NODE_ENV || "development",
+        server: {
+          platform: process.platform,
+          nodeVersion: process.version,
+          uptime: Math.floor(process.uptime())
+        }
+      };
+
+      res.json(systemInfo);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get system info" });
+    }
+  });
+
+  // Remove duplicate system-info routes
+  // (Fixed duplicate routes that were causing conflicts)
 
   // Database stats route
   app.get("/api/database/stats", async (req, res) => {
