@@ -133,9 +133,6 @@ const Header = () => {
 
           {/* Right Side - Hamburger Menu Only */}
           <div className="flex items-center gap-4">
-              <DisasterAlertWidget compact />
-              <WeatherWidget />
-              <ThemeToggle />
               {/* Hamburger Menu Button */}
               <Button
                 variant="ghost"
@@ -182,6 +179,14 @@ const Header = () => {
                   </Link>
                 ))}
               </nav>
+
+              {/* Breaking News Alert */}
+              <div className="border-t border-orange-200 dark:border-gray-600 pt-4 mt-4">
+                <div className="mb-3">
+                  <span className="font-sarabun text-sm text-gray-600 dark:text-gray-400 mb-2 block">ข่าวด่วน:</span>
+                  <DisasterAlertWidget compact />
+                </div>
+              </div>
 
               {/* Theme and Weather Controls */}
               <div className="border-t border-orange-200 dark:border-gray-600 pt-4 mt-4 space-y-3">
