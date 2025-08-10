@@ -21,6 +21,7 @@ import NotFound from "./pages/NotFound";
 import Search from "./pages/Search";
 import TestSystems from "./pages/TestSystems";
 import Login from "./pages/Login";
+import DisasterAlert from "@/pages/DisasterAlert";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -44,6 +45,7 @@ const App = () => (
           <Route path="/donate" component={Donate} />
           <Route path="/search" component={Search} />
           <Route path="/test-systems" component={TestSystems} />
+          <Route path="/disaster-alert/:id" component={DisasterAlert} />
           <Route path="/login" component={Login} />
           <Route path="/admin" component={Admin} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

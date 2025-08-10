@@ -14,6 +14,9 @@ import heroImage from "@/assets/news-hero.jpg";
 import localImage from "@/assets/news-local.jpg";
 import politicsImage from "@/assets/news-politics.jpg";
 import sportsImage from "@/assets/news-sports.jpg";
+import PushNotificationSetup from "@/components/PushNotificationSetup";
+import NewsletterSignup from "@/components/NewsletterSignup";
+import DisasterAlertWidget from "@/components/DisasterAlertWidget";
 
 interface WeatherData {
   temp: number;
@@ -146,9 +149,13 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
+      {/* Special Day Banner */}
       <ThaiSpecialDayBanner />
 
-      {/* Hero Section - Now directly under header */}
+      {/* Disaster Alert Widget */}
+      <DisasterAlertWidget />
+
+      {/* Hero News Section */}
       <section className="relative h-48 md:h-64 overflow-hidden">
         <img 
           src={heroImage} 

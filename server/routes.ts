@@ -780,6 +780,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Disaster Alert API - New System 6
+  app.get("/api/disaster-alerts/active", async (req, res) => {
+    try {
+      const { disasterAlertService } = await import("./disaster-alert-service");
+      const activeAlerts = disasterAlertService.getActiveAlerts();
+      res.json(activeAlerts);
+    } catch (error) {
+      console.error("Error fetching disaster alerts:", error);
+      res.status(500).json({ message: "Failed to fetch disaster alerts" });
+    }
+  });
+
+  app.get("/api/disaster-alerts/:id", async (req, res) => {
+    try {
+      const { disasterAlertService } = await import("./disaster-alert-service");
+      const alertId = req.params.id;
+      const alerts = disasterAlertService.getActiveAlerts();
+      const alert = alerts.find(a => a.id === alertId);
+      
+      if (!alert) {
+        return res.status(404).json({ message: "Alert not found" });
+      }
+      
+      res.json(alert);
+    } catch (error) {
+      console.error("Error fetching disaster alert:", error);
+      res.status(500).json({ message: "Failed to fetch disaster alert" });
+    }
+  });
+
+  app.post("/api/disaster-alerts/:id/dismiss", async (req, res) => {
+    try {
+      const { disasterAlertService } = await import("./disaster-alert-service");
+      const alertId = req.params.id;
+      disasterAlertService.deactivateAlert(alertId);
+      res.json({ message: "Alert dismissed" });
+    } catch (error) {
+      console.error("Error dismissing alert:", error);
+      res.status(500).json({ message: "Failed to dismiss alert" });
+    }
+  });
+
+  // Manual disaster alert creation (admin only)
+  app.post("/api/disaster-alerts/manual", authMiddleware, async (req, res) => {
+    try {
+      const { disasterAlertService } = await import("./disaster-alert-service");
+      const alertData = req.body;
+      
+      const alert = {
+        id: `manual-${Date.now()}`,
+        ...alertData,
+        startTime: new Date().toISOString(),
+        source: 'Admin Manual',
+        isActive: true
+      };
+
+      await disasterAlertService.processNewAlert(alert);
+      res.json({ message: "Manual disaster alert created", alert });
+    } catch (error) {
+      console.error("Error creating manual alert:", error);
+      res.status(500).json({ message: "Failed to create manual alert" });
+    }
+  });
+
   const ratingLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 10,

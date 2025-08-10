@@ -64,6 +64,25 @@ export interface IStorage {
   backupToSecondaryDatabase(): Promise<{ success: boolean; message: string; }>;
   switchToPrimaryDatabase(): Promise<boolean>;
   switchToBackupDatabase(): Promise<boolean>;
+  getCommentsByNewsId(newsId: number): Promise<Comment[]>;
+  createComment(insertComment: InsertComment): Promise<Comment>;
+  createNewsletterSubscriber(insertSubscriber: InsertNewsletterSubscriber): Promise<NewsletterSubscriber>;
+  getAllNewsletterSubscribers(): Promise<NewsletterSubscriber[]>;
+  createPushSubscription(insertSubscription: InsertPushSubscription): Promise<PushSubscription>;
+  deactivatePushSubscription(endpoint: string): Promise<void>;
+  getNewsRatings(newsId: number): Promise<{ likes: number; dislikes: number }>;
+  getUserRating(newsId: number, ipAddress: string): Promise<NewsRating | undefined>;
+  createNewsRating(insertRating: InsertNewsRating): Promise<NewsRating>;
+  searchNews(params: {
+    query?: string;
+    category?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    sortBy?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<NewsArticle[]>;
+  getAllActivePushSubscriptions(): Promise<PushSubscription[]>;
 }
 
 // MemStorage class removed - using only PostgreSQL database storage
@@ -538,10 +557,22 @@ export class DatabaseStorage implements IStorage {
     return subscriber;
   }
 
+  // Get newsletter subscriber by email
+  async getNewsletterSubscriberByEmail(email: string) {
+    return await this.db
+      .select()
+      .from(newsletterSubscribers)
+      .where(eq(newsletterSubscribers.email, email))
+      .get();
+  }
+
+  // Get all newsletter subscribers
   async getAllNewsletterSubscribers(): Promise<NewsletterSubscriber[]> {
-    return await db.select().from(newsletterSubscribers)
+    return await this.db
+      .select()
+      .from(newsletterSubscribers)
       .where(eq(newsletterSubscribers.isActive, true))
-      .orderBy(newsletterSubscribers.subscriptionDate);
+      .all();
   }
 
   // Push Notifications Implementation
@@ -560,15 +591,24 @@ export class DatabaseStorage implements IStorage {
       .where(eq(pushSubscriptions.endpoint, endpoint));
   }
 
+  // Get all active push subscriptions
+  async getAllActivePushSubscriptions(): Promise<PushSubscription[]> {
+    return await db
+      .select()
+      .from(pushSubscriptions)
+      .where(eq(pushSubscriptions.isActive, true))
+      .all();
+  }
+
   // News Rating System Implementation
   async getNewsRatings(newsId: number): Promise<{ likes: number; dislikes: number }> {
     try {
       const ratings = await db.select().from(newsRatings)
         .where(eq(newsRatings.newsId, newsId));
-      
+
       const likes = ratings.filter(r => r.rating === 'like').length;
       const dislikes = ratings.filter(r => r.rating === 'dislike').length;
-      
+
       return { likes, dislikes };
     } catch (error) {
       console.error('Error fetching ratings:', error);
@@ -608,9 +648,9 @@ export class DatabaseStorage implements IStorage {
   }): Promise<NewsArticle[]> {
     try {
       let query = db.select().from(newsArticles);
-      
+
       const conditions = [];
-      
+
       if (params.query) {
         conditions.push(
           or(
@@ -620,23 +660,23 @@ export class DatabaseStorage implements IStorage {
           )
         );
       }
-      
+
       if (params.category) {
         conditions.push(eq(newsArticles.category, params.category));
       }
-      
+
       if (params.dateFrom) {
         conditions.push(gte(newsArticles.createdAt, new Date(params.dateFrom)));
       }
-      
+
       if (params.dateTo) {
         conditions.push(lte(newsArticles.createdAt, new Date(params.dateTo)));
       }
-      
+
       if (conditions.length > 0) {
         query = query.where(and(...conditions));
       }
-      
+
       // Sort by
       if (params.sortBy === 'popularity') {
         // Could join with view counts here if needed
@@ -644,18 +684,18 @@ export class DatabaseStorage implements IStorage {
       } else {
         query = query.orderBy(desc(newsArticles.createdAt));
       }
-      
+
       // Pagination
       if (params.offset) {
         query = query.offset(params.offset);
       }
-      
+
       if (params.limit) {
         query = query.limit(params.limit);
       } else {
         query = query.limit(20); // Default limit
       }
-      
+
       return await query;
     } catch (error) {
       console.error('Error searching news:', error);
