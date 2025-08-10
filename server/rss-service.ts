@@ -64,6 +64,37 @@ export class RSSService {
     return undefined;
   }
 
+  // Calculate string similarity using Levenshtein distance
+  private calculateSimilarity(str1: string, str2: string): number {
+    const longer = str1.length > str2.length ? str1 : str2;
+    const shorter = str1.length > str2.length ? str2 : str1;
+    
+    if (longer.length === 0) return 1.0;
+    
+    const editDistance = this.levenshteinDistance(longer, shorter);
+    return (longer.length - editDistance) / longer.length;
+  }
+
+  private levenshteinDistance(str1: string, str2: string): number {
+    const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
+    
+    for (let i = 0; i <= str1.length; i += 1) matrix[0][i] = i;
+    for (let j = 0; j <= str2.length; j += 1) matrix[j][0] = j;
+    
+    for (let j = 1; j <= str2.length; j += 1) {
+      for (let i = 1; i <= str1.length; i += 1) {
+        const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+        matrix[j][i] = Math.min(
+          matrix[j][i - 1] + 1,
+          matrix[j - 1][i] + 1,
+          matrix[j - 1][i - 1] + indicator
+        );
+      }
+    }
+    
+    return matrix[str2.length][str1.length];
+  }
+
   // Clean and format content
   private cleanContent(content: string | undefined, contentEncoded?: string): string {
     let text = contentEncoded || content || '';
@@ -86,9 +117,40 @@ export class RSSService {
       .replace(/&gt;/g, '>')
       .replace(/&quot;/g, '"')
       .replace(/&#039;/g, "'")
+      .replace(/&#8217;/g, "'")
+      .replace(/&#8220;/g, '"')
+      .replace(/&#8221;/g, '"')
+      .replace(/&#8230;/g, '...')
       .trim();
 
     return text;
+  }
+
+  // Generate summary from content
+  private generateSummary(content: string): string {
+    if (!content || content.length < 50) {
+      return content || 'ไม่มีเนื้อหาสรุป';
+    }
+    
+    // Split by sentences (Thai and English)
+    const sentences = content.split(/[.!?।]/).filter(s => s.trim().length > 10);
+    
+    if (sentences.length === 0) {
+      return content.substring(0, 200) + '...';
+    }
+    
+    // Take first 2-3 sentences for summary
+    const summaryLength = Math.min(3, sentences.length);
+    let summary = sentences.slice(0, summaryLength).join('. ').trim();
+    
+    // Limit summary length
+    if (summary.length > 300) {
+      summary = summary.substring(0, 300) + '...';
+    } else if (!summary.endsWith('.')) {
+      summary += '...';
+    }
+    
+    return summary;
   }
 
   // Determine category from RSS feed category and item categories
@@ -120,7 +182,7 @@ export class RSSService {
     return feedCategory;
   }
 
-  // Process a single RSS feed
+  // Process a single RSS feed with improved performance
   async processFeed(feedId: number, feedUrl: string, category: string): Promise<number> {
     let articlesProcessed = 0;
     let articlesAdded = 0;
@@ -130,11 +192,26 @@ export class RSSService {
     try {
       console.log(`Processing RSS feed: ${feedUrl}`);
       
+      // Add user agent for better compatibility
+      const customParser = new Parser({
+        timeout: 8000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; UD News RSS Reader/1.0)',
+        },
+        customFields: {
+          item: [
+            ['media:content', 'mediaContent'],
+            ['content:encoded', 'contentEncoded'],
+            ['media:thumbnail', 'mediaThumbnail']
+          ]
+        }
+      });
+
       // Add timeout and better error handling
       const feed = await Promise.race([
-        parser.parseURL(feedUrl),
+        customParser.parseURL(feedUrl),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('RSS fetch timeout')), 15000)
+          setTimeout(() => reject(new Error('RSS fetch timeout')), 10000)
         )
       ]) as any;
 
@@ -212,18 +289,35 @@ export class RSSService {
     }
   }
 
+  // Generate a unique hash for article content
+  private generateContentHash(title: string, link: string): string {
+    const crypto = require('crypto');
+    return crypto.createHash('md5').update(`${title}:${link}`).digest('hex');
+  }
+
   // Process a single RSS item
   private async processRSSItem(item: RSSItem, feedCategory: string, feedId: number): Promise<boolean> {
     if (!item.title || !item.link) {
       return false; // Skip items without title or link
     }
 
-    // Check if this article already exists (by title or sourceUrl)
+    // Generate content hash for deduplication
+    const contentHash = this.generateContentHash(item.title, item.link);
+
+    // Check if this article already exists (by sourceUrl or similar title)
     const existingNews = await storage.getAllNews();
-    const exists = existingNews.some(news => 
-      news.title === item.title || 
-      (item.link && news.sourceUrl === item.link)
-    );
+    const exists = existingNews.some(news => {
+      // Check exact URL match
+      if (item.link && news.sourceUrl === item.link) return true;
+      
+      // Check similar titles (fuzzy matching)
+      if (news.title && item.title) {
+        const similarity = this.calculateSimilarity(news.title.toLowerCase(), item.title.toLowerCase());
+        return similarity > 0.85; // 85% similarity threshold
+      }
+      
+      return false;
+    });
 
     if (exists) {
       return false; // Skip duplicate articles
@@ -253,27 +347,7 @@ export class RSSService {
     return true; // Article was added
   }
 
-  // Generate a summary from content
-  private generateSummary(content: string): string {
-    if (!content) return 'สรุปข่าวจาก RSS Feed';
 
-    // Take first 150 characters and ensure it ends properly
-    let summary = content.substring(0, 150);
-    
-    // Try to end at a sentence boundary
-    const lastPeriod = summary.lastIndexOf('.');
-    const lastSpace = summary.lastIndexOf(' ');
-    
-    if (lastPeriod > 100) {
-      summary = summary.substring(0, lastPeriod + 1);
-    } else if (lastSpace > 100) {
-      summary = summary.substring(0, lastSpace) + '...';
-    } else {
-      summary = summary + '...';
-    }
-
-    return summary.trim();
-  }
 
   // Determine if news is breaking based on title keywords
   private isBreakingNews(title: string): boolean {
