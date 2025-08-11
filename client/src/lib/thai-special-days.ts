@@ -101,26 +101,14 @@ export const THAI_SPECIAL_DAYS: ThaiSpecialDay[] = [
   },
   {
     id: "makha-bucha",
-    name: "วันมาघบูชา",
-    date: "variable", // วันขึ้น 15 ค่ำ เดือน 3 (เปลี่ยนทุกปี)
+    name: "วันมาฆบูชา",
+    date: "02-24", // วันขึ้น 15 ค่ำ เดือน 3 (โดยประมาณ)
     theme: "buddhist-saffron",
     description: "ธีมสีเหลืองกุหลาบตามประเพณีพุทธศาสนา",
     colors: {
       primary: "33 100% 50%", // Saffron
       secondary: "35 85% 60%", // Light Saffron
       accent: "30 95% 40%" // Deep Saffron
-    }
-  },
-  {
-    id: "songkran",
-    name: "วันสงกรานต์",
-    date: "04-13", // 13 เมษายน
-    theme: "songkran-blue",
-    description: "ธีมสีฟ้าและขาวเฉลิมฉลองปีใหม่ไทย",
-    colors: {
-      primary: "195 100% 50%", // Water Blue
-      secondary: "200 100% 70%", // Light Blue
-      accent: "190 100% 42%" // Deep Blue
     }
   }
 ]
@@ -129,7 +117,7 @@ export function getCurrentThaiSpecialDay(): ThaiSpecialDay | null {
   const now = new Date()
   const currentDate = format(now, "MM-dd")
   
-  return THAI_SPECIAL_DAYS.find(day => day.date === currentDate) || null
+  return THAI_SPECIAL_DAYS.find((day: ThaiSpecialDay) => day.date === currentDate) || null
 }
 
 export function isThaiSpecialDay(): boolean {
