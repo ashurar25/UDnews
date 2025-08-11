@@ -65,14 +65,16 @@ const NewsManager = () => {
   ];
 
   const { data: newsData, isLoading: queryLoading, refetch } = useQuery({
-    queryKey: ['/api/news'],
+    queryKey: ['api-news'],
     queryFn: async () => {
       const response = await fetch("/api/news");
       if (!response.ok) {
         throw new Error('Failed to fetch news');
       }
       return response.json();
-    }
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: false
   });
 
   useEffect(() => {

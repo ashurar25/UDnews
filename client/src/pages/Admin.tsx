@@ -38,10 +38,13 @@ function AdminContent() {
   const { setTheme } = useTheme()
   const [location, setLocation] = useLocation()
 
+  // Admin tabs state - ต้องอยู่ด้านบนก่อน useQuery
+  const [activeTab, setActiveTab] = useState("overview")
+
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
     setLocation('/');
-  }
+  };
 
   // Fetch real database stats
   const { data: newsData } = useQuery({
@@ -90,9 +93,6 @@ function AdminContent() {
     },
     refetchInterval: 60000
   })
-
-  // Admin tabs state
-  const [activeTab, setActiveTab] = useState("stats")
 
   const newsStats = Array.isArray(newsData) ? newsData.length : 0
   const rssFeeds = Array.isArray(rssFeedsData) ? rssFeedsData.length : 0
@@ -193,7 +193,7 @@ function AdminContent() {
 
         {/* Main Admin Interface with Tabs */}
         <section>
-          <Tabs defaultValue="content" className="w-full">
+          <Tabs defaultValue="overview" className="w-full">
             <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview">ภาพรวม</TabsTrigger>
             <TabsTrigger value="analytics">สถิติ</TabsTrigger>

@@ -1,15 +1,15 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Rss, Plus, Edit, Trash2, Save, X, RefreshCw, PlayCircle } from "lucide-react";
+import { Rss, Plus, Edit, Trash2, Save, X, Play, Pause, RefreshCw, Clock, CheckCircle, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 
@@ -17,81 +17,96 @@ interface RssFeed {
   id: number;
   title: string;
   url: string;
-  description: string | null;
   category: string;
   isActive: boolean;
+  lastFetched: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-interface RssFeedForm {
+interface RssForm {
   title: string;
   url: string;
-  description: string;
   category: string;
   isActive: boolean;
 }
 
 const RSSManager = () => {
   const [feeds, setFeeds] = useState<RssFeed[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isAutoProcessing, setIsAutoProcessing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingFeed, setEditingFeed] = useState<RssFeed | null>(null);
-  const [formData, setFormData] = useState<RssFeedForm>({
+  const [isAutoProcessing, setIsAutoProcessing] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState<string>("");
+  const [formData, setFormData] = useState<RssForm>({
     title: "",
     url: "",
-    description: "",
-    category: "ข่าวทั่วไป",
+    category: "ข่าวท้องถิ่น",
     isActive: true,
   });
   const { toast } = useToast();
 
   const categories = [
-    "ข่าวทั่วไป",
     "ข่าวท้องถิ่น",
-    "ข่าวราชการ",
     "การเมือง",
+    "อาชญากรรม",
     "กีฬา",
     "บันเทิง",
     "เศรษฐกิจ",
+    "การศึกษา",
     "เทคโนโลยี",
-    "ข่าวต่างประเทศ",
-    "สุขภาพ",
-    "การศึกษา"
+    "สุขภาพ"
   ];
 
+  const { data: feedsData, isLoading: queryLoading, refetch } = useQuery({
+    queryKey: ['rss-feeds-manager'],
+    queryFn: async () => {
+      const response = await fetch("/api/rss-feeds");
+      if (!response.ok) {
+        throw new Error('Failed to fetch RSS feeds');
+      }
+      return response.json();
+    },
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false
+  });
+
+  const { data: autoProcessingStatus } = useQuery({
+    queryKey: ['rss-auto-processing-status'],
+    queryFn: async () => {
+      const response = await fetch("/api/rss/auto-processing/status");
+      if (!response.ok) {
+        throw new Error('Failed to fetch auto-processing status');
+      }
+      return response.json();
+    },
+    refetchInterval: 30000,
+    staleTime: 1000 * 30,
+    refetchOnWindowFocus: false
+  });
+
   useEffect(() => {
-    fetchFeeds();
-    checkAutoProcessingStatus();
-  }, []);
+    if (feedsData) {
+      setFeeds(feedsData);
+    }
+    setIsLoading(queryLoading);
+  }, [feedsData, queryLoading]);
+
+  useEffect(() => {
+    if (autoProcessingStatus) {
+      setIsAutoProcessing(autoProcessingStatus.isRunning || false);
+    }
+  }, [autoProcessingStatus]);
 
   const fetchFeeds = async () => {
     try {
-      const response = await fetch("/api/rss-feeds");
-      if (response.ok) {
-        const feedsData = await response.json();
-        setFeeds(feedsData);
-      }
+      await refetch();
     } catch (error) {
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: "ไม่สามารถโหลดข้อมูล RSS Feed ได้",
+        description: "ไม่สามารถโหลดข้อมูล RSS feeds ได้",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const checkAutoProcessingStatus = async () => {
-    try {
-      const response = await fetch('/api/rss/auto-processing/status');
-      if (response.ok) {
-        const data = await response.json();
-        setIsAutoProcessing(data.isAutoProcessing);
-      }
-    } catch (error) {
-      console.error("Error checking auto-processing status:", error);
     }
   };
 
@@ -103,10 +118,12 @@ const RSSManager = () => {
       const url = editingFeed ? `/api/rss-feeds/${editingFeed.id}` : "/api/rss-feeds";
       const method = editingFeed ? "PUT" : "POST";
 
+      const token = localStorage.getItem('adminToken');
       const response = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify(formData),
       });
@@ -114,7 +131,7 @@ const RSSManager = () => {
       if (response.ok) {
         toast({
           title: "สำเร็จ!",
-          description: editingFeed ? "แก้ไข RSS Feed สำเร็จ" : "เพิ่ม RSS Feed สำเร็จ",
+          description: editingFeed ? "แก้ไข RSS feed สำเร็จ" : "เพิ่ม RSS feed สำเร็จ",
         });
         fetchFeeds();
         resetForm();
@@ -125,7 +142,7 @@ const RSSManager = () => {
     } catch (error) {
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: "ไม่สามารถบันทึก RSS Feed ได้",
+        description: "ไม่สามารถบันทึก RSS feed ได้",
         variant: "destructive",
       });
     } finally {
@@ -134,19 +151,23 @@ const RSSManager = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("คุณแน่ใจหรือไม่ที่จะลบ RSS Feed นี้?")) {
+    if (!confirm("คุณแน่ใจหรือไม่ที่จะลบ RSS feed นี้?")) {
       return;
     }
 
     try {
+      const token = localStorage.getItem('adminToken');
       const response = await fetch(`/api/rss-feeds/${id}`, {
         method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
       });
 
       if (response.ok) {
         toast({
           title: "สำเร็จ!",
-          description: "ลบ RSS Feed สำเร็จ",
+          description: "ลบ RSS feed สำเร็จ",
         });
         fetchFeeds();
       } else {
@@ -155,7 +176,7 @@ const RSSManager = () => {
     } catch (error) {
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: "ไม่สามารถลบ RSS Feed ได้",
+        description: "ไม่สามารถลบ RSS feed ได้",
         variant: "destructive",
       });
     }
@@ -166,7 +187,6 @@ const RSSManager = () => {
     setFormData({
       title: feed.title,
       url: feed.url,
-      description: feed.description || "",
       category: feed.category,
       isActive: feed.isActive,
     });
@@ -178,8 +198,7 @@ const RSSManager = () => {
     setFormData({
       title: "",
       url: "",
-      description: "",
-      category: "ข่าวทั่วไป",
+      category: "ข่าวท้องถิ่น",
       isActive: true,
     });
   };
@@ -191,170 +210,97 @@ const RSSManager = () => {
     }
   };
 
-  const handleProcessAllFeeds = async () => {
-    setIsProcessing(true);
+  const handleProcessFeed = async (id: number) => {
     try {
-      const response = await fetch("/api/rss/process", {
+      setProcessingStatus(`Processing feed ${id}...`);
+      const response = await fetch(`/api/rss/process/${id}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
       });
 
       if (response.ok) {
         const result = await response.json();
         toast({
-          title: "เริ่มประมวลผล RSS",
+          title: "สำเร็จ!",
           description: result.message,
         });
-      } else {
-        throw new Error("Failed to process RSS feeds");
-      }
-    } catch (error) {
-      toast({
-        title: "เกิดข้อผิดพลาด",
-        description: "ไม่สามารถประมวลผล RSS Feed ได้",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleProcessSingleFeed = async (feedId: number) => {
-    setIsProcessing(true);
-    try {
-      const response = await fetch(`/api/rss/process/${feedId}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        toast({
-          title: "ประมวลผลสำเร็จ",
-          description: result.message,
-        });
+        fetchFeeds();
       } else {
         throw new Error("Failed to process RSS feed");
       }
     } catch (error) {
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: "ไม่สามารถประมวลผล RSS Feed ได้",
+        description: "ไม่สามารถประมวลผล RSS feed ได้",
         variant: "destructive",
       });
     } finally {
-      setIsProcessing(false);
+      setProcessingStatus("");
     }
   };
 
-  const addSampleFeeds = async () => {
-    const sampleFeeds = [
-      {
-        title: "BBC Thai",
-        url: "https://feeds.bbci.co.uk/thai/rss.xml",
-        description: "ข่าวจาก BBC ภาษาไทย",
-        category: "ข่าวทั่วไป"
-      },
-      {
-        title: "ThaiPBS World",
-        url: "https://world.thaipbs.or.th/rss.xml",
-        description: "ข่าวต่างประเทศจาก ThaiPBS",
-        category: "ข่าวต่างประเทศ"
-      },
-      {
-        title: "Voice Online",
-        url: "https://voiceonline.co.th/rss.xml",
-        description: "ข่าวจาก Voice Online",
-        category: "ข่าวทั่วไป"
-      },
-      {
-        title: "Komchadluek",
-        url: "https://www.komchadluek.net/rss.xml",
-        description: "ข่าวจาก คมชัดลึก",
-        category: "ข่าวทั่วไป"
-      },
-      {
-        title: "Manager Online Tech",
-        url: "https://mgronline.com/rss/technology",
-        description: "ข่าวเทคโนโลยีจาก Manager",
-        category: "เทคโนโลยี"
-      },
-      {
-        title: "Thansettakij",
-        url: "https://www.thansettakij.com/rss",
-        description: "ข่าวเศรษฐกิจจาก ธันเศรษฐกิจ",
-        category: "เศรษฐกิจ"
-      }
-    ];
+  const handleProcessAllFeeds = async () => {
+    try {
+      setProcessingStatus("Processing all feeds...");
+      const response = await fetch("/api/rss/process", {
+        method: "POST",
+      });
 
-    for (const feed of sampleFeeds) {
-      try {
-        await fetch("/api/rss-feeds", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(feed),
+      if (response.ok) {
+        toast({
+          title: "สำเร็จ!",
+          description: "เริ่มประมวลผล RSS feeds ทั้งหมดแล้ว",
         });
-      } catch (error) {
-        console.error("Error adding sample feed:", error);
+        fetchFeeds();
+      } else {
+        throw new Error("Failed to process all RSS feeds");
       }
+    } catch (error) {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถประมวลผล RSS feeds ได้",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingStatus("");
     }
+  };
 
-    toast({
-      title: "เพิ่มตัวอย่าง RSS Feed สำเร็จ",
-      description: "เพิ่ม RSS Feed ตัวอย่างแล้ว",
+  const toggleAutoProcessing = async () => {
+    try {
+      const endpoint = isAutoProcessing ? "/api/rss/auto/stop" : "/api/rss/auto/start";
+      const response = await fetch(endpoint, {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setIsAutoProcessing(!isAutoProcessing);
+        toast({
+          title: "สำเร็จ!",
+          description: result.message,
+        });
+      } else {
+        throw new Error("Failed to toggle auto processing");
+      }
+    } catch (error) {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถเปลี่ยนสถานะการประมวลผลอัตโนมัติได้",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const formatDate = (date: Date | null) => {
+    if (!date) return "ยังไม่เคยดึงข้อมูล";
+    return new Date(date).toLocaleDateString('th-TH', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
-
-    fetchFeeds();
   };
-
-  const handleStartAutoProcessing = async () => {
-    try {
-      const response = await fetch('/api/rss/auto-processing/start', { method: 'POST' });
-      if (response.ok) {
-        setIsAutoProcessing(true);
-        toast({
-          title: "เริ่มประมวลผลอัตโนมัติ",
-          description: "RSS Feed จะถูกประมวลผลทุก 30 นาที",
-        });
-      } else {
-        throw new Error('Failed to start auto-processing');
-      }
-    } catch (error) {
-      toast({
-        title: "เกิดข้อผิดพลาด",
-        description: "ไม่สามารถเริ่มประมวลผลอัตโนมัติได้",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleStopAutoProcessing = async () => {
-    try {
-      const response = await fetch('/api/rss/auto-processing/stop', { method: 'POST' });
-      if (response.ok) {
-        setIsAutoProcessing(false);
-        toast({
-          title: "หยุดประมวลผลอัตโนมัติ",
-          description: "RSS Feed จะไม่ถูกประมวลผลอัตโนมัติอีกต่อไป",
-        });
-      } else {
-        throw new Error('Failed to stop auto-processing');
-      }
-    } catch (error) {
-      toast({
-        title: "เกิดข้อผิดพลาด",
-        description: "ไม่สามารถหยุดประมวลผลอัตโนมัติได้",
-        variant: "destructive",
-      });
-    }
-  };
-
 
   return (
     <Card className="hover:shadow-warm transition-shadow">
@@ -362,61 +308,31 @@ const RSSManager = () => {
         <div>
           <CardTitle className="text-lg font-kanit flex items-center gap-2">
             <Rss className="h-5 w-5 text-primary" />
-            จัดการ RSS Feed
-            {isAutoProcessing && (
-              <Badge variant="secondary" className="bg-green-100 text-green-800 font-sarabun">
-                ประมวลผลอัตโนมัติ: เปิด
-              </Badge>
-            )}
+            จัดการ RSS Feeds
           </CardTitle>
           <CardDescription className="font-sarabun">
-            เพิ่ม แก้ไข และลบ RSS Feed ของเว็บไซต์ พร้อมประมวลผลข่าวจาก RSS
+            จัดการแหล่งข่าวอัตโนมัติ RSS
           </CardDescription>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex gap-2">
           <Button 
-            onClick={handleProcessAllFeeds} 
-            disabled={isProcessing || feeds.length === 0}
             size="sm" 
+            variant="outline"
+            onClick={toggleAutoProcessing}
             className="font-sarabun"
           >
-            {isProcessing ? (
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+            {isAutoProcessing ? (
+              <>
+                <Pause className="h-4 w-4 mr-2" />
+                หยุดอัตโนมัติ
+              </>
             ) : (
-              <PlayCircle className="h-4 w-4 mr-2" />
+              <>
+                <Play className="h-4 w-4 mr-2" />
+                เปิดอัตโนมัติ
+              </>
             )}
-            {isProcessing ? "กำลังประมวลผล..." : "ประมวลผลทั้งหมด"}
           </Button>
-
-          {isAutoProcessing ? (
-            <Button 
-              onClick={handleStopAutoProcessing}
-              variant="destructive"
-              size="sm" 
-              className="font-sarabun"
-            >
-              <X className="h-4 w-4 mr-2" />
-              หยุดประมวลผลอัตโนมัติ
-            </Button>
-          ) : (
-            <Button 
-              onClick={handleStartAutoProcessing}
-              variant="outline"
-              size="sm" 
-              className="font-sarabun"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              เริ่มประมวลผลอัตโนมัติ (ทุก 30 นาที)
-            </Button>
-          )}
-
-          {feeds.length === 0 && (
-            <Button size="sm" onClick={addSampleFeeds} variant="outline" className="font-sarabun">
-              <PlayCircle className="h-4 w-4 mr-2" />
-              เพิ่มตัวอย่าง RSS
-            </Button>
-          )}
-
           <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
             <DialogTrigger asChild>
               <Button size="sm" className="font-sarabun">
@@ -424,104 +340,142 @@ const RSSManager = () => {
                 เพิ่ม RSS Feed
               </Button>
             </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle className="font-kanit">
-                {editingFeed ? "แก้ไข RSS Feed" : "เพิ่ม RSS Feed ใหม่"}
-              </DialogTitle>
-              <DialogDescription className="font-sarabun">
-                กรอกข้อมูล RSS Feed ที่ต้องการ{editingFeed ? "แก้ไข" : "เพิ่ม"}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit}>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="title" className="font-sarabun">ชื่อ RSS Feed</Label>
-                  <Input
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="เช่น ข่าวทั่วไป"
-                    required
-                  />
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle className="font-kanit">
+                  {editingFeed ? "แก้ไข RSS Feed" : "เพิ่ม RSS Feed ใหม่"}
+                </DialogTitle>
+                <DialogDescription className="font-sarabun">
+                  กรอกข้อมูล RSS Feed ที่ต้องการ{editingFeed ? "แก้ไข" : "เพิ่ม"}
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmit}>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="title" className="font-sarabun">ชื่อ RSS Feed</Label>
+                    <Input
+                      id="title"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      placeholder="ชื่อแหล่งข่าว"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="url" className="font-sarabun">URL</Label>
+                    <Input
+                      id="url"
+                      type="url"
+                      value={formData.url}
+                      onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                      placeholder="https://example.com/rss"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="category" className="font-sarabun">หมวดหมู่</Label>
+                    <Select
+                      value={formData.category}
+                      onValueChange={(value) => setFormData({ ...formData, category: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="เลือกหมวดหมู่" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="isActive"
+                      checked={formData.isActive}
+                      onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                    />
+                    <Label htmlFor="isActive" className="font-sarabun">เปิดใช้งาน</Label>
+                  </div>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="url" className="font-sarabun">URL</Label>
-                  <Input
-                    id="url"
-                    type="url"
-                    value={formData.url}
-                    onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                    placeholder="https://example.com/rss.xml"
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="category" className="font-sarabun">หมวดหมู่</Label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value) => setFormData({ ...formData, category: value })}
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsDialogOpen(false)}
+                    className="font-sarabun"
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="เลือกหมวดหมู่" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="description" className="font-sarabun">คำอธิบาย</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="คำอธิบายเกี่ยวกับ RSS Feed นี้"
-                    rows={3}
-                  />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="isActive"
-                    checked={formData.isActive}
-                    onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-                  />
-                  <Label htmlFor="isActive" className="font-sarabun">เปิดใช้งาน</Label>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                  className="font-sarabun"
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  ยกเลิก
-                </Button>
-                <Button type="submit" disabled={isLoading} className="font-sarabun">
-                  <Save className="h-4 w-4 mr-2" />
-                  {editingFeed ? "บันทึกการแก้ไข" : "เพิ่ม RSS Feed"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+                    <X className="h-4 w-4 mr-2" />
+                    ยกเลิก
+                  </Button>
+                  <Button type="submit" disabled={isLoading} className="font-sarabun">
+                    <Save className="h-4 w-4 mr-2" />
+                    {editingFeed ? "บันทึกการแก้ไข" : "เพิ่ม RSS Feed"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
+        {/* Auto Processing Status */}
+        <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-blue-600" />
+              <span className="font-sarabun text-sm text-blue-700">การประมวลผลอัตโนมัติ</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {isAutoProcessing ? (
+                <>
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <Badge className="bg-green-100 text-green-700 font-sarabun">ทำงานอยู่</Badge>
+                </>
+              ) : (
+                <>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                  <Badge variant="secondary" className="font-sarabun">หยุดทำงาน</Badge>
+                </>
+              )}
+            </div>
+          </div>
+          <p className="text-xs text-blue-600 font-sarabun mt-1">
+            {isAutoProcessing ? "ประมวลผลอัตโนมัติทุก 30 นาที" : "การประมวลผลอัตโนมัติถูกปิด"}
+          </p>
+        </div>
+
+        {/* Processing Status */}
+        {processingStatus && (
+          <div className="mb-4 p-3 bg-orange-50 rounded-lg border border-orange-200">
+            <div className="flex items-center gap-2">
+              <RefreshCw className="h-4 w-4 text-orange-600 animate-spin" />
+              <span className="text-sm text-orange-700 font-sarabun">{processingStatus}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Process All Button */}
+        <div className="mb-6">
+          <Button
+            onClick={handleProcessAllFeeds}
+            disabled={isLoading || !!processingStatus}
+            className="font-sarabun bg-green-600 hover:bg-green-700"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            ประมวลผล RSS ทั้งหมดทันที
+          </Button>
+        </div>
+
+        {isLoading && !processingStatus ? (
           <div className="text-center py-4">
             <p className="font-sarabun">กำลังโหลด...</p>
           </div>
         ) : feeds.length === 0 ? (
           <div className="text-center py-8">
             <Rss className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground font-sarabun">ยังไม่มี RSS Feed</p>
+            <p className="text-muted-foreground font-sarabun">ยังไม่มี RSS feeds</p>
             <p className="text-sm text-muted-foreground font-sarabun">
               คลิกปุ่ม "เพิ่ม RSS Feed" เพื่อเริ่มต้น
             </p>
@@ -532,51 +486,68 @@ const RSSManager = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead className="font-sarabun">ชื่อ</TableHead>
-                  <TableHead className="font-sarabun">หมวดหมู่</TableHead>
                   <TableHead className="font-sarabun">URL</TableHead>
+                  <TableHead className="font-sarabun">หมวดหมู่</TableHead>
                   <TableHead className="font-sarabun">สถานะ</TableHead>
-                  <TableHead className="font-sarabun">ประมวลผล</TableHead>
+                  <TableHead className="font-sarabun">ดึงข้อมูลล่าสุด</TableHead>
                   <TableHead className="font-sarabun">การจัดการ</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {feeds.map((feed) => (
                   <TableRow key={feed.id}>
-                    <TableCell className="font-sarabun font-medium">
-                      {feed.title}
-                      {feed.description && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {feed.description}
-                        </div>
-                      )}
+                    <TableCell className="font-sarabun">
+                      <div className="max-w-xs">
+                        <p className="font-medium truncate">{feed.title}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="max-w-xs">
+                        <a 
+                          href={feed.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 text-xs font-mono truncate block"
+                        >
+                          {feed.url}
+                        </a>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary" className="font-sarabun">
                         {feed.category}
                       </Badge>
                     </TableCell>
-                    <TableCell className="font-mono text-xs max-w-[200px] truncate">
-                      {feed.url}
-                    </TableCell>
                     <TableCell>
-                      <Badge variant={feed.isActive ? "default" : "outline"} className="font-sarabun">
-                        {feed.isActive ? "เปิดใช้งาน" : "ปิดใช้งาน"}
-                      </Badge>
+                      <div className="flex items-center gap-1">
+                        {feed.isActive ? (
+                          <Badge className="bg-green-100 text-green-700 font-sarabun">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            ใช้งาน
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="font-sarabun">
+                            <AlertTriangle className="h-3 w-3 mr-1" />
+                            ปิดใช้งาน
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
-                    <TableCell>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleProcessSingleFeed(feed.id)}
-                        disabled={isProcessing || !feed.isActive}
-                        className="font-sarabun"
-                      >
-                        <RefreshCw className={`h-3 w-3 mr-1 ${isProcessing ? 'animate-spin' : ''}`} />
-                        ประมวลผล
-                      </Button>
+                    <TableCell className="font-sarabun text-sm">
+                      {formatDate(feed.lastFetched)}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleProcessFeed(feed.id)}
+                          disabled={!!processingStatus}
+                          className="h-8 w-8 p-0"
+                          title="ประมวลผลทันที"
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                        </Button>
                         <Button
                           size="sm"
                           variant="outline"
