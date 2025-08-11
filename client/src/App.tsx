@@ -32,7 +32,7 @@ const App = () => (
       <Router>
         <Switch>
           {navItems.map(({ to, page }) => (
-            <Route key={to} path={to} component={() => page} />
+            <Route key={to} path={to} component={page} />
           ))}
           <Route path="/local" component={Local} />
           <Route path="/politics" component={Politics} />

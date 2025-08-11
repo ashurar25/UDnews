@@ -6,11 +6,11 @@ export const navItems = [
   {
     title: "หน้าแรก",
     to: "/",
-    page: <Index />,
+    page: Index,
   },
   {
     title: "แอดมิน",
     to: "/admin",
-    page: <Admin />,
+    page: Admin,
   },
 ];
