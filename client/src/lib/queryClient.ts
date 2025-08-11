@@ -8,6 +8,13 @@ const queryClient = new QueryClient({
       staleTime: 2 * 60 * 1000, // 2 minutes
       gcTime: 5 * 60 * 1000, // 5 minutes cache
       refetchInterval: false,
+      queryFn: async ({ queryKey }) => {
+        const response = await fetch(queryKey[0] as string);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      },
     },
     mutations: {
       retry: 1,
