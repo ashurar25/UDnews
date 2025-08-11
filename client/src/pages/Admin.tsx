@@ -246,74 +246,13 @@ const Admin = () => {
             <AnalyticsDashboard />
           </TabsContent>
 
-            {/* Content Management Tab */}
+            {/* News Management Tab */}
             <TabsContent value="news">
               <div className="space-y-6">
-                <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการเนื้อหาและข้อมูล</h3>
+                <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการข่าว</h3>
 
                 {/* News Management */}
-                <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
-                  <CardHeader className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-t-xl">
-                    <CardTitle className="flex items-center gap-2 font-kanit text-orange-700">
-                      <Newspaper className="h-5 w-5" />
-                      จัดการข่าว
-                    </CardTitle>
-                    <CardDescription className="font-sarabun">
-                      เพิ่ม แก้ไข และลบข่าวสาร
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <NewsManager />
-                  </CardContent>
-                </Card>
-
-                {/* RSS Management */}
-                <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
-                  <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-t-xl">
-                    <CardTitle className="flex items-center gap-2 font-kanit text-purple-700">
-                      <Rss className="h-5 w-5" />
-                      จัดการ RSS Feeds
-                    </CardTitle>
-                    <CardDescription className="font-sarabun">
-                      จัดการแหล่งข่าวอัตโนมัติ
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <RSSManager />
-                  </CardContent>
-                </Card>
-
-                {/* Sponsor Management */}
-                <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
-                  <CardHeader className="bg-gradient-to-r from-green-50 to-teal-50 rounded-t-xl">
-                    <CardTitle className="flex items-center gap-2 font-kanit text-green-700">
-                      <Image className="h-5 w-5" />
-                      จัดการแบนเนอร์สปอนเซอร์
-                    </CardTitle>
-                    <CardDescription className="font-sarabun">
-                      จัดการโฆษณาและแบนเนอร์
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <SponsorManager />
-                  </CardContent>
-                </Card>
-
-                {/* Contact Messages Management */}
-                <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
-                  <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-xl">
-                    <CardTitle className="flex items-center gap-2 font-kanit text-blue-700">
-                      <Mail className="h-5 w-5" />
-                      จัดการข้อความติดต่อ
-                    </CardTitle>
-                    <CardDescription className="font-sarabun">
-                      ดูและจัดการข้อความจากผู้เยี่ยมชม
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <ContactMessagesManager />
-                  </CardContent>
-                </Card>
+                <NewsManager />
               </div>
             </TabsContent>
 
