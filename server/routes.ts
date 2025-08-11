@@ -14,7 +14,7 @@ import {
   insertNewsRatingSchema
 } from "@shared/schema";
 import { rssService } from "./rss-service";
-import { authMiddleware, generateToken } from "./middleware/auth";
+import { authenticateToken as authMiddleware, generateToken } from "./middleware/auth";
 import rateLimit from "express-rate-limit";
 
 // Cache configuration for faster news loading
@@ -76,6 +76,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // Admin verification route
+  app.get("/api/admin/verify", authMiddleware, async (req, res) => {
+    try {
+      res.json({ 
+        success: true, 
+        message: 'Token valid',
+        user: (req as any).user
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        success: false, 
+        message: 'Server error' 
+      });
+    }
+  });
+
   // Public RSS Feeds routes (read-only)
   app.get("/api/rss-feeds", async (req, res) => {
     try {
@@ -695,7 +712,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false, 
         message: "Backup process failed",
-        error: error.toString(),
+        error: error instanceof Error ? error.message : String(error),
         timestamp: new Date().toISOString()
       });
     }
@@ -739,7 +756,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         status: "unhealthy",
         timestamp: new Date().toISOString(),
-        error: error.toString()
+        error: error instanceof Error ? error.message : String(error)
       });
     }
   });
@@ -771,7 +788,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(comment);
     } catch (error) {
       console.error("Error creating comment:", error);
-      res.status(400).json({ message: "Failed to create comment" });
+      res.status(400).json({ 
+        message: "Failed to create comment",
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
@@ -783,7 +803,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(subscriber);
     } catch (error) {
       console.error("Error creating newsletter subscription:", error);
-      if (error.message && error.message.includes('unique')) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('unique')) {
         res.status(400).json({ message: "อีเมลนี้ได้สมัครรับข่าวสารแล้ว" });
       } else {
         res.status(500).json({ message: "ไม่สามารถสมัครรับข่าวสารได้" });

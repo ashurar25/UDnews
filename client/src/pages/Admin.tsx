@@ -25,12 +25,8 @@ import {
   MessageSquare
 } from "lucide-react"
 import { Link } from "wouter"
-import RSSManager from "@/components/RSSManager"
-import NewsManager from "@/components/NewsManager"
-import SponsorManager from "@/components/SponsorManager"
-import ThemeSettings from "@/components/ThemeSettings"
-import ContactMessagesManager from "@/components/ContactMessagesManager"
-import AnalyticsDashboard from "@/components/AnalyticsDashboard" // Assuming this component exists
+// Components will be lazy loaded
+// AnalyticsDashboard will be lazy loaded
 import { useTheme } from "next-themes"
 import { useQuery } from "@tanstack/react-query"
 import React, { useState, useEffect, useCallback, Suspense } from "react"
@@ -331,13 +327,17 @@ function AdminContent() {
               <BarChart3 className="h-6 w-6 text-primary" />
               <h2 className="text-2xl font-bold">สถิติและการวิเคราะห์</h2>
             </div>
-            <AnalyticsDashboard />
+            <Suspense fallback={<LoadingSpinner />}>
+              <LazyAnalyticsDashboard />
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="news">
             <div className="space-y-6">
               <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการข่าว</h3>
-              <NewsManager />
+              <Suspense fallback={<LoadingSpinner />}>
+                <LazyNewsManager />
+              </Suspense>
             </div>
           </TabsContent>
 
@@ -355,7 +355,9 @@ function AdminContent() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-6">
-                  <RSSManager />
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <LazyRSSManager />
+                  </Suspense>
                 </CardContent>
               </Card>
             </div>
@@ -375,7 +377,9 @@ function AdminContent() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-6">
-                  <SponsorManager />
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <LazySponsorManager />
+                  </Suspense>
                 </CardContent>
               </Card>
             </div>
@@ -384,7 +388,9 @@ function AdminContent() {
           <TabsContent value="themes">
             <div className="space-y-6">
               <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">การตั้งค่ารูปลักษณ์</h3>
-              <ThemeSettings />
+              <Suspense fallback={<LoadingSpinner />}>
+                <LazyThemeSettings />
+              </Suspense>
               <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
                 <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-t-xl">
                   <CardTitle className="flex items-center gap-2 font-kanit text-pink-700">
@@ -771,7 +777,9 @@ function AdminContent() {
           </TabsContent>
 
           <TabsContent value="messages" className="space-y-6">
-            <ContactMessagesManager />
+            <Suspense fallback={<LoadingSpinner />}>
+              <LazyContactMessagesManager />
+            </Suspense>
           </TabsContent>
         </Tabs>
       </main>
