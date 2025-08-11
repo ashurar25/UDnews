@@ -135,10 +135,10 @@ export function ThemeProvider({
     theme,
     specialDay,
     isAutoMode: theme === "auto",
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme)
-      setTheme(theme)
-      setIsAutoMode(theme === "auto")
+    setTheme: (newTheme: Theme) => {
+      localStorage.setItem(storageKey, newTheme)
+      setTheme(newTheme)
+      setIsAutoMode(newTheme === "auto")
     },
   }
 
