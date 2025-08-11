@@ -209,49 +209,68 @@ export class RSSService {
     try {
       console.log(`Processing RSS feed: ${feedUrl}`);
 
-      // Add timeout and better error handling
+      // Set a more generous timeout for fetch operations (45 seconds)
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 45000);
 
-      try {
-        // Use the global parser instance
-        const feed = await parser.parseURL(feedUrl);
-        clearTimeout(timeout); // Clear timeout if parsing is successful
+      console.log(`🔄 Fetching RSS from: ${feedUrl}`);
 
-        if (!feed || !feed.items || feed.items.length === 0) {
-          console.log(`No items found in feed: ${feedUrl}`);
-          await this.recordProcessingHistory(feedId, 0, 0, true, 'No items found in feed');
-          this.lastProcessed.set(feedId, new Date()); // Update last processed time even if no items
-          return 0;
-        }
+      const response = await fetch(feedUrl, {
+        headers: {
+          'User-Agent': 'UD-News-RSS-Reader/1.0 (+https://udnews.com)',
+          'Accept': 'application/rss+xml, application/xml, text/xml, application/atom+xml',
+          'Cache-Control': 'no-cache'
+        },
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
 
-        articlesProcessed = feed.items.length;
-
-        // Process each item in the feed
-        for (const item of feed.items) {
-          try {
-            const wasAdded = await this.processRSSItem(item as RSSItem, category, feedId);
-            if (wasAdded) articlesAdded++;
-          } catch (error) {
-            console.error(`Error processing RSS item from ${feedUrl}:`, error);
-            // Continue processing other items
-          }
-        }
-
-        // Update feed last processed time
-        await storage.updateRssFeedLastProcessed(feedId);
-
-        // Record processing history
-        await this.recordProcessingHistory(feedId, articlesProcessed, articlesAdded, true, null);
-
-        this.lastProcessed.set(feedId, new Date());
-        console.log(`Successfully processed ${articlesAdded}/${articlesProcessed} items from ${feedUrl}`);
-        return articlesAdded;
-
-      } catch (fetchError) {
-        clearTimeout(timeout); // Clear timeout if fetch fails
-        throw fetchError; // Re-throw the error to be caught by the outer catch block
+      if (!response.ok) {
+        console.error(`❌ RSS fetch failed for ${feedUrl}: HTTP ${response.status}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const xml = await response.text();
+
+      if (!xml || xml.length < 100) {
+        console.error(`❌ RSS content too short for ${feedUrl}: ${xml.length} characters`);
+        throw new Error('RSS content appears to be empty or too short');
+      }
+
+      console.log(`✅ RSS fetched successfully from ${feedUrl}: ${xml.length} characters`);
+
+      // Use the global parser instance
+      const feed = await parser.parseString(xml); // Use parseString with the fetched XML
+
+      if (!feed || !feed.items || feed.items.length === 0) {
+        console.log(`No items found in feed: ${feedUrl}`);
+        await this.recordProcessingHistory(feedId, 0, 0, true, 'No items found in feed');
+        this.lastProcessed.set(feedId, new Date()); // Update last processed time even if no items
+        return 0;
+      }
+
+      articlesProcessed = feed.items.length;
+
+      // Process each item in the feed
+      for (const item of feed.items) {
+        try {
+          const wasAdded = await this.processRSSItem(item as RSSItem, category, feedId);
+          if (wasAdded) articlesAdded++;
+        } catch (error) {
+          console.error(`Error processing RSS item from ${feedUrl}:`, error);
+          // Continue processing other items
+        }
+      }
+
+      // Update feed last processed time
+      await storage.updateRssFeedLastProcessed(feedId);
+
+      // Record processing history
+      await this.recordProcessingHistory(feedId, articlesProcessed, articlesAdded, true, null);
+
+      this.lastProcessed.set(feedId, new Date());
+      console.log(`Successfully processed ${articlesAdded}/${articlesProcessed} items from ${feedUrl}`);
+      return articlesAdded;
 
     } catch (error) {
       success = false;

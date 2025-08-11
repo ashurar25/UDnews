@@ -1,4 +1,3 @@
-
 import { notificationService } from './notification-service';
 import { storage } from './storage';
 
@@ -23,6 +22,7 @@ export interface DisasterAlert {
 class DisasterAlertService {
   private alerts: DisasterAlert[] = [];
   private checkInterval: NodeJS.Timeout | null = null;
+  private isInitialized: boolean = false; // Added flag
 
   constructor() {
     this.startMonitoring();
@@ -38,6 +38,7 @@ class DisasterAlertService {
     // ตรวจสอบครั้งแรกเมื่อเริ่มต้น
     this.checkForDisasters();
     console.log('🚨 Disaster Alert System started - monitoring every 15 minutes');
+    this.isInitialized = true; // Set initialized flag
   }
 
   stopMonitoring() {
@@ -52,10 +53,10 @@ class DisasterAlertService {
     try {
       // ตรวจสอบจากกรมอุตุนิยมวิทยา (TMD)
       await this.checkTMDAlerts();
-      
+
       // ตรวจสอบจาก API อื่นๆ เช่น USGS สำหรับแผ่นดินไหว
       await this.checkUSGSEarthquakes();
-      
+
       // ตรวจสอบการเตือนภัยจากข่าวที่มี keywords ภัยพิบัติ
       await this.checkNewsForDisasters();
 
@@ -93,7 +94,7 @@ class DisasterAlertService {
       if (!response.ok) return;
 
       const data = await response.json();
-      
+
       // กรองเฉพาะแผ่นดินไหวในประเทศไทยและประเทศใกล้เคียง
       const thaiRegion = data.features.filter((earthquake: any) => {
         const [lng, lat] = earthquake.geometry.coordinates;
@@ -104,7 +105,7 @@ class DisasterAlertService {
       for (const earthquake of thaiRegion) {
         const magnitude = earthquake.properties.mag;
         const [lng, lat] = earthquake.geometry.coordinates;
-        
+
         if (magnitude >= 4.5) {
           const alert: DisasterAlert = {
             id: `earthquake-${earthquake.id}`,
@@ -179,7 +180,7 @@ class DisasterAlertService {
   // จำลองการตรวจสอบสภาพอากาศ (สำหรับทดสอบ)
   async simulateWeatherCheck() {
     const random = Math.random();
-    
+
     // สุ่มสร้างการเตือนภัย 5% ของเวลา
     if (random < 0.05) {
       const alerts = [
@@ -231,7 +232,7 @@ class DisasterAlertService {
     try {
       // ส่งผ่าน Push Notification
       const subscriptions = await storage.getAllActivePushSubscriptions();
-      
+
       for (const subscription of subscriptions) {
         await notificationService.sendPushNotification(
           subscription,
@@ -244,7 +245,7 @@ class DisasterAlertService {
       if (alert.severity === 'critical' || alert.severity === 'high') {
         const subscribers = await storage.getAllNewsletterSubscribers();
         const emails = subscribers.map(sub => sub.email);
-        
+
         if (emails.length > 0) {
           await notificationService.sendBreakingNewsEmail(
             emails,
@@ -291,20 +292,13 @@ class DisasterAlertService {
     }
   }
 
-  // ได้รับการเตือนภัยทั้งหมดที่ยังใช้งานอยู่
+  // ดึงรายการแจ้งเตือนที่ยังใช้งานอยู่
   getActiveAlerts(): DisasterAlert[] {
-    return this.alerts.filter(alert => {
-      if (!alert.isActive) return false;
-      
-      if (alert.endTime) {
-        return new Date() < new Date(alert.endTime);
-      }
-      
-      // หากไม่มี endTime ให้ active นาน 24 ชั่วโมง
-      const alertTime = new Date(alert.startTime);
-      const now = new Date();
-      return (now.getTime() - alertTime.getTime()) < 24 * 60 * 60 * 1000;
-    });
+    if (!this.isInitialized) {
+      console.warn('⚠️ Disaster Alert Service not properly initialized');
+      return [];
+    }
+    return this.alerts.filter(alert => alert.isActive);
   }
 
   // ปิดการเตือนภัย

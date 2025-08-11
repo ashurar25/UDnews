@@ -17,18 +17,25 @@ export class NotificationService {
       },
     });
 
-    // Configure web push with fallback VAPID keys
-    const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || 'BIh5YzCp0zD5yQq5xVi0WvCxwQ7J1M1P2KJ8LlS9X8F3hG4T6U2VwQ5xVi0WvCxwQ7J1M1P2KJ8LlS9X8F3hG4T6U';
-    const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || 'YourPrivateVapidKeyHere123456789012345678901234567890123456789012';
+    // Configure web push with proper VAPID keys
+    const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
+    const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
     
-    if (vapidPublicKey && vapidPrivateKey) {
-      webpush.setVapidDetails(
-        'mailto:admin@udnews.com',
-        vapidPublicKey,
-        vapidPrivateKey
-      );
+    if (vapidPublicKey && vapidPrivateKey && vapidPublicKey.length > 10) {
+      try {
+        webpush.setVapidDetails(
+          'mailto:admin@udnews.com',
+          vapidPublicKey,
+          vapidPrivateKey
+        );
+        console.log('✅ VAPID keys configured successfully');
+      } catch (error) {
+        console.warn('⚠️ Invalid VAPID keys format:', error.message);
+        console.log('📝 To generate VAPID keys, run: npx web-push generate-vapid-keys');
+      }
     } else {
       console.warn('⚠️ VAPID keys not configured. Push notifications will not work.');
+      console.log('📝 To generate VAPID keys, run: npx web-push generate-vapid-keys');
     }
   }
 
