@@ -13,6 +13,7 @@ Preferred communication style: Simple, everyday language.
 - **Build System Working**: Full React application now builds and serves correctly
 - **UI Improvements**: Fixed header full-width layout and login page dark theme support
 - **RSS Processing Active**: News feed processing from Thai sources working correctly
+- **Development Mode**: Switched to Vite development server with hot reload for automatic rebuilds
 
 # System Architecture
 
