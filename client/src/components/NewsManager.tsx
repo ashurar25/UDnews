@@ -431,7 +431,7 @@ const NewsManager = () => {
                 >
                   ← ก่อนหน้า
                 </Button>
-                
+
                 <div className="flex items-center gap-1">
                   {Array.from({ length: Math.ceil(news.length / ITEMS_PER_PAGE) }, (_, i) => i + 1)
                     .filter(page => 

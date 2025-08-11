@@ -4,14 +4,14 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { 
-  Settings, 
-  Users, 
-  FileText, 
-  BarChart3, 
-  Home, 
-  Newspaper, 
-  Rss, 
+import {
+  Settings,
+  Users,
+  FileText,
+  BarChart3,
+  Home,
+  Newspaper,
+  Rss,
   Image,
   Palette,
   Monitor,
@@ -31,10 +31,10 @@ import ContactMessagesManager from "@/components/ContactMessagesManager"
 import AnalyticsDashboard from "@/components/AnalyticsDashboard" // Assuming this component exists
 import { useTheme } from "next-themes"
 import { useQuery } from "@tanstack/react-query"
-import { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { useLocation } from "wouter"
 
-const Admin = () => {
+function AdminContent() {
   const { setTheme } = useTheme()
   const [location, setLocation] = useLocation()
 
@@ -116,9 +116,9 @@ const Admin = () => {
               <Badge variant="secondary" className="font-sarabun bg-orange-100 text-orange-700 hover:bg-orange-200">
                 ผู้ดูแลระบบ
               </Badge>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={handleLogout}
                 className="font-sarabun border-red-300 text-red-600 hover:bg-red-50"
               >
@@ -398,9 +398,9 @@ const Admin = () => {
                         <h4 className="text-lg font-semibold font-kanit text-orange-700 mb-4">ทดสอบธีมวันสำคัญ</h4>
                         <p className="text-sm text-gray-600 font-sarabun mb-4">คลิกเพื่อดูธีมสำหรับวันสำคัญต่างๆ ของไทย</p>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
+                          <Button
+                            size="sm"
+                            variant="outline"
                             className="h-auto p-3 text-xs font-sarabun border-yellow-300 text-yellow-700 hover:bg-yellow-50 flex flex-col items-center gap-1"
                             onClick={() => {
                               const root = document.documentElement;
@@ -416,9 +416,9 @@ const Admin = () => {
                             วันเฉลิมพระชนมพรรษา
                           </Button>
 
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
+                          <Button
+                            size="sm"
+                            variant="outline"
                             className="h-auto p-3 text-xs font-sarabun border-blue-300 text-blue-700 hover:bg-blue-50 flex flex-col items-center gap-1"
                             onClick={() => {
                               const root = document.documentElement;
@@ -434,9 +434,9 @@ const Admin = () => {
                             วันแม่แห่งชาติ
                           </Button>
 
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
+                          <Button
+                            size="sm"
+                            variant="outline"
                             className="h-auto p-3 text-xs font-sarabun border-yellow-300 text-yellow-700 hover:bg-yellow-50 flex flex-col items-center gap-1"
                             onClick={() => {
                               const root = document.documentElement;
@@ -452,9 +452,9 @@ const Admin = () => {
                             วันพ่อแห่งชาติ
                           </Button>
 
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
+                          <Button
+                            size="sm"
+                            variant="outline"
                             className="h-auto p-3 text-xs font-sarabun border-red-300 text-red-700 hover:bg-red-50 flex flex-col items-center gap-1"
                             onClick={() => {
                               const root = document.documentElement;
@@ -474,9 +474,9 @@ const Admin = () => {
                             วันชาติ
                           </Button>
 
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
+                          <Button
+                            size="sm"
+                            variant="outline"
                             className="h-auto p-3 text-xs font-sarabun border-orange-300 text-orange-700 hover:bg-orange-50 flex flex-col items-center gap-1"
                             onClick={() => {
                               const root = document.documentElement;
@@ -492,9 +492,9 @@ const Admin = () => {
                             วันรัฐธรรมนูญ
                           </Button>
 
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
+                          <Button
+                            size="sm"
+                            variant="outline"
                             className="h-auto p-3 text-xs font-sarabun border-orange-400 text-orange-800 hover:bg-orange-50 flex flex-col items-center gap-1"
                             onClick={() => {
                               const root = document.documentElement;
@@ -510,9 +510,9 @@ const Admin = () => {
                             วันมาฆบูชา
                           </Button>
 
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
+                          <Button
+                            size="sm"
+                            variant="outline"
                             className="h-auto p-3 text-xs font-sarabun border-cyan-300 text-cyan-700 hover:bg-cyan-50 flex flex-col items-center gap-1"
                             onClick={() => {
                               const root = document.documentElement;
@@ -528,9 +528,9 @@ const Admin = () => {
                             วันสงกรานต์
                           </Button>
 
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
+                          <Button
+                            size="sm"
+                            variant="outline"
                             className="h-auto p-3 text-xs font-sarabun border-gray-300 text-gray-700 hover:bg-gray-50 flex flex-col items-center gap-1"
                             onClick={() => {
                               const root = document.documentElement;
@@ -729,7 +729,13 @@ const Admin = () => {
         </section>
       </main>
     </div>
-  )
+  );
 }
 
-export default Admin
+export default function Admin() {
+  return (
+    <React.Suspense fallback={<div className="p-8 text-center">กำลังโหลด...</div>}>
+      <AdminContent />
+    </React.Suspense>
+  );
+}
