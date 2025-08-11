@@ -76,6 +76,30 @@ export const THAI_SPECIAL_DAYS: ThaiSpecialDay[] = [
     }
   },
   {
+    id: "buddhist-lent",
+    name: "วันเข้าพรรษา",
+    date: "07-15", // วันแรม 1 ค่ำ เดือน 8 (โดยประมาณ)
+    theme: "buddhist-saffron",
+    description: "ธีมสีเหลืองพระและน้ำตาลเพื่อเฉลิมฉลองประเพณีพุทธ",
+    colors: {
+      primary: "33 100% 50%", // Saffron
+      secondary: "35 85% 60%", // Light Saffron
+      accent: "30 95% 40%" // Deep Saffron
+    }
+  },
+  {
+    id: "songkran",
+    name: "เทศกาลสงกรานต์",
+    date: "04-13", // 13-15 เมษายน
+    theme: "songkran-blue",
+    description: "ธีมสีน้ำเงินและขาวเพื่อเฉลิมฉลองปีใหม่ไทย",
+    colors: {
+      primary: "195 100% 50%", // Water Blue
+      secondary: "200 100% 70%", // Light Blue
+      accent: "190 100% 42%" // Deep Blue
+    }
+  },
+  {
     id: "makha-bucha",
     name: "วันมาघบูชา",
     date: "variable", // วันขึ้น 15 ค่ำ เดือน 3 (เปลี่ยนทุกปี)
