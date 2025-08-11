@@ -42,7 +42,7 @@ const PushNotificationSetup = () => {
       }
 
       // Subscribe to push notifications
-      const vapidPublicKey = 'BIh5YzCp0zD5yQq5xVi0WvCxwQ7J1M1P2KJ8LlS9X8F3hG4T6U2VwQ5xVi0WvCxwQ7J1M1P2KJ8LlS9X8F3hG4T6U';
+      const vapidPublicKey = 'BP4d_Lmh8hQ6QTK6r5s8zO70KtOYzaCTvkfrrwBCAThqYal_YqWs8aWmyoqjUpAwWmNI2x47vOFMTBQLB2USsUA';
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: vapidPublicKey

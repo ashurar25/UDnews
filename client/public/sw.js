@@ -9,6 +9,91 @@ const urlsToCache = [
   '/placeholder.svg'
 ];
 
+// Install event
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => {
+        return cache.addAll(urlsToCache);
+      })
+  );
+});
+
+// Fetch event
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request)
+      .then((response) => {
+        if (response) {
+          return response;
+        }
+        return fetch(event.request);
+      }
+    )
+  );
+});
+
+// Push event
+self.addEventListener('push', (event) => {
+  if (event.data) {
+    const data = event.data.json();
+    const options = {
+      body: data.body,
+      icon: data.icon || '/logo.jpg',
+      badge: data.badge || '/logo.jpg',
+      tag: data.tag || 'default',
+      requireInteraction: data.requireInteraction || false,
+      data: {
+        url: data.url
+      },
+      actions: [
+        {
+          action: 'open',
+          title: 'อ่านข่าว'
+        },
+        {
+          action: 'close',
+          title: 'ปิด'
+        }
+      ]
+    };
+
+    event.waitUntil(
+      self.registration.showNotification(data.title, options)
+    );
+  }
+});
+
+// Notification click event
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  if (event.action === 'open' || !event.action) {
+    const url = event.notification.data?.url || '/';
+    
+    event.waitUntil(
+      clients.openWindow(url)
+    );
+  }
+});
+
+// Background sync for offline functionality
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'background-sync') {
+    event.waitUntil(doBackgroundSync());
+  }
+});
+
+function doBackgroundSync() {
+  // Implement background sync logic here
+  return Promise.resolve();
+}
+const urlsToCache = [
+  '/',
+  '/logo.jpg',
+  '/placeholder.svg'
+];
+
 // Install event - cache resources
 self.addEventListener('install', (event) => {
   console.log('[SW] Installing service worker...');

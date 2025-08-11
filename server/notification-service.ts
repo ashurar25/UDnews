@@ -1,4 +1,3 @@
-
 import nodemailer from 'nodemailer';
 import webpush from 'web-push';
 
@@ -17,25 +16,24 @@ export class NotificationService {
       },
     });
 
-    // Configure web push with proper VAPID keys
-    const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
-    const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
-    
-    if (vapidPublicKey && vapidPrivateKey && vapidPublicKey.length > 10) {
+    // Configure web push with actual VAPID keys
+    const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:kenginol.ar@gmail.com';
+    const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || 'BP4d_Lmh8hQ6QTK6r5s8zO70KtOYzaCTvkfrrwBCAThqYal_YqWs8aWmyoqjUpAwWmNI2x47vOFMTBQLB2USsUA';
+    const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || 'xZIjrB_qo2gXTsF6OxHct2VBM496q3sBFgsm2BcPxDw';
+
+    if (vapidPublicKey && vapidPrivateKey) {
       try {
         webpush.setVapidDetails(
-          'mailto:admin@udnews.com',
+          vapidSubject,
           vapidPublicKey,
           vapidPrivateKey
         );
         console.log('✅ VAPID keys configured successfully');
       } catch (error) {
-        console.warn('⚠️ Invalid VAPID keys format:', error.message);
-        console.log('📝 To generate VAPID keys, run: npx web-push generate-vapid-keys');
+        console.error('❌ Error setting VAPID details:', error);
       }
     } else {
       console.warn('⚠️ VAPID keys not configured. Push notifications will not work.');
-      console.log('📝 To generate VAPID keys, run: npx web-push generate-vapid-keys');
     }
   }
 
@@ -52,7 +50,7 @@ export class NotificationService {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #dc2626;">🚨 ข่าวด่วนจาก UD News</h2>
           <h3>${newsTitle}</h3>
-          <p>อ่านข่าวฉบับเต็มได้ที่:</p>
+          <p>อ่านข่าวฉบบเต็มได้ที่:</p>
           <a href="${newsUrl}" style="background: #dc2626; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
             อ่านข่าวเต็ม
           </a>
@@ -102,7 +100,7 @@ export class NotificationService {
     commentContent: string
   ): Promise<void> {
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@udnews.com';
-    
+
     const mailOptions = {
       from: process.env.SMTP_FROM || 'UD News <noreply@udnews.com>',
       to: adminEmail,
