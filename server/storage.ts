@@ -84,6 +84,10 @@ export interface IStorage {
     offset?: number;
   }): Promise<NewsArticle[]>;
   getAllActivePushSubscriptions(): Promise<PushSubscription[]>;
+  getNewsCount(): Promise<number>;
+  getRSSFeedsCount(): Promise<number>;
+  getSponsorBannersCount(): Promise<number>;
+  getContactMessagesCount(): Promise<number>;
 }
 
 // MemStorage class removed - using only PostgreSQL database storage
@@ -148,15 +152,15 @@ export class DatabaseStorage implements IStorage {
 
   async getAllNews(limit?: number, offset?: number): Promise<NewsArticle[]> {
     let query = db.select().from(newsArticles).orderBy(desc(newsArticles.createdAt));
-    
+
     if (limit) {
       query = query.limit(limit);
     }
-    
+
     if (offset) {
       query = query.offset(offset);
     }
-    
+
     return await query;
   }
 
@@ -422,17 +426,17 @@ export class DatabaseStorage implements IStorage {
     databaseUrl: string;
   }> {
     const [newsCount, rssFeedsCount, sponsorBannersCount, contactMessagesCount] = await Promise.all([
-      db.select({ count: sql<number>`count(*)` }).from(newsArticles),
-      db.select({ count: sql<number>`count(*)` }).from(rssFeeds),
-      db.select({ count: sql<number>`count(*)` }).from(sponsorBanners),
-      db.select({ count: sql<number>`count(*)` }).from(contactMessages)
+      this.getNewsCount(),
+      this.getRSSFeedsCount(),
+      this.getSponsorBannersCount(),
+      this.getContactMessagesCount()
     ]);
 
     return {
-      newsCount: newsCount[0]?.count || 0,
-      rssFeedsCount: rssFeedsCount[0]?.count || 0,
-      sponsorBannersCount: sponsorBannersCount[0]?.count || 0,
-      contactMessagesCount: contactMessagesCount[0]?.count || 0,
+      newsCount: newsCount,
+      rssFeedsCount: rssFeedsCount,
+      sponsorBannersCount: sponsorBannersCount,
+      contactMessagesCount: contactMessagesCount,
       totalUsers: 0, // Placeholder since we don't have user management yet
       databaseProvider: "Render PostgreSQL + Neon Backup",
       databaseUrl: "Primary: Render | Backup: Neon",
@@ -575,20 +579,21 @@ export class DatabaseStorage implements IStorage {
 
   // Get newsletter subscriber by email
   async getNewsletterSubscriberByEmail(email: string) {
-    return await this.db
+    return await db // Changed from this.db to db
       .select()
       .from(newsletterSubscribers)
       .where(eq(newsletterSubscribers.email, email))
-      .get();
+      .limit(1) // Added limit(1) to get a single subscriber
+      .execute(); // Added execute()
   }
 
   // Get all newsletter subscribers
   async getAllNewsletterSubscribers(): Promise<NewsletterSubscriber[]> {
-    return await this.db
+    return await db // Changed from this.db to db
       .select()
       .from(newsletterSubscribers)
       .where(eq(newsletterSubscribers.isActive, true))
-      .all();
+      .execute(); // Added execute()
   }
 
   // Push Notifications Implementation
@@ -613,7 +618,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(pushSubscriptions)
       .where(eq(pushSubscriptions.isActive, true))
-      .all();
+      .execute(); // Added execute()
   }
 
   // News Rating System Implementation
@@ -717,6 +722,27 @@ export class DatabaseStorage implements IStorage {
       console.error('Error searching news:', error);
       return [];
     }
+  }
+
+  // Added helper functions for counts
+  async getNewsCount(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(newsArticles);
+    return result[0]?.count || 0;
+  }
+
+  async getRSSFeedsCount(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(rssFeeds);
+    return result[0]?.count || 0;
+  }
+
+  async getSponsorBannersCount(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(sponsorBanners);
+    return result[0]?.count || 0;
+  }
+
+  async getContactMessagesCount(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(contactMessages);
+    return result[0]?.count || 0;
   }
 }
 

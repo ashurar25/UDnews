@@ -1,9 +1,8 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
-import { Router, Route, Switch } from "wouter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Router, Route } from "wouter";
 import { navItems } from "./nav-items";
 import Local from "./pages/Local";
 import Politics from "./pages/Politics";
@@ -23,6 +22,36 @@ import TestSystems from "./pages/TestSystems";
 import Login from "./pages/Login";
 import DisasterAlert from "@/pages/DisasterAlert";
 import SystemStatus from "@/pages/SystemStatus";
+import "./App.css";
+import { ErrorBoundary } from "react-error-boundary";
+
+function ErrorFallback({error, resetErrorBoundary}: {error: Error, resetErrorBoundary: () => void}) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-red-50">
+      <div className="text-center p-8">
+        <h2 className="text-2xl font-bold text-red-600 mb-4">เกิดข้อผิดพลาด</h2>
+        <p className="text-gray-600 mb-4">{error.message}</p>
+        <button 
+          onClick={resetErrorBoundary}
+          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+        >
+          ลองใหม่
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 10, // 10 minutes (updated from cacheTime)
+      retry: 2,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -30,29 +59,36 @@ const App = () => (
       <Toaster />
       <Sonner />
       <Router>
-        <Switch>
-          {navItems.map(({ to, page }) => (
-            <Route key={to} path={to} component={page} />
-          ))}
-          <Route path="/local" component={Local} />
-          <Route path="/politics" component={Politics} />
-          <Route path="/crime" component={Crime} />
-          <Route path="/sports" component={Sports} />
-          <Route path="/entertainment" component={Entertainment} />
-          <Route path="/contact" component={Contact} />
-          <Route path="/news" component={AllNews} />
-          <Route path="/all-news" component={AllNews} />
-          <Route path="/news/:id" component={NewsDetail} />
-          <Route path="/category/:category" component={CategoryNews} />
-          <Route path="/donate" component={Donate} />
-          <Route path="/search" component={Search} />
-          <Route path="/test-systems" component={TestSystems} />
-          <Route path="/system-status" component={SystemStatus} />
-          <Route path="/login" component={Login} />
-          <Route path="/admin" component={Admin} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route component={NotFound} />
-        </Switch>
+        <ErrorBoundary
+          FallbackComponent={ErrorFallback}
+          onError={(error) => {
+            console.error('Application Error:', error);
+          }}
+        >
+          <Switch>
+            {navItems.map(({ to, page }) => (
+              <Route key={to} path={to} component={page} />
+            ))}
+            <Route path="/local" component={Local} />
+            <Route path="/politics" component={Politics} />
+            <Route path="/crime" component={Crime} />
+            <Route path="/sports" component={Sports} />
+            <Route path="/entertainment" component={Entertainment} />
+            <Route path="/contact" component={Contact} />
+            <Route path="/news" component={AllNews} />
+            <Route path="/all-news" component={AllNews} />
+            <Route path="/news/:id" component={NewsDetail} />
+            <Route path="/category/:category" component={CategoryNews} />
+            <Route path="/donate" component={Donate} />
+            <Route path="/search" component={Search} />
+            <Route path="/test-systems" component={TestSystems} />
+            <Route path="/system-status" component={SystemStatus} />
+            <Route path="/login" component={Login} />
+            <Route path="/admin" component={Admin} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route component={NotFound} />
+          </Switch>
+        </ErrorBoundary>
       </Router>
     </TooltipProvider>
   </QueryClientProvider>

@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FileText, Plus, Edit, Trash2, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 
 interface NewsArticle {
   id: number;
@@ -35,7 +36,7 @@ interface NewsForm {
 
 const NewsManager = () => {
   const [news, setNews] = useState<NewsArticle[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingNews, setEditingNews] = useState<NewsArticle | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -63,25 +64,33 @@ const NewsManager = () => {
     "สุขภาพ"
   ];
 
+  const { data: newsData, isLoading: queryLoading, refetch } = useQuery({
+    queryKey: ['/api/news'],
+    queryFn: async () => {
+      const response = await fetch("/api/news");
+      if (!response.ok) {
+        throw new Error('Failed to fetch news');
+      }
+      return response.json();
+    }
+  });
+
   useEffect(() => {
-    fetchNews();
-  }, []);
+    if (newsData) {
+      setNews(newsData);
+    }
+    setIsLoading(queryLoading);
+  }, [newsData, queryLoading]);
 
   const fetchNews = async () => {
     try {
-      const response = await fetch("/api/news");
-      if (response.ok) {
-        const newsData = await response.json();
-        setNews(newsData);
-      }
+      await refetch();
     } catch (error) {
       toast({
         title: "เกิดข้อผิดพลาด",
         description: "ไม่สามารถโหลดข้อมูลข่าวได้",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 

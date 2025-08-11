@@ -51,11 +51,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/login", async (req, res) => {
     try {
       const { username, password } = req.body;
-      
+
       // Simple hardcoded admin credentials (แนะนำให้เปลี่ยนใน production)
       const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
       const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'udnews2025secure';
-      
+
       if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
         const token = generateToken({ id: 1, username: ADMIN_USERNAME });
         res.json({ 
@@ -148,21 +148,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const limit = parseInt(req.query.limit as string) || 100;
       const offset = parseInt(req.query.offset as string) || 0;
-      
+
       // Create cache key
       const cacheKey = `news:all:${limit}:${offset}`;
-      
+
       // Try to get from cache first
       let news = newsCache.get<any[]>(cacheKey);
-      
+
       if (!news) {
         // If not in cache, fetch from database
         news = await storage.getAllNews(limit, offset);
-        
+
         // Store in cache for faster subsequent requests
         newsCache.set(cacheKey, news);
       }
-      
+
       res.json(news);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch news" });
@@ -179,21 +179,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const id = parseInt(req.params.id);
       const cacheKey = `news:${id}`;
-      
+
       // Try to get from cache first
       let article = individualNewsCache.get<any>(cacheKey);
-      
+
       if (!article) {
         // If not in cache, fetch from database
         article = await storage.getNewsById(id);
         if (!article) {
           return res.status(404).json({ error: "News article not found" });
         }
-        
+
         // Store in cache for faster subsequent requests
         individualNewsCache.set(cacheKey, article);
       }
-      
+
       res.json(article);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch news article" });
@@ -204,11 +204,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertNewsSchema.parse(req.body);
       const article = await storage.insertNews(validatedData);
-      
+
       // Clear cache when new news is added  
       newsCache.flushAll();
       individualNewsCache.flushAll();
-      
+
       res.status(201).json(article);
     } catch (error) {
       res.status(400).json({ error: "Invalid news article data" });
@@ -326,7 +326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'Pragma': 'no-cache',
         'Expires': '0'
       });
-      
+
       await rssService.processAllFeeds();
       res.json({ message: "RSS processing started" });
     } catch (error) {
@@ -533,7 +533,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ipAddress = req.ip || req.connection.remoteAddress || '';
       const userAgent = req.get('User-Agent') || '';
       const referrer = req.get('Referer') || '';
-      
+
       const view = await storage.recordNewsView(newsId, ipAddress, userAgent, referrer);
       res.status(201).json(view);
     } catch (error) {
@@ -643,7 +643,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { SitemapGenerator } = await import("./sitemap-generator");
       const sitemap = await SitemapGenerator.generateSitemap();
-      
+
       res.set({
         'Content-Type': 'application/xml',
         'Cache-Control': 'public, max-age=3600' // Cache for 1 hour
@@ -659,7 +659,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { SitemapGenerator } = await import("./sitemap-generator");
       const robotsTxt = await SitemapGenerator.generateRobotsTxt();
-      
+
       res.set({
         'Content-Type': 'text/plain',
         'Cache-Control': 'public, max-age=86400' // Cache for 24 hours
@@ -676,7 +676,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('🔄 Backup request received from admin');
       const result = await storage.backupToSecondaryDatabase();
-      
+
       if (result.success) {
         res.json({
           success: true,
@@ -720,7 +720,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // ตรวจสอบการเชื่อมต่อฐานข้อมูล
       const dbCheck = await storage.getDatabaseStats();
-      
+
       res.json({
         status: "healthy",
         timestamp: new Date().toISOString(),
@@ -833,11 +833,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const alertId = req.params.id;
       const alerts = disasterAlertService.getActiveAlerts();
       const alert = alerts.find(a => a.id === alertId);
-      
+
       if (!alert) {
         return res.status(404).json({ message: "Alert not found" });
       }
-      
+
       res.json(alert);
     } catch (error) {
       console.error("Error fetching disaster alert:", error);
@@ -862,7 +862,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { disasterAlertService } = await import("./disaster-alert-service");
       const alertData = req.body;
-      
+
       const alert = {
         id: `manual-${Date.now()}`,
         ...alertData,
@@ -892,7 +892,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const newsId = parseInt(req.params.id);
       const { rating } = req.body;
       const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
-      
+
       const existingRating = await storage.getUserRating(newsId, ipAddress);
       if (existingRating) {
         return res.status(400).json({ message: "คุณได้ให้คะแนนข่าวนี้แล้ว" });
@@ -903,7 +903,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         rating,
         ipAddress
       });
-      
+
       const newRating = await storage.createNewsRating(validatedData);
       res.json(newRating);
     } catch (error) {
@@ -916,7 +916,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/news/search", async (req, res) => {
     try {
       const { q, category, dateFrom, dateTo, sortBy, limit = 20, offset = 0 } = req.query;
-      
+
       const searchParams = {
         query: q as string,
         category: category as string,

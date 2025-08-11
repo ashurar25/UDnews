@@ -45,24 +45,49 @@ const Admin = () => {
 
   // Fetch real database stats
   const { data: newsData } = useQuery({
-    queryKey: ['/api/news']
+    queryKey: ['/api/news'],
+    queryFn: async () => {
+      const response = await fetch('/api/news');
+      if (!response.ok) throw new Error('Failed to fetch news');
+      return response.json();
+    }
   })
 
   const { data: rssFeedsData } = useQuery({
-    queryKey: ['/api/rss-feeds']
+    queryKey: ['/api/rss-feeds'],
+    queryFn: async () => {
+      const response = await fetch('/api/rss-feeds');
+      if (!response.ok) throw new Error('Failed to fetch RSS feeds');
+      return response.json();
+    }
   })
 
   const { data: sponsorBannersData } = useQuery({
-    queryKey: ['/api/sponsor-banners']
+    queryKey: ['/api/sponsor-banners'],
+    queryFn: async () => {
+      const response = await fetch('/api/sponsor-banners');
+      if (!response.ok) throw new Error('Failed to fetch sponsor banners');
+      return response.json();
+    }
   })
 
   const { data: databaseStats } = useQuery({
     queryKey: ['/api/database/stats'],
+    queryFn: async () => {
+      const response = await fetch('/api/database/stats');
+      if (!response.ok) throw new Error('Failed to fetch database stats');
+      return response.json();
+    },
     refetchInterval: 30000
   })
 
   const { data: systemInfo } = useQuery({
     queryKey: ['/api/system-info'],
+    queryFn: async () => {
+      const response = await fetch('/api/system-info');
+      if (!response.ok) throw new Error('Failed to fetch system info');
+      return response.json();
+    },
     refetchInterval: 60000
   })
 
