@@ -6,6 +6,14 @@ UD News (อัพเดทข่าวอุดร) is a full-stack local news 
 
 Preferred communication style: Simple, everyday language.
 
+# Recent Changes (August 11, 2025)
+
+- **Migration Completed**: Successfully migrated UD News from Replit Agent to standard Replit environment
+- **Dependencies Fixed**: Resolved Vite, tsx, autoprefixer, and TailwindCSS dependency conflicts
+- **Build System Working**: Full React application now builds and serves correctly
+- **UI Improvements**: Fixed header full-width layout and login page dark theme support
+- **RSS Processing Active**: News feed processing from Thai sources working correctly
+
 # System Architecture
 
 ## Frontend Architecture

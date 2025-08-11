@@ -38,7 +38,7 @@ const Header = () => {
   const getThemeClasses = () => {
     return {
       topBar: "bg-primary/60 backdrop-blur-md text-primary-foreground py-1 border-b border-primary/20",
-      mainHeader: "w-full px-8 py-6 bg-primary/25 backdrop-blur-md border-b border-primary/30",
+      mainHeader: "w-full px-4 py-6 bg-primary/25 backdrop-blur-md border-b border-primary/30",
       title: "text-3xl font-bold font-kanit text-foreground drop-shadow-lg"
     }
   }
@@ -61,8 +61,8 @@ const Header = () => {
 
       {/* Top Bar */}
       <div className={themeClasses.topBar}>
-        <div className="w-full px-8 flex justify-between items-center text-xs">
-          <div className="flex items-center gap-2">
+        <div className="w-full px-0 flex justify-between items-center text-xs">
+          <div className="flex items-center gap-2 pl-4">
             <div className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
               <span className="font-sarabun">
@@ -80,7 +80,7 @@ const Header = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 pr-4">
             {/* Donation Button */}
             <Link to="/donate">
               <Button
