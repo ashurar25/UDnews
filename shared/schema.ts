@@ -154,7 +154,7 @@ export const contactMessages = pgTable("contact_messages", {
 
 export const newsViews = pgTable("news_views", {
   id: serial("id").primaryKey(),
-  newsId: integer("news_id").references(() => news.id).notNull(),
+  newsId: integer("news_id").references(() => newsArticles.id).notNull(),
   ipAddress: varchar("ip_address", { length: 45 }),
   userAgent: text("user_agent"),
   referrer: text("referrer"),
@@ -166,7 +166,7 @@ export const dailyStats = pgTable("daily_stats", {
   date: date("date").notNull(),
   totalViews: integer("total_views").default(0).notNull(),
   uniqueVisitors: integer("unique_visitors").default(0).notNull(),
-  popularNewsId: integer("popular_news_id").references(() => news.id),
+  popularNewsId: integer("popular_news_id").references(() => newsArticles.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -193,7 +193,7 @@ export type InsertDailyStats = typeof dailyStats.$inferInsert;
 // Comments Table  
 export const comments = pgTable("comments", {
   id: serial("id").primaryKey(),
-  newsId: integer("news_id").references(() => news.id).notNull(),
+  newsId: integer("news_id").references(() => newsArticles.id).notNull(),
   parentId: integer("parent_id"),
   authorName: varchar("author_name", { length: 100 }).notNull(),
   authorEmail: varchar("author_email", { length: 255 }),
@@ -260,7 +260,7 @@ export type InsertPushSubscription = typeof pushSubscriptions.$inferInsert;
 // News Ratings Table
 export const newsRatings = pgTable("news_ratings", {
   id: serial("id").primaryKey(),
-  newsId: integer("news_id").references(() => news.id).notNull(),
+  newsId: integer("news_id").references(() => newsArticles.id).notNull(),
   rating: varchar("rating", { length: 10 }).notNull(), // 'like' or 'dislike'
   ipAddress: varchar("ip_address", { length: 45 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
