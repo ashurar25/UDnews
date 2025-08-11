@@ -109,9 +109,9 @@ const Header = () => {
 
       {/* Main Header */}
       <div className={themeClasses.mainHeader}>
-        <div className="flex items-center justify-between px-4">
+        <div className="flex items-center justify-between px-0">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-6 hover:opacity-90 transition-opacity" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+          <Link to="/" className="flex items-center gap-6 hover:opacity-90 transition-opacity pl-4" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <img 
               src="/logo.jpg" 
               alt="UD News Update Logo"
@@ -129,7 +129,7 @@ const Header = () => {
           </Link>
 
           {/* Right Side - Hamburger Menu Only */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 pr-4">
               {/* Hamburger Menu Button */}
               <Button
                 variant="ghost"

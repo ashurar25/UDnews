@@ -308,6 +308,11 @@ All colors MUST be HSL.
     transition: border-color 0.3s ease;
   }
 
+  html, body {
+    margin: 0;
+    padding: 0;
+  }
+
   body {
     @apply bg-background text-foreground;
     transition: background-color 0.3s ease, color 0.3s ease;
