@@ -66,12 +66,23 @@ const Header = () => {
             <div className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
               <span className="font-sarabun">
-                {new Date().toLocaleDateString('th-TH', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
+                {(() => {
+                  try {
+                    return new Date().toLocaleDateString('th-TH', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    });
+                  } catch (error) {
+                    return new Date().toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      year: 'numeric', 
+                      month: 'long',
+                      day: 'numeric'
+                    });
+                  }
+                })()}
               </span>
             </div>
             <div className="hidden md:flex items-center gap-3">
