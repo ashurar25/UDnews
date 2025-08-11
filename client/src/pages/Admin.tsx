@@ -733,6 +733,68 @@ function AdminContent() {
 }
 
 export default function Admin() {
+  const [, setLocation] = useLocation();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        // ตรวจสอบ authentication
+        const token = localStorage.getItem('admin-token');
+        if (!token) {
+          setLocation('/login');
+          return;
+        }
+
+        // Verify token with server
+        const response = await fetch('/api/admin/verify', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Token invalid');
+        }
+
+        setIsAuthenticated(true);
+      } catch (error) {
+        localStorage.removeItem('admin-token');
+        setLocation('/login');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [setLocation]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('admin-token');
+    // Removed toast as it was not in the original Admin component, and the change snippet did not specify adding it to this outer component.
+    // toast({
+    //   title: "ออกจากระบบสำเร็จ",
+    //   description: "คุณได้ออกจากระบบผู้ดูแลเรียบร้อยแล้ว",
+    // });
+    setLocation('/');
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">กำลังตรวจสอบสิทธิ์...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <React.Suspense fallback={<div className="p-8 text-center">กำลังโหลด...</div>}>
       <AdminContent />
