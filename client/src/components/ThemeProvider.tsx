@@ -131,15 +131,17 @@ export function ThemeProvider({
     return () => clearInterval(interval)
   }, [theme, storageKey])
 
+  const handleThemeChange = (newTheme: Theme) => {
+    localStorage.setItem(storageKey, newTheme)
+    setTheme(newTheme)
+    setIsAutoMode(newTheme === "auto")
+  }
+
   const value = {
     theme,
     specialDay,
     isAutoMode: theme === "auto",
-    setTheme: (newTheme: Theme) => {
-      localStorage.setItem(storageKey, newTheme)
-      setTheme(newTheme)
-      setIsAutoMode(newTheme === "auto")
-    },
+    setTheme: handleThemeChange,
   }
 
   return (

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, Search, Rss, Clock, Heart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Link, useLocation } from "wouter";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/ThemeProvider";
 import { getCurrentThaiSpecialDay } from "@/lib/thai-special-days";
 import { ThemeToggle } from "./ThemeToggle";
 import WeatherWidget from "./WeatherWidget";
@@ -36,24 +36,10 @@ const Header = () => {
 
   // Dynamic theme classes based on current theme
   const getThemeClasses = () => {
-    if (specialDay && theme === "thai-special") {
-      return {
-        topBar: `bg-${specialDay.colors.primary}/60 backdrop-blur-md text-white py-1 border-b border-${specialDay.colors.secondary}/20`,
-        mainHeader: `w-full px-8 py-6 bg-${specialDay.colors.primary}/25 backdrop-blur-md border-b border-${specialDay.colors.secondary}/30`,
-        title: `text-3xl font-bold font-kanit text-white drop-shadow-lg shadow-orange-500`
-      }
-    }
-    if (theme === "dark") {
-      return {
-        topBar: "bg-gray-800/60 backdrop-blur-md text-white py-1 border-b border-gray-700/20",
-        mainHeader: "w-full px-8 py-6 bg-gray-900/25 backdrop-blur-md border-b border-gray-800/30",
-        title: "text-3xl font-bold font-kanit text-white drop-shadow-lg shadow-orange-500"
-      }
-    }
     return {
-      topBar: "bg-orange-600/60 backdrop-blur-md text-white py-1 border-b border-orange-300/20",
-      mainHeader: "w-full px-8 py-6 bg-orange-500/25 backdrop-blur-md border-b border-orange-200/30",
-      title: "text-3xl font-bold font-kanit text-white drop-shadow-lg shadow-orange-500"
+      topBar: "bg-primary/60 backdrop-blur-md text-primary-foreground py-1 border-b border-primary/20",
+      mainHeader: "w-full px-8 py-6 bg-primary/25 backdrop-blur-md border-b border-primary/30",
+      title: "text-3xl font-bold font-kanit text-foreground drop-shadow-lg"
     }
   }
 
@@ -70,7 +56,7 @@ const Header = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-orange-50/40 dark:bg-gray-900/40 backdrop-blur-md supports-[backdrop-filter]:bg-orange-100/20 dark:supports-[backdrop-filter]:bg-gray-800/20">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
 
 
       {/* Top Bar */}
@@ -99,7 +85,7 @@ const Header = () => {
             <Link to="/donate">
               <Button
                 size="sm"
-                className="bg-red-500 hover:bg-red-600 text-white font-sarabun gap-1 px-3 py-1 text-xs"
+                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-sarabun gap-1 px-3 py-1 text-xs"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
                 <Heart className="h-3 w-3 fill-current animate-pulse" />
@@ -122,10 +108,10 @@ const Header = () => {
               loading="eager"
             />
             <div>
-              <h1 className="text-2xl font-bold font-kanit text-yellow-200 drop-shadow-lg" style={{ textShadow: '2px 2px 4px rgba(251, 146, 60, 0.8), -1px -1px 2px rgba(251, 146, 60, 0.6)' }}>
+              <h1 className="text-2xl font-bold font-kanit text-primary-foreground drop-shadow-lg">
                 {specialDay ? specialDay.name || "อัพเดทข่าวอุดร" : "อัพเดทข่าวอุดร"}
               </h1>
-              <p className="text-lg text-orange-100 font-sarabun font-bold drop-shadow-md" style={{ textShadow: '1px 1px 2px rgba(251, 146, 60, 0.6)' }}>
+              <p className="text-lg text-primary-foreground/90 font-sarabun font-bold drop-shadow-md">
                 UD News Update
               </p>
             </div>
