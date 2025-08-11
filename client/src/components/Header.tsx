@@ -38,7 +38,7 @@ const Header = () => {
   const getThemeClasses = () => {
     return {
       topBar: "bg-primary/60 backdrop-blur-md text-primary-foreground py-1 border-b border-primary/20",
-      mainHeader: "w-full px-4 py-6 bg-primary/25 backdrop-blur-md border-b border-primary/30",
+      mainHeader: "w-full px-0 py-6 bg-primary/25 backdrop-blur-md border-b border-primary/30",
       title: "text-3xl font-bold font-kanit text-foreground drop-shadow-lg"
     }
   }
@@ -98,7 +98,7 @@ const Header = () => {
 
       {/* Main Header */}
       <div className={themeClasses.mainHeader}>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between px-4">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-6 hover:opacity-90 transition-opacity" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <img 
