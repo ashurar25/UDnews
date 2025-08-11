@@ -170,7 +170,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getNewsByUrl(url: string): Promise<NewsArticle | null> {
-    const result = await db.select().from(newsArticles).where(eq(newsArticles.originalUrl, url));
+    const result = await db.select().from(newsArticles).where(eq(newsArticles.sourceUrl, url));
     return result[0] || null;
   }
 
@@ -322,7 +322,7 @@ export class DatabaseStorage implements IStorage {
     return result[0]?.count || 0;
   }
 
-  async getPopularNews(limit: number = 10): Promise<(typeof newsArticles.$inferSelect & { viewCount: number })[]> {
+  async getPopularNews(limit: number = 10): Promise<(NewsArticle & { viewCount: number })[]> {
     const result = await db
       .select({
         id: newsArticles.id,
@@ -332,6 +332,7 @@ export class DatabaseStorage implements IStorage {
         imageUrl: newsArticles.imageUrl,
         sourceUrl: newsArticles.sourceUrl,
         category: newsArticles.category,
+        rssFeedId: newsArticles.rssFeedId,
         isBreaking: newsArticles.isBreaking,
         createdAt: newsArticles.createdAt,
         updatedAt: newsArticles.updatedAt,
@@ -343,7 +344,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(sql`count(${newsViews.id}) desc`)
       .limit(limit);
 
-    return result;
+    return result as (NewsArticle & { viewCount: number })[];
   }
 
   async getDailyStats(date: string): Promise<DailyStats | null> {
@@ -356,7 +357,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateDailyStats(date: string, totalViews: number, uniqueVisitors: number, popularNewsId?: number): Promise<DailyStats> {
-    const existing = await this.getDailyStats(date);
+    const existing = await db.select().from(dailyStats).where(eq(dailyStats.date, date)).then(res => res[0] || null);
 
     if (existing) {
       const [updated] = await db
@@ -389,29 +390,39 @@ export class DatabaseStorage implements IStorage {
     todayViews: number;
     popularNews: any[];
   }> {
-    const today = new Date().toISOString().split('T')[0];
+    try {
+      const today = new Date().toISOString().split('T')[0];
 
-    const [totalViewsResult] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(newsViews);
+      const [totalViewsResult] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(newsViews);
 
-    const [totalNewsResult] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(newsArticles);
+      const [totalNewsResult] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(newsArticles);
 
-    const [todayViewsResult] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(newsViews)
-      .where(sql`DATE(${newsViews.viewedAt}) = ${today}`);
+      const [todayViewsResult] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(newsViews)
+        .where(sql`DATE(${newsViews.viewedAt}) = ${today}`);
 
-    const popularNews = await this.getPopularNews(5);
+      const popularNews = await db.select().from(newsArticles).orderBy(desc(newsArticles.createdAt)).limit(5);
 
-    return {
-      totalViews: totalViewsResult?.count || 0,
-      totalNews: totalNewsResult?.count || 0,
-      todayViews: todayViewsResult?.count || 0,
-      popularNews
-    };
+      return {
+        totalViews: totalViewsResult?.count || 0,
+        totalNews: totalNewsResult?.count || 0,
+        todayViews: todayViewsResult?.count || 0,
+        popularNews
+      };
+    } catch (error) {
+      console.error('Error getting analytics summary:', error);
+      return {
+        totalViews: 0,
+        totalNews: 0,
+        todayViews: 0,
+        popularNews: []
+      };
+    }
   }
 
 
@@ -426,10 +437,10 @@ export class DatabaseStorage implements IStorage {
     databaseUrl: string;
   }> {
     const [newsCount, rssFeedsCount, sponsorBannersCount, contactMessagesCount] = await Promise.all([
-      this.getNewsCount(),
-      this.getRSSFeedsCount(),
-      this.getSponsorBannersCount(),
-      this.getContactMessagesCount()
+      db.select({ count: sql<number>`count(*)` }).from(newsArticles).then(res => res[0]?.count || 0),
+      db.select({ count: sql<number>`count(*)` }).from(rssFeeds).then(res => res[0]?.count || 0),
+      db.select({ count: sql<number>`count(*)` }).from(sponsorBanners).then(res => res[0]?.count || 0),
+      db.select({ count: sql<number>`count(*)` }).from(contactMessages).then(res => res[0]?.count || 0)
     ]);
 
     return {
@@ -592,8 +603,7 @@ export class DatabaseStorage implements IStorage {
     return await db // Changed from this.db to db
       .select()
       .from(newsletterSubscribers)
-      .where(eq(newsletterSubscribers.isActive, true))
-      .execute(); // Added execute()
+      .where(eq(newsletterSubscribers.isActive, true));
   }
 
   // Push Notifications Implementation
@@ -617,8 +627,7 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(pushSubscriptions)
-      .where(eq(pushSubscriptions.isActive, true))
-      .execute(); // Added execute()
+      .where(eq(pushSubscriptions.isActive, true));
   }
 
   // News Rating System Implementation

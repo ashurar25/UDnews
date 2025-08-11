@@ -76,14 +76,10 @@ function AdminContent() {
     totalFeeds: 0
   });
 
-  useEffect(() => {
-    fetchSystemStats();
-  }, []);
-
-  const fetchSystemStats = async () => {
+  const fetchSystemStats = useCallback(async () => {
     try {
       const [newsRes, statsRes] = await Promise.all([
-        fetch('/api/news?limit=1'), // Fetching one news item just to check the /api/news endpoint
+        fetch('/api/news?limit=1'),
         fetch('/api/database/stats')
       ]);
 
@@ -95,13 +91,16 @@ function AdminContent() {
           totalFeeds: stats.rssFeedsCount || 0
         });
       } else {
-         // Handle cases where endpoints might not return OK status
          console.error("Failed to fetch stats. News response:", newsRes.status, "Stats response:", statsRes.status);
       }
     } catch (error) {
       console.error('Error fetching system stats:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchSystemStats();
+  }, [fetchSystemStats]);
 
 
   const handleLogout = () => {
@@ -838,9 +837,5 @@ export default function Admin() {
     return null;
   }
 
-  return (
-    <React.Suspense fallback={<LoadingSpinner />}>
-      <AdminContent />
-    </React.Suspense>
-  );
+  return <AdminContent />;
 }

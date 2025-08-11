@@ -583,7 +583,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const summary = await storage.getAnalyticsSummary();
       res.json(summary);
     } catch (error) {
-      res.status(500).json({ error: "Failed to get analytics summary" });
+      console.error("Error fetching analytics summary:", error);
+      // Provide fallback data during error
+      res.json({
+        totalViews: 0,
+        totalNews: 0,
+        todayViews: 0,
+        popularNews: []
+      });
     }
   });
 

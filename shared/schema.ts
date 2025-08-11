@@ -190,11 +190,11 @@ export const insertDailyStatsSchema = createInsertSchema(dailyStats);
 export type DailyStats = typeof dailyStats.$inferSelect;
 export type InsertDailyStats = typeof dailyStats.$inferInsert;
 
-// Comments Table
+// Comments Table  
 export const comments = pgTable("comments", {
   id: serial("id").primaryKey(),
   newsId: integer("news_id").references(() => news.id).notNull(),
-  parentId: integer("parent_id").references(() => comments.id),
+  parentId: integer("parent_id"),
   authorName: varchar("author_name", { length: 100 }).notNull(),
   authorEmail: varchar("author_email", { length: 255 }),
   content: text("content").notNull(),
