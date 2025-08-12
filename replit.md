@@ -20,6 +20,7 @@ Theme preference: Light theme as default (user reported dark theme issue)
 - **Admin Panel Enhanced**: Added complete management system with tabs for news, RSS, analytics, messages, sponsors, themes
 - **ID/Password Demo Removed**: Removed demo credential notifications from login page as requested
 - **Full Management Features**: Restored all admin functionality including data tables and real-time API connections
+- **Admin URL Setup**: Both `/admin` and `/admin.html` work properly with automatic redirect from admin to admin.html
 
 # Previous Changes (August 11, 2025)
 
