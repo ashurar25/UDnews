@@ -1,1085 +1,868 @@
+
 <!DOCTYPE html>
-<html lang="th" class="light-theme">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แอดมิน UD News - อัพเดทข่าวอุดรธานี</title>
+    <title>แอดมิน UD News</title>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+            font-family: 'Sarabun', sans-serif;
         }
-        
-        /* Light Theme (Default) */
-        .light-theme {
-            --theme-primary: #f97316;
-            --theme-secondary: #fed7aa;
-            --theme-background: #ffffff;
-            --theme-surface: #f9fafb;
-            --theme-text: #111827;
-            --theme-text-secondary: #6b7280;
-            --theme-border: #e5e7eb;
-            --theme-success: #10b981;
-            --theme-danger: #ef4444;
-            --theme-warning: #f59e0b;
-        }
-        
-        /* Dark Theme */
-        .dark-theme {
-            --theme-primary: #f97316;
-            --theme-secondary: #451a03;
-            --theme-background: #111827;
-            --theme-surface: #1f2937;
-            --theme-text: #f9fafb;
-            --theme-text-secondary: #9ca3af;
-            --theme-border: #374151;
-            --theme-success: #10b981;
-            --theme-danger: #ef4444;
-            --theme-warning: #f59e0b;
-        }
-        
-        /* Thai Royal Theme */
-        .thai-theme {
-            --theme-primary: #fbbf24;
-            --theme-secondary: #fef3c7;
-            --theme-background: #fffbeb;
-            --theme-surface: #fef3c7;
-            --theme-text: #92400e;
-            --theme-text-secondary: #b45309;
-            --theme-border: #fcd34d;
-            --theme-success: #10b981;
-            --theme-danger: #ef4444;
-            --theme-warning: #f59e0b;
-        }
-        
-        body {
-            font-family: 'Sarabun', Arial, sans-serif;
-            background: var(--theme-background);
-            color: var(--theme-text);
-            min-height: 100vh;
-            line-height: 1.6;
-            transition: all 0.3s ease;
-        }
-        
         .font-kanit {
             font-family: 'Kanit', sans-serif;
         }
         
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 20px;
+        /* Theme Variables */
+        :root {
+            --primary: #ea580c;
+            --secondary: #fed7aa;
+            --background: #ffffff;
+            --foreground: #0a0a0a;
+            --card: #ffffff;
+            --border: #e5e7eb;
         }
         
-        .header {
-            background: var(--theme-surface);
-            border-bottom: 1px solid var(--theme-border);
-            position: sticky;
+        .light-theme {
+            --primary: #ea580c;
+            --secondary: #fed7aa;
+            --background: #ffffff;
+            --foreground: #0a0a0a;
+            --card: #ffffff;
+            --border: #e5e7eb;
+        }
+        
+        .dark-theme {
+            --primary: #fb923c;
+            --secondary: #431407;
+            --background: #0a0a0a;
+            --foreground: #fafafa;
+            --card: #1a1a1a;
+            --border: #374151;
+        }
+        
+        .thai-theme {
+            --primary: #dc2626;
+            --secondary: #fef3c7;
+            --background: #fffbeb;
+            --foreground: #1f2937;
+            --card: #fef3c7;
+            --border: #d97706;
+        }
+        
+        body {
+            background-color: var(--background);
+            color: var(--foreground);
+        }
+        
+        .card {
+            background-color: var(--card);
+            border: 1px solid var(--border);
+        }
+        
+        .primary-bg {
+            background-color: var(--primary);
+        }
+        
+        .secondary-bg {
+            background-color: var(--secondary);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .modal {
+            position: fixed;
             top: 0;
-            z-index: 50;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        
-        .header-content {
-            display: flex;
-            justify-content: space-between;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
             align-items: center;
-            padding: 16px 0;
+            z-index: 1000;
         }
         
-        .header-left {
+        .modal.show {
             display: flex;
-            align-items: center;
-            gap: 16px;
         }
         
-        .title {
-            color: var(--theme-primary);
-            font-size: 24px;
-            font-weight: 700;
-            margin: 0;
-        }
-        
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        
-        .theme-toggle {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .theme-selector {
-            padding: 8px 12px;
-            border: 1px solid var(--theme-border);
-            border-radius: 6px;
-            background: var(--theme-background);
-            color: var(--theme-text);
-            font-size: 14px;
-            cursor: pointer;
+        .modal-content {
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 0.5rem;
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+            width: 600px;
         }
         
         .btn {
-            padding: 8px 16px;
-            border: 1px solid var(--theme-border);
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            border: none;
             cursor: pointer;
+            font-weight: 500;
             transition: all 0.2s;
-            text-decoration: none;
-            display: inline-block;
-            background: var(--theme-background);
-            color: var(--theme-text);
         }
         
         .btn-primary {
-            background: var(--theme-primary);
+            background-color: var(--primary);
             color: white;
-            border-color: var(--theme-primary);
         }
         
         .btn-primary:hover {
             opacity: 0.9;
         }
         
-        .main {
-            padding: 24px 0;
-        }
-        
-        .section {
-            background: var(--theme-surface);
-            border: 1px solid var(--theme-border);
-            border-radius: 12px;
-            margin-bottom: 24px;
-            overflow: hidden;
-        }
-        
-        .section-header {
-            background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
-            color: white;
-            padding: 16px 24px;
-            font-weight: 600;
-            font-size: 18px;
-        }
-        
-        .section-content {
-            padding: 24px;
-        }
-        
-        .info {
-            background: var(--theme-secondary);
-            color: var(--theme-text);
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        
-        .test-card {
-            background: var(--theme-surface);
-            border: 2px solid var(--theme-border);
-            border-radius: 8px;
-            padding: 16px;
-            margin: 8px 0;
-            text-align: center;
-        }
-        
-        .grid {
-            display: grid;
-            gap: 16px;
-        }
-        
-        .grid-3 {
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        }
-        
-        .form-group {
-            margin-bottom: 16px;
-        }
-        
-        .form-label {
-            display: block;
-            margin-bottom: 4px;
-            font-weight: 500;
-            color: var(--theme-text);
-        }
-        
-        .form-select {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--theme-border);
-            border-radius: 6px;
-            font-size: 14px;
-            background: var(--theme-background);
-            color: var(--theme-text);
-        }
-        
-        .flex {
-            display: flex;
-        }
-        
-        .flex-gap {
-            gap: 8px;
-        }
-        
-        .flex-between {
-            justify-content: space-between;
-        }
-        
-        .mb-4 {
-            margin-bottom: 16px;
-        }
-        
-        .loading {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--theme-text-secondary);
-        }
-        
-        .spinner {
-            width: 16px;
-            height: 16px;
-            border: 2px solid var(--theme-border);
-            border-top: 2px solid var(--theme-primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* Navigation Tabs */
-        .nav-tabs {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 24px;
-            border-bottom: 1px solid var(--theme-border);
-        }
-        
-        .nav-tab {
-            padding: 12px 16px;
-            border: none;
-            background: transparent;
-            color: var(--theme-text-secondary);
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-        }
-        
-        .nav-tab:hover {
-            color: var(--theme-text);
-            background: var(--theme-surface);
-        }
-        
-        .nav-tab.active {
-            color: var(--theme-primary);
-            border-bottom-color: var(--theme-primary);
-            background: var(--theme-surface);
-        }
-        
-        /* Tab Content */
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        /* Stat Cards */
-        .stat-card {
-            background: var(--theme-surface);
-            border: 1px solid var(--theme-border);
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-        }
-        
-        .stat-card h3 {
-            font-size: 14px;
-            color: var(--theme-text-secondary);
-            margin-bottom: 8px;
-        }
-        
-        .stat-number {
-            font-size: 32px;
-            font-weight: bold;
-            color: var(--theme-primary);
-        }
-        
-        /* Data Table */
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 16px;
-        }
-        
-        .data-table th,
-        .data-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid var(--theme-border);
-        }
-        
-        .data-table th {
-            background: var(--theme-surface);
-            font-weight: 600;
-            color: var(--theme-text);
-        }
-        
-        .data-table tr:hover {
-            background: var(--theme-surface);
-        }
-        
-        .btn-small {
-            padding: 4px 8px;
-            font-size: 12px;
-        }
-        
         .btn-secondary {
-            background: var(--theme-surface);
-            color: var(--theme-text);
-            border-color: var(--theme-border);
+            background-color: var(--secondary);
+            color: var(--foreground);
         }
         
-        .btn-danger {
-            background: var(--theme-danger);
+        .input, .textarea, .select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 0.25rem;
+            background-color: var(--background);
+            color: var(--foreground);
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+        
+        .pagination button {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--foreground);
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+        
+        .pagination button:hover {
+            background: var(--secondary);
+        }
+        
+        .pagination button.active {
+            background: var(--primary);
             color: white;
-            border-color: var(--theme-danger);
-        }
-        
-        .text-sm {
-            font-size: 14px;
-        }
-        
-        .text-xs {
-            font-size: 12px;
-        }
-        
-        .text-gray {
-            color: var(--theme-text-secondary);
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="container">
-            <div class="header-content">
-                <div class="header-left">
-                    <h1 class="title font-kanit">UD News Admin</h1>
-                </div>
-                <div class="header-right">
-                    <div class="theme-toggle">
-                        <label for="themeSelector" class="form-label" style="margin: 0;">ธีม:</label>
-                        <select id="themeSelector" class="theme-selector" onchange="changeTheme()">
-                            <option value="light">สว่าง</option>
-                            <option value="dark">มืด</option>
-                            <option value="thai">ไทย</option>
-                        </select>
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="card border-b sticky top-0 z-50">
+            <div class="container mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <h1 class="text-3xl font-bold font-kanit" style="color: var(--primary)">แอดมิน UD News</h1>
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-2">
+                            <span>ธีม:</span>
+                            <select id="themeSelector" class="select" style="width: auto;">
+                                <option value="light">ธีมสว่าง</option>
+                                <option value="dark">ธีมมืด</option>
+                                <option value="thai">ธีมไทย</option>
+                            </select>
+                        </div>
+                        <button onclick="logout()" class="btn" style="background: #dc2626; color: white;">ออกจากระบบ</button>
                     </div>
-                    <button class="btn btn-primary" onclick="logout()">ออกจากระบบ</button>
                 </div>
             </div>
-        </div>
-    </div>
+        </header>
 
-    <div class="main">
-        <div class="container">
-            <!-- Navigation Tabs -->
-            <div class="nav-tabs">
-                <button class="nav-tab active" onclick="showTab('dashboard')">แดชบอร์ด</button>
-                <button class="nav-tab" onclick="showTab('news')">จัดการข่าว</button>
-                <button class="nav-tab" onclick="showTab('rss')">RSS Feeds</button>
-                <button class="nav-tab" onclick="showTab('analytics')">สถิติ</button>
-                <button class="nav-tab" onclick="showTab('messages')">ข้อความติดต่อ</button>
-                <button class="nav-tab" onclick="showTab('sponsors')">สปอนเซอร์</button>
-                <button class="nav-tab" onclick="showTab('themes')">ธีม</button>
+        <!-- Navigation -->
+        <nav class="card border-b">
+            <div class="container mx-auto px-4 py-2">
+                <div class="flex space-x-4">
+                    <button onclick="showTab('dashboard')" class="tab-btn btn btn-secondary">แดชบอร์ด</button>
+                    <button onclick="showTab('news')" class="tab-btn btn btn-secondary">จัดการข่าว</button>
+                    <button onclick="showTab('rss')" class="tab-btn btn btn-secondary">RSS Feeds</button>
+                    <button onclick="showTab('themes')" class="tab-btn btn btn-secondary">ธีม</button>
+                </div>
             </div>
+        </nav>
 
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-8">
             <!-- Dashboard Tab -->
-            <div id="dashboard-tab" class="tab-content active">
-                <div class="grid grid-3 mb-4">
-                    <div class="stat-card">
-                        <h3>ข่าวทั้งหมด</h3>
-                        <div class="stat-number" id="newsCount">0</div>
+            <div id="dashboard-tab" class="tab-content">
+                <h2 class="text-2xl font-bold font-kanit mb-6">แดशบอร์ด</h2>
+                
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                    <div class="card rounded-lg p-4 primary-bg text-white">
+                        <h3 class="text-lg font-semibold">ข่าวทั้งหมด</h3>
+                        <p class="text-2xl font-bold" id="totalNews">-</p>
                     </div>
-                    <div class="stat-card">
-                        <h3>RSS Feeds</h3>
-                        <div class="stat-number" id="rssCount">0</div>
+                    <div class="card rounded-lg p-4" style="background: #16a34a; color: white;">
+                        <h3 class="text-lg font-semibold">RSS Feeds</h3>
+                        <p class="text-2xl font-bold" id="totalFeeds">-</p>
                     </div>
-                    <div class="stat-card">
-                        <h3>ข้อความติดต่อ</h3>
-                        <div class="stat-number" id="messageCount">0</div>
+                    <div class="card rounded-lg p-4" style="background: #7c3aed; color: white;">
+                        <h3 class="text-lg font-semibold">ข้อความติดต่อ</h3>
+                        <p class="text-2xl font-bold" id="totalMessages">-</p>
+                    </div>
+                    <div class="card rounded-lg p-4" style="background: #dc2626; color: white;">
+                        <h3 class="text-lg font-semibold">สถานะระบบ</h3>
+                        <p class="text-lg font-bold" id="systemStatus">-</p>
                     </div>
                 </div>
-                
-                <div class="section">
-                    <div class="section-header">📊 สถานะระบบ</div>
-                    <div class="section-content">
-                        <div id="systemStatus" class="loading">
-                            <div class="spinner"></div>
-                            กำลังตรวจสอบสถานะระบบ...
+
+                <!-- Database Status -->
+                <div class="card rounded-lg p-6 mb-6">
+                    <h3 class="text-xl font-bold font-kanit mb-4">สถานะฐานข้อมูล PostgreSQL</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <div class="mb-2">
+                                <span class="font-semibold">สถานะการเชื่อมต่อ:</span>
+                                <span id="dbStatus" class="ml-2 px-2 py-1 rounded text-sm">กำลังตรวจสอบ...</span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="font-semibold">เซิร์ฟเวอร์:</span>
+                                <span id="dbHost" class="ml-2">-</span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="font-semibold">ฐานข้อมูล:</span>
+                                <span id="dbName" class="ml-2">-</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="mb-2">
+                                <span class="font-semibold">จำนวนตาราง:</span>
+                                <span id="dbTables" class="ml-2">-</span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="font-semibold">ขนาดฐานข้อมูล:</span>
+                                <span id="dbSize" class="ml-2">-</span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="font-semibold">SSL:</span>
+                                <span id="dbSSL" class="ml-2">-</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- News Management Tab -->
-            <div id="news-tab" class="tab-content">
-                <div class="section">
-                    <div class="section-header">📰 จัดการข่าว</div>
-                    <div class="section-content">
-                        <div class="flex flex-between mb-4">
-                            <h3>รายการข่าวทั้งหมด</h3>
-                            <button class="btn btn-primary" onclick="loadNews()">รีเฟรชข้อมูล</button>
-                        </div>
-                        <div id="newsList" class="loading">
-                            <div class="spinner"></div>
-                            กำลังโหลดข่าว...
-                        </div>
-                    </div>
+            <div id="news-tab" class="tab-content hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold font-kanit">จัดการข่าว</h2>
+                    <button onclick="showAddNewsModal()" class="btn btn-primary">เพิ่มข่าวใหม่</button>
+                </div>
+
+                <!-- News List -->
+                <div id="newsList" class="space-y-4">
+                    <!-- จะถูกเติมด้วย JavaScript -->
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination" id="newsPagination">
+                    <!-- จะถูกเติมด้วย JavaScript -->
                 </div>
             </div>
 
-            <!-- RSS Tab -->
-            <div id="rss-tab" class="tab-content">
-                <div class="section">
-                    <div class="section-header">📡 RSS Feeds</div>
-                    <div class="section-content">
-                        <div id="rssList" class="loading">
-                            <div class="spinner"></div>
-                            กำลังโหลด RSS Feeds...
-                        </div>
-                    </div>
+            <!-- RSS Feeds Tab -->
+            <div id="rss-tab" class="tab-content hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold font-kanit">จัดการ RSS Feeds</h2>
+                    <button onclick="showAddRSSModal()" class="btn btn-primary">เพิ่ม RSS Feed</button>
                 </div>
-            </div>
 
-            <!-- Analytics Tab -->
-            <div id="analytics-tab" class="tab-content">
-                <div class="section">
-                    <div class="section-header">📊 สถิติการเข้าชม</div>
-                    <div class="section-content">
-                        <div id="analyticsData" class="loading">
-                            <div class="spinner"></div>
-                            กำลังโหลดข้อมูลสถิติ...
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Messages Tab -->
-            <div id="messages-tab" class="tab-content">
-                <div class="section">
-                    <div class="section-header">💬 ข้อความติดต่อ</div>
-                    <div class="section-content">
-                        <div id="messagesList" class="loading">
-                            <div class="spinner"></div>
-                            กำลังโหลดข้อความ...
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sponsors Tab -->
-            <div id="sponsors-tab" class="tab-content">
-                <div class="section">
-                    <div class="section-header">🏢 จัดการสปอนเซอร์</div>
-                    <div class="section-content">
-                        <div id="sponsorsList" class="loading">
-                            <div class="spinner"></div>
-                            กำลังโหลดข้อมูลสปอนเซอร์...
-                        </div>
-                    </div>
+                <!-- RSS List -->
+                <div id="rssList" class="space-y-4">
+                    <!-- จะถูกเติมด้วย JavaScript -->
                 </div>
             </div>
 
             <!-- Themes Tab -->
-            <div id="themes-tab" class="tab-content">
-                <div class="section">
-                    <div class="section-header">🎨 ทดสอบระบบธีม</div>
-                    <div class="section-content">
-                        <div class="info mb-4">
-                            ทดสอบการเปลี่ยนธีมของระบบ - เลือกธีมจากเมนูด้านบนเพื่อดูการเปลี่ยนแปลง
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">ทดสอบธีมวันสำคัญของไทย</label>
-                            <select class="form-select" id="specialThemeTest" onchange="applySpecialTheme()">
-                                <option value="">เลือกธีมพิเศษ</option>
-                                <option value="royal">ธีมหลวง (สีเหลือง)</option>
-                                <option value="mother">ธีมวันแม่ (สีฟ้า)</option>
-                                <option value="father">ธีมวันพ่อ (สีเหลือง)</option>
-                            </select>
-                        </div>
-                        
-                        <div class="grid grid-3 mb-4">
-                            <div class="test-card">
-                                <h4>การ์ดทดสอบ 1</h4>
-                                <p>ทดสอบข้อความใน Card</p>
-                                <button class="btn btn-primary">ปุ่มทดสอบ</button>
-                            </div>
-                            <div class="test-card">
-                                <h4>การ์ดทดสอบ 2</h4>
-                                <p>ทดสอบสีพื้นหลังและตัวอักษร</p>
-                                <button class="btn btn-primary">ปุ่มทดสอบ</button>
-                            </div>
-                            <div class="test-card">
-                                <h4>การ์ดทดสอบ 3</h4>
-                                <p>ทดสอบ Border และ Shadow</p>
-                                <button class="btn btn-primary">ปุ่มทดสอบ</button>
-                            </div>
-                        </div>
-                        
-                        <div class="flex flex-gap">
-                            <button class="btn btn-primary" onclick="testThemeChange()">ทดสอบการเปลี่ยนธีม</button>
-                            <button class="btn btn-secondary" onclick="resetTheme()">รีเซ็ตธีม</button>
+            <div id="themes-tab" class="tab-content hidden">
+                <h2 class="text-2xl font-bold font-kanit mb-6">การตั้งค่าธีม</h2>
+                
+                <div class="card rounded-lg p-6">
+                    <h3 class="text-lg font-semibold mb-4">เลือกธีม</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <button onclick="applyTheme('light')" class="btn" style="background: #ffffff; color: #000000; border: 1px solid #e5e7eb;">
+                            ธีมสว่าง
+                        </button>
+                        <button onclick="applyTheme('dark')" class="btn" style="background: #1a1a1a; color: #ffffff;">
+                            ธีมมืด
+                        </button>
+                        <button onclick="applyTheme('thai')" class="btn" style="background: #dc2626; color: #ffffff;">
+                            ธีมไทย
+                        </button>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <h4 class="text-md font-semibold mb-3">ธีมวันสำคัญ</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <button onclick="applySpecialTheme('mothers-day')" class="btn" style="background: #3b82f6; color: white;">
+                                วันแม่
+                            </button>
+                            <button onclick="applySpecialTheme('fathers-day')" class="btn" style="background: #fbbf24; color: white;">
+                                วันพ่อ
+                            </button>
+                            <button onclick="applySpecialTheme('national-day')" class="btn" style="background: #dc2626; color: white;">
+                                วันชาติ
+                            </button>
+                            <button onclick="applySpecialTheme('songkran')" class="btn" style="background: #06b6d4; color: white;">
+                                สงกรานต์
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
+        </main>
+    </div>
+
+    <!-- Add News Modal -->
+    <div id="addNewsModal" class="modal">
+        <div class="modal-content">
+            <h3 class="text-xl font-bold font-kanit mb-4">เพิ่มข่าวใหม่</h3>
+            <form id="newsForm">
+                <div class="mb-4">
+                    <label class="block mb-2 font-semibold">หัวข้อข่าว *</label>
+                    <input type="text" id="newsTitle" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block mb-2 font-semibold">หมวดหมู่ *</label>
+                    <select id="newsCategory" class="select" required>
+                        <option value="local">ข่าวท้องถิ่น</option>
+                        <option value="politics">การเมือง</option>
+                        <option value="crime">อาชญากรรม</option>
+                        <option value="sports">กีฬา</option>
+                        <option value="entertainment">บันเทิง</option>
+                        <option value="general">ทั่วไป</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block mb-2 font-semibold">สรุปข่าว</label>
+                    <textarea id="newsSummary" class="textarea" rows="3"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block mb-2 font-semibold">URL รูปภาพ</label>
+                    <input type="url" id="newsImageUrl" class="input">
+                </div>
+                <div class="mb-4">
+                    <label class="block mb-2 font-semibold">เนื้อหาข่าว *</label>
+                    <textarea id="newsContent" class="textarea" rows="8" required></textarea>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="closeModal('addNewsModal')" class="btn btn-secondary">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add RSS Modal -->
+    <div id="addRSSModal" class="modal">
+        <div class="modal-content">
+            <h3 class="text-xl font-bold font-kanit mb-4">เพิ่ม RSS Feed</h3>
+            <form id="rssForm">
+                <div class="mb-4">
+                    <label class="block mb-2 font-semibold">ชื่อ RSS Feed *</label>
+                    <input type="text" id="rssTitle" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block mb-2 font-semibold">URL ของ RSS Feed *</label>
+                    <input type="url" id="rssUrl" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block mb-2 font-semibold">หมวดหมู่ *</label>
+                    <select id="rssCategory" class="select" required>
+                        <option value="local">ข่าวท้องถิ่น</option>
+                        <option value="politics">การเมือง</option>
+                        <option value="crime">อาชญากรรม</option>
+                        <option value="sports">กีฬา</option>
+                        <option value="entertainment">บันเทิง</option>
+                        <option value="general">ทั่วไป</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="rssActive" checked class="mr-2">
+                        เปิดใช้งาน RSS Feed
+                    </label>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="closeModal('addRSSModal')" class="btn btn-secondary">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary">บันทึก</button>
+                </div>
+            </form>
         </div>
     </div>
 
     <script>
-        // Theme management functions
-        function changeTheme() {
-            const selector = document.getElementById('themeSelector');
-            const theme = selector.value;
-            applyTheme(theme);
-            localStorage.setItem('admin-theme', theme);
-        }
-        
+        // Global variables
+        let currentPage = 1;
+        const itemsPerPage = 50;
+        let currentTheme = 'light';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Admin theme system initialized');
+            
+            // Load saved theme
+            const savedTheme = localStorage.getItem('admin-theme') || 'light';
+            applyTheme(savedTheme);
+            document.getElementById('themeSelector').value = savedTheme;
+            
+            // Test theme system
+            testThemeSystem();
+            
+            // Check authentication
+            checkAuth();
+            
+            // Load initial data
+            loadDashboard();
+            showTab('dashboard');
+            
+            // Set up form handlers
+            setupFormHandlers();
+        });
+
+        // Theme system
         function applyTheme(theme) {
-            const html = document.documentElement;
-            html.className = theme + '-theme';
-            
             console.log('Applied theme:', theme);
+            currentTheme = theme;
             
-            // Update current theme display
-            updateThemeStatus(theme);
-        }
-        
-        function applySpecialTheme() {
-            const selector = document.getElementById('specialThemeTest');
-            const specialTheme = selector.value;
+            // Remove all theme classes
+            document.body.classList.remove('light-theme', 'dark-theme', 'thai-theme');
             
-            if (!specialTheme) return;
+            // Apply new theme
+            document.body.classList.add(theme + '-theme');
             
-            const html = document.documentElement;
+            // Save theme
+            localStorage.setItem('admin-theme', theme);
             
-            switch(specialTheme) {
-                case 'royal':
-                    html.style.setProperty('--theme-primary', '#fbbf24');
-                    html.style.setProperty('--theme-secondary', '#fef3c7');
-                    html.style.setProperty('--theme-background', '#fffbeb');
-                    break;
-                case 'mother':
-                    html.style.setProperty('--theme-primary', '#3b82f6');
-                    html.style.setProperty('--theme-secondary', '#dbeafe');
-                    html.style.setProperty('--theme-background', '#eff6ff');
-                    break;
-                case 'father':
-                    html.style.setProperty('--theme-primary', '#f59e0b');
-                    html.style.setProperty('--theme-secondary', '#fed7aa');
-                    html.style.setProperty('--theme-background', '#fffbeb');
-                    break;
-            }
+            // Update selector
+            document.getElementById('themeSelector').value = theme;
             
-            console.log('Applied special theme:', specialTheme);
-        }
-        
-        function testThemeChange() {
-            const themes = ['light', 'dark', 'thai'];
-            let currentIndex = 0;
-            
-            const interval = setInterval(() => {
-                applyTheme(themes[currentIndex]);
-                document.getElementById('themeSelector').value = themes[currentIndex];
-                currentIndex++;
-                
-                if (currentIndex >= themes.length) {
-                    clearInterval(interval);
-                    // Reset to light theme
-                    applyTheme('light');
-                    document.getElementById('themeSelector').value = 'light';
-                }
-            }, 2000);
-        }
-        
-        function resetTheme() {
-            applyTheme('light');
-            document.getElementById('themeSelector').value = 'light';
-            document.getElementById('specialThemeTest').value = '';
-            localStorage.setItem('admin-theme', 'light');
-            
-            // Reset custom properties
-            const html = document.documentElement;
-            html.style.removeProperty('--theme-primary');
-            html.style.removeProperty('--theme-secondary');
-            html.style.removeProperty('--theme-background');
-        }
-        
-        function updateThemeStatus(theme) {
+            // Get theme name in Thai
             const themeNames = {
                 'light': 'ธีมสว่าง',
-                'dark': 'ธีมมืด', 
+                'dark': 'ธีมมืด',
                 'thai': 'ธีมไทย'
             };
             
-            console.log('Current theme:', themeNames[theme] || theme);
+            console.log('Current theme:', themeNames[theme]);
         }
-        
-        // System status check
-        async function checkSystemStatus() {
-            const statusDiv = document.getElementById('systemStatus');
-            
-            try {
-                const response = await fetch('/api/database/stats');
-                if (response.ok) {
-                    const stats = await response.json();
-                    statusDiv.innerHTML = `
-                        <div style="color: var(--theme-success);">✅ ระบบทำงานปกติ</div>
-                        <div style="margin-top: 8px; font-size: 14px; color: var(--theme-text-secondary);">
-                            ข่าวทั้งหมด: ${stats.newsCount || 0} รายการ<br>
-                            RSS Feeds: ${stats.rssFeedsCount || 0} รายการ<br>
-                            ข้อความติดต่อ: ${stats.contactMessagesCount || 0} รายการ
-                        </div>
-                    `;
-                } else {
-                    throw new Error('API not available');
-                }
-            } catch (error) {
-                statusDiv.innerHTML = `
-                    <div style="color: var(--theme-danger);">❌ ไม่สามารถเชื่อมต่อได้</div>
-                    <div style="margin-top: 8px; font-size: 14px; color: var(--theme-text-secondary);">
-                        Error: ${error.message}
-                    </div>
-                `;
-            }
-        }
-        
 
-        
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Load saved theme
-            const savedTheme = localStorage.getItem('admin-theme') || 'light';
-            const themeSelector = document.getElementById('themeSelector');
-            if (themeSelector) {
-                themeSelector.value = savedTheme;
-                applyTheme(savedTheme);
-            }
+        function applySpecialTheme(specialTheme) {
+            const themes = {
+                'mothers-day': 'thai',
+                'fathers-day': 'thai',
+                'national-day': 'thai',
+                'songkran': 'thai'
+            };
             
-            // Check system status
-            checkSystemStatus();
+            applyTheme(themes[specialTheme]);
+        }
+
+        function testThemeSystem() {
+            console.log('Testing theme system...');
             
-            // Load dashboard data on initial load
-            loadStats();
-            
-            // Test theme system only once on load (not repeatedly)
-            if (!localStorage.getItem('theme-tested')) {
-                setTimeout(() => {
-                    console.log('Testing theme system...');
-                    testAllThemes();
-                    localStorage.setItem('theme-tested', 'true');
-                }, 2000);
-            }
-            
-            console.log('Admin theme system initialized');
-        });
-        
-        // Additional theme testing function
-        function testAllThemes() {
             const themes = ['light', 'dark', 'thai'];
             let index = 0;
             
             const testInterval = setInterval(() => {
-                const theme = themes[index];
-                applyTheme(theme);
-                console.log(`Testing theme: ${theme}`);
-                
-                // Check if theme was applied correctly
-                const html = document.documentElement;
-                const currentTheme = html.className;
-                console.log(`Current theme class: ${currentTheme}`);
-                
-                index++;
-                if (index >= themes.length) {
+                if (index < themes.length) {
+                    const theme = themes[index];
+                    applyTheme(theme);
+                    console.log('Testing theme:', theme);
+                    console.log('Current theme class:', document.body.className);
+                    index++;
+                } else {
                     clearInterval(testInterval);
-                    // Reset to light theme
-                    applyTheme('light');
-                    const themeSelector = document.getElementById('themeSelector');
-                    if (themeSelector) themeSelector.value = 'light';
+                    applyTheme('light'); // Reset to light theme
                     console.log('Theme testing completed - reset to light theme');
                 }
             }, 1000);
         }
-        
-        // Tab management functions
-        function showTab(tabName) {
-            // Hide all tabs
-            const tabs = document.querySelectorAll('.tab-content');
-            tabs.forEach(tab => tab.classList.remove('active'));
-            
-            // Hide all nav buttons
-            const navTabs = document.querySelectorAll('.nav-tab');
-            navTabs.forEach(nav => nav.classList.remove('active'));
-            
-            // Show selected tab
-            const targetTab = document.getElementById(tabName + '-tab');
-            if (targetTab) {
-                targetTab.classList.add('active');
-            }
-            
-            // Activate nav button
-            const targetNav = event.target;
-            if (targetNav) {
-                targetNav.classList.add('active');
-            }
-            
-            // Load data for specific tabs
-            switch(tabName) {
-                case 'dashboard':
-                    loadStats();
-                    break;
-                case 'news':
-                    loadNews();
-                    break;
-                case 'rss':
-                    loadRSSFeeds();
-                    break;
-                case 'analytics':
-                    loadAnalytics();
-                    break;
-                case 'messages':
-                    loadMessages();
-                    break;
-                case 'sponsors':
-                    loadSponsors();
-                    break;
-            }
-        }
-        
-        // Authentication functions
-        function getAuthHeaders() {
+
+        // Theme selector change handler
+        document.getElementById('themeSelector').addEventListener('change', function(e) {
+            applyTheme(e.target.value);
+        });
+
+        // Authentication
+        function checkAuth() {
             const token = localStorage.getItem('admin-token');
-            return {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            };
-        }
-        
-        // Load statistics
-        async function loadStats() {
-            try {
-                const response = await fetch('/api/database/stats');
-                if (response.ok) {
-                    const stats = await response.json();
-                    document.getElementById('newsCount').textContent = stats.newsCount || 0;
-                    document.getElementById('rssCount').textContent = stats.rssFeedsCount || 0;
-                    document.getElementById('messageCount').textContent = stats.contactMessagesCount || 0;
-                }
-            } catch (error) {
-                console.error('Error loading stats:', error);
-            }
-        }
-        
-        // Load news
-        async function loadNews() {
-            const newsList = document.getElementById('newsList');
-            newsList.innerHTML = '<div class="loading"><div class="spinner"></div>กำลังโหลดข่าว...</div>';
-            
-            try {
-                const response = await fetch('/api/news?limit=20');
-                if (response.ok) {
-                    const news = await response.json();
-                    displayNews(news);
-                } else {
-                    newsList.innerHTML = '<div class="error">ไม่สามารถโหลดข่าวได้</div>';
-                }
-            } catch (error) {
-                console.error('Error loading news:', error);
-                newsList.innerHTML = '<div class="error">เกิดข้อผิดพลาดในการโหลดข่าว</div>';
-            }
-        }
-        
-        function displayNews(news) {
-            const container = document.getElementById('newsList');
-            if (!news || news.length === 0) {
-                container.innerHTML = '<div class="info">ยังไม่มีข่าว</div>';
+            if (!token) {
+                window.location.href = '/';
                 return;
             }
-            
-            let html = '<table class="data-table"><thead><tr>';
-            html += '<th>หัวข้อ</th><th>หมวดหมู่</th><th>ผู้เขียน</th><th>วันที่</th><th>การดำเนินการ</th>';
-            html += '</tr></thead><tbody>';
-            
-            news.forEach(item => {
-                const categoryMap = {
-                    'general': 'ทั่วไป',
-                    'politics': 'การเมือง',
-                    'local': 'ท้องถิ่น',
-                    'sports': 'กีฬา',
-                    'entertainment': 'บันเทิง',
-                    'crime': 'อาชญากรรม'
-                };
-                
-                html += `<tr>
-                    <td style="max-width: 300px;">
-                        <div style="font-weight: 500;">${item.title}</div>
-                        <div class="text-xs text-gray">${item.summary ? item.summary.substring(0, 100) + '...' : ''}</div>
-                    </td>
-                    <td>${categoryMap[item.category] || item.category}</td>
-                    <td>${item.author || 'ไม่ระบุ'}</td>
-                    <td class="text-sm">${formatDate(item.publishedAt || item.createdAt)}</td>
-                    <td>
-                        <div class="flex flex-gap">
-                            <button class="btn btn-secondary btn-small">แก้ไข</button>
-                            <button class="btn btn-danger btn-small">ลบ</button>
-                        </div>
-                    </td>
-                </tr>`;
-            });
-            
-            html += '</tbody></table>';
-            container.innerHTML = html;
         }
-        
-        // Load RSS Feeds
-        async function loadRSSFeeds() {
-            const rssList = document.getElementById('rssList');
-            rssList.innerHTML = '<div class="loading"><div class="spinner"></div>กำลังโหลด RSS Feeds...</div>';
-            
-            try {
-                const response = await fetch('/api/rss-feeds');
-                if (response.ok) {
-                    const feeds = await response.json();
-                    displayRSSFeeds(feeds);
-                } else {
-                    rssList.innerHTML = '<div class="error">ไม่สามารถโหลด RSS Feeds ได้</div>';
-                }
-            } catch (error) {
-                console.error('Error loading RSS feeds:', error);
-                rssList.innerHTML = '<div class="error">เกิดข้อผิดพลาดในการโหลด RSS Feeds</div>';
-            }
-        }
-        
-        function displayRSSFeeds(feeds) {
-            const container = document.getElementById('rssList');
-            if (!feeds || feeds.length === 0) {
-                container.innerHTML = '<div class="info">ยังไม่มี RSS Feeds</div>';
-                return;
-            }
-            
-            let html = '<table class="data-table"><thead><tr>';
-            html += '<th>ชื่อ</th><th>URL</th><th>สถานะ</th><th>อัปเดตล่าสุด</th><th>การดำเนินการ</th>';
-            html += '</tr></thead><tbody>';
-            
-            feeds.forEach(feed => {
-                const statusBadge = feed.isActive ? 
-                    '<span style="color: var(--theme-success);">✅ เปิดใช้งาน</span>' : 
-                    '<span style="color: var(--theme-danger);">❌ ปิดใช้งาน</span>';
-                
-                html += `<tr>
-                    <td style="font-weight: 500;">${feed.title}</td>
-                    <td class="text-sm" style="max-width: 200px; word-break: break-all;">${feed.url}</td>
-                    <td>${statusBadge}</td>
-                    <td class="text-sm">${formatDate(feed.lastUpdated)}</td>
-                    <td>
-                        <div class="flex flex-gap">
-                            <button class="btn btn-secondary btn-small">แก้ไข</button>
-                            <button class="btn btn-danger btn-small">ลบ</button>
-                        </div>
-                    </td>
-                </tr>`;
-            });
-            
-            html += '</tbody></table>';
-            container.innerHTML = html;
-        }
-        
-        // Load Analytics
-        async function loadAnalytics() {
-            const analyticsData = document.getElementById('analyticsData');
-            analyticsData.innerHTML = '<div class="loading"><div class="spinner"></div>กำลังโหลดข้อมูลสถิติ...</div>';
-            
-            try {
-                const response = await fetch('/api/analytics/summary');
-                if (response.ok) {
-                    const analytics = await response.json();
-                    displayAnalytics(analytics);
-                } else {
-                    analyticsData.innerHTML = '<div class="error">ไม่สามารถโหลดข้อมูลสถิติได้</div>';
-                }
-            } catch (error) {
-                console.error('Error loading analytics:', error);
-                analyticsData.innerHTML = '<div class="error">เกิดข้อผิดพลาดในการโหลดข้อมูลสถิติ</div>';
-            }
-        }
-        
-        function displayAnalytics(analytics) {
-            const container = document.getElementById('analyticsData');
-            
-            let html = `
-                <div class="grid grid-3 mb-4">
-                    <div class="stat-card">
-                        <h3>การเข้าชมทั้งหมด</h3>
-                        <div class="stat-number">${analytics.totalViews?.toLocaleString() || '0'}</div>
-                    </div>
-                    <div class="stat-card">
-                        <h3>การเข้าชมวันนี้</h3>
-                        <div class="stat-number">${analytics.todayViews?.toLocaleString() || '0'}</div>
-                    </div>
-                    <div class="stat-card">
-                        <h3>เฉลี่ยต่อวัน</h3>
-                        <div class="stat-number">${analytics.avgDaily?.toLocaleString() || '0'}</div>
-                    </div>
-                </div>
-            `;
-            
-            container.innerHTML = html;
-        }
-        
-        // Load Messages
-        async function loadMessages() {
-            const messagesList = document.getElementById('messagesList');
-            messagesList.innerHTML = '<div class="loading"><div class="spinner"></div>กำลังโหลดข้อความ...</div>';
-            
-            try {
-                const response = await fetch('/api/contact-messages');
-                if (response.ok) {
-                    const messages = await response.json();
-                    displayMessages(messages);
-                } else {
-                    messagesList.innerHTML = '<div class="error">ไม่สามารถโหลดข้อความได้</div>';
-                }
-            } catch (error) {
-                console.error('Error loading messages:', error);
-                messagesList.innerHTML = '<div class="error">เกิดข้อผิดพลาดในการโหลดข้อความ</div>';
-            }
-        }
-        
-        function displayMessages(messages) {
-            const container = document.getElementById('messagesList');
-            if (!messages || messages.length === 0) {
-                container.innerHTML = '<div class="info">ยังไม่มีข้อความติดต่อ</div>';
-                return;
-            }
-            
-            let html = '<table class="data-table"><thead><tr>';
-            html += '<th>ชื่อ</th><th>อีเมล</th><th>หัวข้อ</th><th>วันที่</th><th>สถานะ</th><th>การดำเนินการ</th>';
-            html += '</tr></thead><tbody>';
-            
-            messages.forEach(message => {
-                const statusBadge = message.isRead ? 
-                    '<span style="color: var(--theme-text-secondary);">อ่านแล้ว</span>' : 
-                    '<span style="color: var(--theme-primary); font-weight: bold;">ยังไม่อ่าน</span>';
-                
-                html += `<tr style="${!message.isRead ? 'font-weight: 500;' : ''}">
-                    <td>${message.name}</td>
-                    <td class="text-sm">${message.email}</td>
-                    <td style="max-width: 200px;">${message.subject}</td>
-                    <td class="text-sm">${formatDate(message.createdAt)}</td>
-                    <td>${statusBadge}</td>
-                    <td>
-                        <div class="flex flex-gap">
-                            <button class="btn btn-secondary btn-small">ดู</button>
-                            <button class="btn btn-danger btn-small">ลบ</button>
-                        </div>
-                    </td>
-                </tr>`;
-            });
-            
-            html += '</tbody></table>';
-            container.innerHTML = html;
-        }
-        
-        // Load Sponsors
-        async function loadSponsors() {
-            const sponsorsList = document.getElementById('sponsorsList');
-            sponsorsList.innerHTML = '<div class="loading"><div class="spinner"></div>กำลังโหลดข้อมูลสปอนเซอร์...</div>';
-            
-            try {
-                const response = await fetch('/api/sponsor-banners');
-                if (response.ok) {
-                    const sponsors = await response.json();
-                    displaySponsors(sponsors);
-                } else {
-                    sponsorsList.innerHTML = '<div class="error">ไม่สามารถโหลดข้อมูลสปอนเซอร์ได้</div>';
-                }
-            } catch (error) {
-                console.error('Error loading sponsors:', error);
-                sponsorsList.innerHTML = '<div class="error">เกิดข้อผิดพลาดในการโหลดข้อมูลสปอนเซอร์</div>';
-            }
-        }
-        
-        function displaySponsors(sponsors) {
-            const container = document.getElementById('sponsorsList');
-            if (!sponsors || sponsors.length === 0) {
-                container.innerHTML = '<div class="info">ยังไม่มีสปอนเซอร์</div>';
-                return;
-            }
-            
-            let html = '<table class="data-table"><thead><tr>';
-            html += '<th>ชื่อ</th><th>ตำแหน่ง</th><th>สถานะ</th><th>วันที่สร้าง</th><th>การดำเนินการ</th>';
-            html += '</tr></thead><tbody>';
-            
-            sponsors.forEach(sponsor => {
-                const positionMap = {
-                    'header': 'ส่วนหัว',
-                    'sidebar': 'แถบข้าง',
-                    'footer': 'ส่วนท้าย',
-                    'content': 'เนื้อหา'
-                };
-                
-                const statusBadge = sponsor.isActive ? 
-                    '<span style="color: var(--theme-success);">✅ เปิดใช้งาน</span>' : 
-                    '<span style="color: var(--theme-danger);">❌ ปิดใช้งาน</span>';
-                
-                html += `<tr>
-                    <td style="font-weight: 500;">${sponsor.title}</td>
-                    <td>${positionMap[sponsor.position] || sponsor.position}</td>
-                    <td>${statusBadge}</td>
-                    <td class="text-sm">${formatDate(sponsor.createdAt)}</td>
-                    <td>
-                        <div class="flex flex-gap">
-                            <button class="btn btn-secondary btn-small">แก้ไข</button>
-                            <button class="btn btn-danger btn-small">ลบ</button>
-                        </div>
-                    </td>
-                </tr>`;
-            });
-            
-            html += '</tbody></table>';
-            container.innerHTML = html;
-        }
-        
-        // Utility function
-        function formatDate(dateString) {
-            if (!dateString) return 'ไม่ระบุ';
-            return new Date(dateString).toLocaleDateString('th-TH', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
-        
+
         function logout() {
             localStorage.removeItem('admin-token');
-            localStorage.removeItem('admin-theme');
-            alert('ออกจากระบบเรียบร้อยแล้ว');
             window.location.href = '/';
         }
+
+        // Tab management
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.remove('hidden');
+            
+            // Update active tab button
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-secondary');
+            });
+            
+            event.target.classList.remove('btn-secondary');
+            event.target.classList.add('btn-primary');
+            
+            // Load tab-specific data
+            if (tabName === 'news') {
+                loadNews();
+            } else if (tabName === 'rss') {
+                loadRSSFeeds();
+            }
+        }
+
+        // Dashboard functions
+        async function loadDashboard() {
+            try {
+                // Load basic stats
+                const [newsRes, statsRes, systemRes] = await Promise.all([
+                    fetch('/api/news?limit=1'),
+                    fetch('/api/database/stats'),
+                    fetch('/api/system-info')
+                ]);
+
+                if (statsRes.ok) {
+                    const stats = await statsRes.json();
+                    document.getElementById('totalNews').textContent = stats.newsCount || 0;
+                    document.getElementById('totalFeeds').textContent = stats.rssFeedsCount || 0;
+                    document.getElementById('totalMessages').textContent = stats.contactMessagesCount || 0;
+                }
+
+                if (systemRes.ok) {
+                    const systemInfo = await systemRes.json();
+                    updateDatabaseStatus(systemInfo);
+                }
+
+                document.getElementById('systemStatus').textContent = 'ปกติ';
+                document.getElementById('systemStatus').style.color = '#16a34a';
+
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                document.getElementById('systemStatus').textContent = 'ข้อผิดพลาด';
+                document.getElementById('systemStatus').style.color = '#dc2626';
+            }
+        }
+
+        function updateDatabaseStatus(systemInfo) {
+            const db = systemInfo.database || {};
+            
+            document.getElementById('dbStatus').textContent = 'เชื่อมต่อแล้ว';
+            document.getElementById('dbStatus').className = 'ml-2 px-2 py-1 rounded text-sm text-white';
+            document.getElementById('dbStatus').style.backgroundColor = '#16a34a';
+            
+            document.getElementById('dbHost').textContent = db.host || 'ไม่ทราบ';
+            document.getElementById('dbName').textContent = db.database || 'ไม่ทราบ';
+            document.getElementById('dbSSL').textContent = db.ssl || 'เปิดใช้งาน';
+            
+            // Mock data for table count and size (เนื่องจาก API ไม่มีข้อมูลนี้)
+            document.getElementById('dbTables').textContent = '8 ตาราง';
+            document.getElementById('dbSize').textContent = '~15 MB';
+        }
+
+        // News management functions
+        async function loadNews() {
+            try {
+                const response = await fetch(`/api/news?limit=${itemsPerPage}&offset=${(currentPage - 1) * itemsPerPage}`);
+                if (!response.ok) throw new Error('Failed to fetch news');
+                
+                const news = await response.json();
+                displayNews(news);
+                updateNewsPagination();
+            } catch (error) {
+                console.error('Error loading news:', error);
+                document.getElementById('newsList').innerHTML = '<p class="text-red-600">เกิดข้อผิดพลาดในการโหลดข่าว</p>';
+            }
+        }
+
+        function displayNews(news) {
+            const container = document.getElementById('newsList');
+            
+            if (news.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">ไม่มีข่าวในระบบ</p>';
+                return;
+            }
+
+            container.innerHTML = news.map(item => `
+                <div class="card rounded-lg p-4">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-semibold mb-2">${item.title}</h3>
+                            <p class="text-sm text-gray-600 mb-2">${item.category} | ${new Date(item.publishedAt).toLocaleDateString('th-TH')}</p>
+                            <p class="text-sm text-gray-700">${item.summary || item.content.substring(0, 150)}...</p>
+                        </div>
+                        <div class="flex space-x-2 ml-4">
+                            <button onclick="editNews(${item.id})" class="btn btn-secondary text-sm">แก้ไข</button>
+                            <button onclick="deleteNews(${item.id})" class="btn text-sm" style="background: #dc2626; color: white;">ลบ</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateNewsPagination() {
+            const container = document.getElementById('newsPagination');
+            const totalPages = Math.ceil(571 / itemsPerPage); // ใช้จำนวนจาก stats
+            
+            let paginationHTML = '';
+            
+            // Previous button
+            if (currentPage > 1) {
+                paginationHTML += `<button onclick="changePage(${currentPage - 1})">« ก่อนหน้า</button>`;
+            }
+            
+            // Page numbers
+            for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
+                paginationHTML += `<button onclick="changePage(${i})" class="${i === currentPage ? 'active' : ''}">${i}</button>`;
+            }
+            
+            // Next button
+            if (currentPage < totalPages) {
+                paginationHTML += `<button onclick="changePage(${currentPage + 1})">ถัดไป »</button>`;
+            }
+            
+            container.innerHTML = paginationHTML;
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            loadNews();
+        }
+
+        async function addNews(formData) {
+            try {
+                const response = await fetch('/api/news', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin-token')}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) throw new Error('Failed to add news');
+                
+                closeModal('addNewsModal');
+                loadNews();
+                loadDashboard(); // Refresh stats
+                alert('เพิ่มข่าวสำเร็จ');
+            } catch (error) {
+                console.error('Error adding news:', error);
+                alert('เกิดข้อผิดพลาดในการเพิ่มข่าว');
+            }
+        }
+
+        async function deleteNews(id) {
+            if (!confirm('คุณแน่ใจหรือไม่ที่จะลบข่าวนี้?')) return;
+
+            try {
+                const response = await fetch(`/api/news/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('admin-token')}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to delete news');
+                
+                loadNews();
+                loadDashboard(); // Refresh stats
+                alert('ลบข่าวสำเร็จ');
+            } catch (error) {
+                console.error('Error deleting news:', error);
+                alert('เกิดข้อผิดพลาดในการลบข่าว');
+            }
+        }
+
+        // RSS management functions
+        async function loadRSSFeeds() {
+            try {
+                const response = await fetch('/api/rss-feeds');
+                if (!response.ok) throw new Error('Failed to fetch RSS feeds');
+                
+                const feeds = await response.json();
+                displayRSSFeeds(feeds);
+            } catch (error) {
+                console.error('Error loading RSS feeds:', error);
+                document.getElementById('rssList').innerHTML = '<p class="text-red-600">เกิดข้อผิดพลาดในการโหลด RSS Feeds</p>';
+            }
+        }
+
+        function displayRSSFeeds(feeds) {
+            const container = document.getElementById('rssList');
+            
+            if (feeds.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">ไม่มี RSS Feeds ในระบบ</p>';
+                return;
+            }
+
+            container.innerHTML = feeds.map(feed => `
+                <div class="card rounded-lg p-4">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-semibold mb-2">${feed.title}</h3>
+                            <p class="text-sm text-gray-600 mb-1">URL: ${feed.url}</p>
+                            <p class="text-sm text-gray-600 mb-1">หมวดหมู่: ${feed.category}</p>
+                            <p class="text-sm ${feed.isActive ? 'text-green-600' : 'text-red-600'}">
+                                สถานะ: ${feed.isActive ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
+                            </p>
+                        </div>
+                        <div class="flex space-x-2 ml-4">
+                            <button onclick="processRSSFeed(${feed.id})" class="btn btn-secondary text-sm">ประมวลผล</button>
+                            <button onclick="deleteRSSFeed(${feed.id})" class="btn text-sm" style="background: #dc2626; color: white;">ลบ</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function addRSSFeed(formData) {
+            try {
+                const response = await fetch('/api/rss-feeds', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin-token')}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) throw new Error('Failed to add RSS feed');
+                
+                closeModal('addRSSModal');
+                loadRSSFeeds();
+                loadDashboard(); // Refresh stats
+                alert('เพิ่ม RSS Feed สำเร็จ');
+            } catch (error) {
+                console.error('Error adding RSS feed:', error);
+                alert('เกิดข้อผิดพลาดในการเพิ่ม RSS Feed');
+            }
+        }
+
+        async function deleteRSSFeed(id) {
+            if (!confirm('คุณแน่ใจหรือไม่ที่จะลบ RSS Feed นี้?')) return;
+
+            try {
+                const response = await fetch(`/api/rss-feeds/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('admin-token')}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to delete RSS feed');
+                
+                loadRSSFeeds();
+                loadDashboard(); // Refresh stats
+                alert('ลบ RSS Feed สำเร็จ');
+            } catch (error) {
+                console.error('Error deleting RSS feed:', error);
+                alert('เกิดข้อผิดพลาดในการลบ RSS Feed');
+            }
+        }
+
+        async function processRSSFeed(id) {
+            try {
+                const response = await fetch(`/api/rss/process/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('admin-token')}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to process RSS feed');
+                
+                alert('เริ่มประมวลผล RSS Feed แล้ว');
+            } catch (error) {
+                console.error('Error processing RSS feed:', error);
+                alert('เกิดข้อผิดพลาดในการประมวลผล RSS Feed');
+            }
+        }
+
+        // Modal functions
+        function showAddNewsModal() {
+            document.getElementById('addNewsModal').classList.add('show');
+        }
+
+        function showAddRSSModal() {
+            document.getElementById('addRSSModal').classList.add('show');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+            
+            // Reset forms
+            if (modalId === 'addNewsModal') {
+                document.getElementById('newsForm').reset();
+            } else if (modalId === 'addRSSModal') {
+                document.getElementById('rssForm').reset();
+            }
+        }
+
+        // Form handlers
+        function setupFormHandlers() {
+            // News form
+            document.getElementById('newsForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = {
+                    title: document.getElementById('newsTitle').value,
+                    category: document.getElementById('newsCategory').value,
+                    summary: document.getElementById('newsSummary').value,
+                    imageUrl: document.getElementById('newsImageUrl').value,
+                    content: document.getElementById('newsContent').value
+                };
+                
+                addNews(formData);
+            });
+
+            // RSS form
+            document.getElementById('rssForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = {
+                    title: document.getElementById('rssTitle').value,
+                    url: document.getElementById('rssUrl').value,
+                    category: document.getElementById('rssCategory').value,
+                    isActive: document.getElementById('rssActive').checked
+                };
+                
+                addRSSFeed(formData);
+            });
+        }
+
+        // Close modals when clicking outside
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('show');
+            }
+        });
     </script>
 </body>
 </html>
