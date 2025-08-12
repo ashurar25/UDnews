@@ -37,8 +37,8 @@ const Header = () => {
   // Dynamic theme classes based on current theme
   const getThemeClasses = () => {
     return {
-      topBar: "bg-primary/60 backdrop-blur-md text-primary-foreground py-1 border-b border-primary/20",
-      mainHeader: "w-full px-0 py-6 bg-primary/25 backdrop-blur-md border-b border-primary/30",
+      topBar: "w-full bg-primary/60 backdrop-blur-md text-primary-foreground py-1 border-b border-primary/20",
+      mainHeader: "w-full py-6 bg-primary/25 backdrop-blur-md border-b border-primary/30",
       title: "text-3xl font-bold font-kanit text-foreground drop-shadow-lg"
     }
   }
@@ -61,8 +61,8 @@ const Header = () => {
 
       {/* Top Bar */}
       <div className={themeClasses.topBar}>
-        <div className="w-full px-0 flex justify-between items-center text-xs">
-          <div className="flex items-center gap-2 pl-4">
+        <div className="w-full px-4 flex justify-between items-center text-xs">
+          <div className="flex items-center gap-2">
             <div className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
               <span className="font-sarabun">
@@ -91,7 +91,7 @@ const Header = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 pr-4">
+          <div className="flex items-center gap-2">
             {/* Donation Button */}
             <Link to="/donate">
               <Button
@@ -109,9 +109,9 @@ const Header = () => {
 
       {/* Main Header */}
       <div className={themeClasses.mainHeader}>
-        <div className="flex items-center justify-between px-0">
+        <div className="flex items-center justify-between px-4">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-6 hover:opacity-90 transition-opacity pl-4" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+          <Link to="/" className="flex items-center gap-6 hover:opacity-90 transition-opacity" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <img 
               src="/logo.jpg" 
               alt="UD News Update Logo"
@@ -129,7 +129,7 @@ const Header = () => {
           </Link>
 
           {/* Right Side - Hamburger Menu Only */}
-          <div className="flex items-center gap-4 pr-4">
+          <div className="flex items-center gap-4">
               {/* Hamburger Menu Button */}
               <Button
                 variant="ghost"
