@@ -5,11 +5,13 @@ UD News (อัพเดทข่าวอุดร) is a full-stack local news 
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
+Theme preference: Light theme as default (user reported dark theme issue)
 
 # Recent Changes (August 12, 2025)
 
 - **Migration to Replit Completed**: Successfully migrated from Replit Agent to standard Replit environment
 - **Build Process Fixed**: Corrected client build path and static file serving configuration
+- **Theme Fix**: Fixed default theme to light mode after user reported dark theme issue
 - **Header UI Improved**: Made header extend full width across top of page for better visual coverage
 - **Admin Panel Replaced**: Created static HTML admin panel due to persistent React error #185 in React setup
 - **Static Admin Working**: New admin.html loads properly and connects to backend APIs for real data
