@@ -28,6 +28,7 @@ import { eq, desc, and, gte, lte, sql, asc } from "drizzle-orm";
 import { rssService } from "./rss-service";
 import { authenticateToken as authMiddleware, generateToken } from "./middleware/auth";
 import rateLimit from "express-rate-limit";
+import path from 'path';
 
 // Cache configuration for faster news loading
 const newsCache = new NodeCache({ stdTTL: 300, checkperiod: 60 }); // 5 minutes
@@ -58,6 +59,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Apply rate limiting
   app.use('/api/', apiLimiter);
   app.use('/admin', adminLimiter);
+
+  // Admin routes - serve static HTML
+  app.get('/admin.html', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../client/public/admin.html'));
+  });
+
+  // Redirect /admin to static HTML
+  app.get('/admin', (req, res) => {
+    res.redirect('/admin.html');
+  });
 
   // Admin Login Route
   app.post("/api/admin/login", async (req, res) => {

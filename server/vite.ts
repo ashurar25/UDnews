@@ -50,6 +50,23 @@ export async function setupVite(app: Express, server: Server) {
   });
 
   app.use(vite.middlewares);
+  // Handle admin.html separately
+  app.get("/admin.html", async (req, res) => {
+    try {
+      const adminTemplate = path.resolve(
+        import.meta.dirname,
+        "..",
+        "client",
+        "public",
+        "admin.html",
+      );
+      const html = await fs.promises.readFile(adminTemplate, "utf-8");
+      res.status(200).set({ "Content-Type": "text/html" }).end(html);
+    } catch (e) {
+      res.status(404).send("Admin page not found");
+    }
+  });
+
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
 
