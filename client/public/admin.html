@@ -896,6 +896,7 @@
                                     <div class="flex flex-gap">
                                         <button class="btn btn-secondary" onclick="applyThemePreset()">ใช้ธีม</button>
                                         <button class="btn btn-primary" onclick="saveTheme()">บันทึกธีม</button>
+                                        <button class="btn btn-secondary btn-small" onclick="testTheme()">ทดสอบธีม</button>
                                     </div>
                                 </div>
                             </div>
@@ -909,22 +910,22 @@
                                     <div class="form-group">
                                         <label class="form-label">สีหลัก (Primary):</label>
                                         <div class="flex flex-gap">
-                                            <input type="color" class="form-input" id="primaryColor" value="#f97316" style="width: 60px;">
-                                            <input type="text" class="form-input" readonly id="primaryColorText" style="font-family: monospace;">
+                                            <input type="color" class="form-input" id="primaryColor" value="#f97316" style="width: 60px;" onchange="updateThemeFromColorPicker()">
+                                            <input type="text" class="form-input" readonly id="primaryColorText" value="#f97316" style="font-family: monospace; font-size: 12px;">
                                         </div>
                                     </div>
                                     <div class="form-group">
                                         <label class="form-label">สีรอง (Secondary):</label>
                                         <div class="flex flex-gap">
-                                            <input type="color" class="form-input" id="secondaryColor" value="#fed7aa" style="width: 60px;">
-                                            <input type="text" class="form-input" readonly id="secondaryColorText" style="font-family: monospace;">
+                                            <input type="color" class="form-input" id="secondaryColor" value="#fed7aa" style="width: 60px;" onchange="updateThemeFromColorPicker()">
+                                            <input type="text" class="form-input" readonly id="secondaryColorText" value="#fed7aa" style="font-family: monospace; font-size: 12px;">
                                         </div>
                                     </div>
                                     <div class="form-group">
                                         <label class="form-label">สีพื้นหลัง (Background):</label>
                                         <div class="flex flex-gap">
-                                            <input type="color" class="form-input" id="backgroundColor" value="#ffffff" style="width: 60px;">
-                                            <input type="text" class="form-input" readonly id="backgroundColorText" style="font-family: monospace;">
+                                            <input type="color" class="form-input" id="backgroundColor" value="#ffffff" style="width: 60px;" onchange="updateThemeFromColorPicker()">
+                                            <input type="text" class="form-input" readonly id="backgroundColorText" value="#ffffff" style="font-family: monospace; font-size: 12px;">
                                         </div>
                                     </div>
                                 </div>
@@ -2131,7 +2132,10 @@
         }
 
         function applyThemePreset() {
-            const preset = document.getElementById('themePreset').value;
+            const presetSelect = document.getElementById('themePreset');
+            if (!presetSelect) return;
+            
+            const preset = presetSelect.value;
             const presets = {
                 light: { 
                     primary: '#f97316', 
@@ -2158,14 +2162,37 @@
 
             if (presets[preset]) {
                 const theme = presets[preset];
-                document.getElementById('primaryColor').value = theme.primary;
-                document.getElementById('secondaryColor').value = theme.secondary;
-                document.getElementById('backgroundColor').value = theme.background;
+                
+                // Update color inputs
+                const primaryInput = document.getElementById('primaryColor');
+                const secondaryInput = document.getElementById('secondaryColor');
+                const backgroundInput = document.getElementById('backgroundColor');
+                
+                if (primaryInput) primaryInput.value = theme.primary;
+                if (secondaryInput) secondaryInput.value = theme.secondary;
+                if (backgroundInput) backgroundInput.value = theme.background;
+                
+                // Update text displays
+                const primaryText = document.getElementById('primaryColorText');
+                const secondaryText = document.getElementById('secondaryColorText');
+                const backgroundText = document.getElementById('backgroundColorText');
+                
+                if (primaryText) primaryText.value = theme.primary;
+                if (secondaryText) secondaryText.value = theme.secondary;
+                if (backgroundText) backgroundText.value = theme.background;
                 
                 // Apply theme immediately
                 applyThemeToPage(theme.primary, theme.secondary, theme.background, theme.text, theme.border);
                 
+                // Update status
+                const themeStatus = document.getElementById('themeStatus');
+                if (themeStatus) {
+                    const themeNames = { light: 'สว่าง', dark: 'มืด', thai: 'ไทย' };
+                    themeStatus.innerHTML = `<div class="success">✓ เปลี่ยนเป็นธีม${themeNames[preset]}แล้ว - สามารถกดบันทึกเพื่อเก็บค่า</div>`;
+                }
+                
                 showSuccess(`เปลี่ยนเป็นธีม${preset === 'light' ? 'สว่าง' : preset === 'dark' ? 'มืด' : 'ไทย'}แล้ว`);
+                console.log('Applied theme preset:', preset, theme);
             }
         }
 
@@ -2305,53 +2332,64 @@
 
         // Real-time color preview
         function setupColorPreview() {
-            const primaryInput = document.getElementById('primaryColor');
-            const secondaryInput = document.getElementById('secondaryColor');
-            const backgroundInput = document.getElementById('backgroundColor');
-            
-            // Update text fields
-            function updateColorTexts() {
-                const primaryText = document.getElementById('primaryColorText');
-                const secondaryText = document.getElementById('secondaryColorText');
-                const backgroundText = document.getElementById('backgroundColorText');
+            // Wait for DOM elements to be ready
+            setTimeout(() => {
+                const primaryInput = document.getElementById('primaryColor');
+                const secondaryInput = document.getElementById('secondaryColor');
+                const backgroundInput = document.getElementById('backgroundColor');
                 
-                if (primaryText) primaryText.value = primaryInput.value;
-                if (secondaryText) secondaryText.value = secondaryInput.value;
-                if (backgroundText) backgroundText.value = backgroundInput.value;
-            }
-            
-            if (primaryInput) {
-                primaryInput.addEventListener('input', (e) => {
-                    const primary = e.target.value;
-                    const secondary = document.getElementById('secondaryColor').value;
-                    const background = document.getElementById('backgroundColor').value;
-                    applyThemeToPage(primary, secondary, background);
-                    updateColorTexts();
-                });
-            }
-            
-            if (secondaryInput) {
-                secondaryInput.addEventListener('input', (e) => {
-                    const primary = document.getElementById('primaryColor').value;
-                    const secondary = e.target.value;
-                    const background = document.getElementById('backgroundColor').value;
-                    applyThemeToPage(primary, secondary, background);
-                    updateColorTexts();
-                });
-            }
-            
-            if (backgroundInput) {
-                backgroundInput.addEventListener('input', (e) => {
-                    const primary = document.getElementById('primaryColor').value;
-                    const secondary = document.getElementById('secondaryColor').value;
-                    const background = e.target.value;
-                    applyThemeToPage(primary, secondary, background);
-                    updateColorTexts();
-                });
-            }
-            
-            // Initialize text fields
-            updateColorTexts();
+                // Update text fields
+                function updateColorTexts() {
+                    const primaryText = document.getElementById('primaryColorText');
+                    const secondaryText = document.getElementById('secondaryColorText');
+                    const backgroundText = document.getElementById('backgroundColorText');
+                    
+                    if (primaryText && primaryInput) primaryText.value = primaryInput.value;
+                    if (secondaryText && secondaryInput) secondaryText.value = secondaryInput.value;
+                    if (backgroundText && backgroundInput) backgroundText.value = backgroundInput.value;
+                }
+                
+                if (primaryInput) {
+                    primaryInput.addEventListener('input', (e) => {
+                        const primary = e.target.value;
+                        const secondary = document.getElementById('secondaryColor').value;
+                        const background = document.getElementById('backgroundColor').value;
+                        applyThemeToPage(primary, secondary, background);
+                        updateColorTexts();
+                        console.log('Primary color changed to:', primary);
+                    });
+                }
+                
+                if (secondaryInput) {
+                    secondaryInput.addEventListener('input', (e) => {
+                        const primary = document.getElementById('primaryColor').value;
+                        const secondary = e.target.value;
+                        const background = document.getElementById('backgroundColor').value;
+                        applyThemeToPage(primary, secondary, background);
+                        updateColorTexts();
+                        console.log('Secondary color changed to:', secondary);
+                    });
+                }
+                
+                if (backgroundInput) {
+                    backgroundInput.addEventListener('input', (e) => {
+                        const primary = document.getElementById('primaryColor').value;
+                        const secondary = document.getElementById('secondaryColor').value;
+                        const background = e.target.value;
+                        applyThemeToPage(primary, secondary, background);
+                        updateColorTexts();
+                        console.log('Background color changed to:', background);
+                    });
+                }
+                
+                // Initialize text fields and apply current theme
+                updateColorTexts();
+                
+                // Apply initial theme
+                if (primaryInput && secondaryInput && backgroundInput) {
+                    applyThemeToPage(primaryInput.value, secondaryInput.value, backgroundInput.value);
+                }
+            }, 500);
         }
 
         // Thai Special Days Theme Functions
@@ -2505,18 +2543,79 @@
             root.style.removeProperty('--theme-background');
             
             // Reset select
-            document.getElementById('specialDayPreset').value = '';
+            const specialSelect = document.getElementById('specialDayPreset');
+            if (specialSelect) specialSelect.value = '';
             
             // Update status
-            document.getElementById('currentSpecialDay').innerHTML = `
-                <div class="info">
-                    ✓ กลับเป็นธีมปกติแล้ว
-                </div>
-            `;
+            const statusDiv = document.getElementById('currentSpecialDay');
+            if (statusDiv) {
+                statusDiv.innerHTML = `
+                    <div class="info">
+                        ✓ กลับเป็นธีมปกติแล้ว
+                    </div>
+                `;
+            }
             
             showSuccess('กลับเป็นธีมปกติแล้ว');
         }
+        
+        function testTheme() {
+            const primaryInput = document.getElementById('primaryColor');
+            const secondaryInput = document.getElementById('secondaryColor');
+            const backgroundInput = document.getElementById('backgroundColor');
+            
+            console.log('Testing theme system...');
+            console.log('Primary input:', primaryInput ? primaryInput.value : 'not found');
+            console.log('Secondary input:', secondaryInput ? secondaryInput.value : 'not found');
+            console.log('Background input:', backgroundInput ? backgroundInput.value : 'not found');
+            
+            if (primaryInput && secondaryInput && backgroundInput) {
+                // Test with bright colors
+                primaryInput.value = '#ff0000';
+                secondaryInput.value = '#00ff00';
+                backgroundInput.value = '#0000ff';
+                
+                updateThemeFromColorPicker();
+                
+                setTimeout(() => {
+                    alert('ธีมทดสอบถูกใช้แล้ว! ตรวจสอบการเปลี่ยนแปลง');
+                    
+                    // Reset to original colors after 3 seconds
+                    setTimeout(() => {
+                        primaryInput.value = '#f97316';
+                        secondaryInput.value = '#fed7aa';
+                        backgroundInput.value = '#ffffff';
+                        updateThemeFromColorPicker();
+                    }, 3000);
+                }, 500);
+            } else {
+                alert('ไม่พบ input elements สำหรับสี');
+            }
+        }
 
+        // Function to update theme when color picker changes
+        function updateThemeFromColorPicker() {
+            const primaryInput = document.getElementById('primaryColor');
+            const secondaryInput = document.getElementById('secondaryColor');
+            const backgroundInput = document.getElementById('backgroundColor');
+            
+            if (primaryInput && secondaryInput && backgroundInput) {
+                const primary = primaryInput.value;
+                const secondary = secondaryInput.value;
+                const background = backgroundInput.value;
+                
+                // Update text fields
+                document.getElementById('primaryColorText').value = primary;
+                document.getElementById('secondaryColorText').value = secondary;
+                document.getElementById('backgroundColorText').value = background;
+                
+                // Apply theme immediately
+                applyThemeToPage(primary, secondary, background);
+                
+                console.log('Theme updated:', { primary, secondary, background });
+            }
+        }
+        
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
             if (!checkAuth()) return;
@@ -2537,7 +2636,12 @@
             // Setup real-time color preview
             setTimeout(() => {
                 setupColorPreview();
-            }, 1500);
+                
+                // Initialize theme display
+                updateThemeFromColorPicker();
+            }, 800);
+            
+            console.log('Admin page initialized with theme system');
         });
     </script>
 </body>
