@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
 import NodeCache from 'node-cache';
 import { 
   insertRssFeedSchema, 
@@ -11,8 +12,19 @@ import {
   insertCommentSchema,
   insertNewsletterSubscriberSchema,
   insertPushSubscriptionSchema,
-  insertNewsRatingSchema
+  insertNewsRatingSchema,
+  newsArticles,
+  rssFeeds,
+  sponsorBanners,
+  contactMessages,
+  siteSettings,
+  newsViews,
+  dailyStats,
+  comments,
+  newsRatings,
+  rssProcessingHistory
 } from "@shared/schema";
+import { eq, desc, and, gte, lte, sql, asc } from "drizzle-orm";
 import { rssService } from "./rss-service";
 import { authenticateToken as authMiddleware, generateToken } from "./middleware/auth";
 import rateLimit from "express-rate-limit";
@@ -486,9 +498,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Site Settings routes for theme management
   app.get("/api/site-settings", async (req, res) => {
     try {
-      // Query the actual site_settings table structure
-      const settings = await db.select().from(siteSettings);
-      res.json(settings);
+      // Use raw SQL query since the table structure doesn't match schema
+      const result = await db.execute(sql`SELECT * FROM site_settings ORDER BY created_at DESC`);
+      res.json(result.rows);
     } catch (error) {
       console.error('Site settings error:', error);
       res.status(500).json({ error: "Failed to fetch site settings" });
@@ -599,9 +611,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Contact Messages routes
   app.get("/api/contact-messages", async (req, res) => {
     try {
-      // Query the actual contact_messages table structure
-      const messages = await db.select().from(contactMessages).orderBy(desc(contactMessages.createdAt));
-      res.json(messages);
+      // Use raw SQL query since the table structure may not match schema exactly
+      const result = await db.execute(sql`SELECT * FROM contact_messages ORDER BY created_at DESC`);
+      res.json(result.rows);
     } catch (error) {
       console.error('Contact messages error:', error);
       res.status(500).json({ error: "Failed to fetch contact messages" });
