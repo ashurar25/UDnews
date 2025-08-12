@@ -19,9 +19,9 @@ const Login = () => {
 
   // Check if already logged in
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem('admin-token');
     if (token) {
-      setLocation('/admin');
+      setLocation('/admin.html');
     }
   }, [setLocation]);
 
@@ -42,12 +42,13 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('adminToken', data.token);
+        localStorage.setItem('admin-token', data.token);
         toast({
           title: "เข้าสู่ระบบสำเร็จ",
           description: "ยินดีต้อนรับสู่แผงควบคุมแอดมิน",
         });
-        setLocation('/admin');
+        // Redirect to static HTML admin page
+        window.location.href = '/admin.html';
       } else {
         setError(data.error || 'เข้าสู่ระบบไม่สำเร็จ');
       }
