@@ -22,7 +22,8 @@ import {
   Clock,
   Mail,
   LogOut,
-  MessageSquare
+  MessageSquare,
+  FolderOpen
 } from "lucide-react"
 import { Link } from "wouter"
 // Components will be lazy loaded
@@ -63,6 +64,13 @@ const LazySponsorManager = React.lazy(() => import("@/components/SponsorManager"
 const LazyContactMessagesManager = React.lazy(() => import("@/components/ContactMessagesManager"));
 const LazyAnalyticsDashboard = React.lazy(() => import("@/components/AnalyticsDashboard"));
 const LazyThemeSettings = React.lazy(() => import("@/components/ThemeSettings"));
+const LazyUserManager = React.lazy(() => import("@/components/UserManager"));
+const LazyCommentManager = React.lazy(() => import("@/components/CommentManager"));
+const LazyNewsletterManager = React.lazy(() => import("@/components/NewsletterManager"));
+const LazyPushNotificationManager = React.lazy(() => import("@/components/PushNotificationManager"));
+const LazySystemSettings = React.lazy(() => import("@/components/SystemSettings"));
+const LazyMediaManager = React.lazy(() => import("@/components/MediaManager"));
+const LazyCategoryManager = React.lazy(() => import("@/components/CategoryManager"));
 
 
 function AdminContent() {
@@ -199,7 +207,7 @@ function AdminContent() {
         <Separator className="mb-8" />
 
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-12">
             <TabsTrigger value="overview">ภาพรวม</TabsTrigger>
             <TabsTrigger value="analytics">สถิติ</TabsTrigger>
             <TabsTrigger value="news">จัดการข่าว</TabsTrigger>
@@ -207,6 +215,11 @@ function AdminContent() {
             <TabsTrigger value="sponsors">แบนเนอร์</TabsTrigger>
             <TabsTrigger value="themes">ธีม</TabsTrigger>
             <TabsTrigger value="messages">ข้อความ</TabsTrigger>
+            <TabsTrigger value="users">ผู้ใช้</TabsTrigger>
+            <TabsTrigger value="comments">ความคิดเห็น</TabsTrigger>
+            <TabsTrigger value="newsletter">จดหมายข่าว</TabsTrigger>
+            <TabsTrigger value="notifications">การแจ้งเตือน</TabsTrigger>
+            <TabsTrigger value="settings">การตั้งค่า</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -334,6 +347,43 @@ function AdminContent() {
               <Suspense fallback={<LoadingSpinner />}>
                 <LazyThemeSettings />
               </Suspense>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
+                  <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-xl">
+                    <CardTitle className="flex items-center gap-2 font-kanit text-blue-700">
+                      <Image className="h-5 w-5" />
+                      จัดการไฟล์มีเดีย
+                    </CardTitle>
+                    <CardDescription className="font-sarabun">
+                      อัปโหลดและจัดการไฟล์รูปภาพ วิดีโอ และเอกสาร
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <LazyMediaManager />
+                    </Suspense>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
+                  <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-xl">
+                    <CardTitle className="flex items-center gap-2 font-kanit text-green-700">
+                      <FolderOpen className="h-5 w-5" />
+                      จัดการหมวดหมู่
+                    </CardTitle>
+                    <CardDescription className="font-sarabun">
+                      สร้างและจัดการหมวดหมู่ข่าว
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <LazyCategoryManager />
+                    </Suspense>
+                  </CardContent>
+                </Card>
+              </div>
+              
               <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
                 <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-t-xl">
                   <CardTitle className="flex items-center gap-2 font-kanit text-pink-700">
@@ -722,6 +772,36 @@ function AdminContent() {
           <TabsContent value="messages" className="space-y-6">
             <Suspense fallback={<LoadingSpinner />}>
               <LazyContactMessagesManager />
+            </Suspense>
+          </TabsContent>
+
+          <TabsContent value="users" className="space-y-6">
+            <Suspense fallback={<LoadingSpinner />}>
+              <LazyUserManager />
+            </Suspense>
+          </TabsContent>
+
+          <TabsContent value="comments" className="space-y-6">
+            <Suspense fallback={<LoadingSpinner />}>
+              <LazyCommentManager />
+            </Suspense>
+          </TabsContent>
+
+          <TabsContent value="newsletter" className="space-y-6">
+            <Suspense fallback={<LoadingSpinner />}>
+              <LazyNewsletterManager />
+            </Suspense>
+          </TabsContent>
+
+          <TabsContent value="notifications" className="space-y-6">
+            <Suspense fallback={<LoadingSpinner />}>
+              <LazyPushNotificationManager />
+            </Suspense>
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-6">
+            <Suspense fallback={<LoadingSpinner />}>
+              <LazySystemSettings />
             </Suspense>
           </TabsContent>
         </Tabs>
