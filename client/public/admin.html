@@ -724,38 +724,58 @@
 
         // Tab management
         function showTab(tabName) {
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.add('hidden');
-            });
-            
-            // Show selected tab
-            document.getElementById(tabName + '-tab').classList.remove('hidden');
-            
-            // Update active tab button
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // Find and activate the correct tab button
-            const tabButtons = document.querySelectorAll('.tab-btn');
-            tabButtons.forEach(btn => {
-                if (btn.textContent.includes(getTabDisplayName(tabName))) {
-                    btn.classList.add('active');
+            try {
+                // Hide all tabs
+                const tabs = document.querySelectorAll('.tab-content');
+                tabs.forEach(tab => {
+                    if (tab && tab.classList) {
+                        tab.classList.remove('active');
+                    }
+                });
+                
+                // Show selected tab
+                const targetTab = document.getElementById(tabName + '-tab');
+                if (targetTab && targetTab.classList) {
+                    targetTab.classList.add('active');
                 }
-            });
-            
-            // Load tab-specific data
-            if (tabName === 'news') {
-                loadNews();
-            } else if (tabName === 'rss') {
-                loadRSSFeeds();
-            } else if (tabName === 'banners') {
-                loadBanners();
-            } else if (tabName === 'comments') {
-                loadComments();
-            } else if (tabName === 'analytics') {
-                loadAnalytics();
+                
+                // Update active nav tab
+                const navTabs = document.querySelectorAll('.nav-tab');
+                navTabs.forEach(nav => {
+                    if (nav && nav.classList) {
+                        nav.classList.remove('active');
+                    }
+                });
+                
+                // Find and activate the correct nav tab
+                const clickedButton = document.querySelector(`[onclick*="showTab('${tabName}')"]`);
+                if (clickedButton && clickedButton.classList) {
+                    clickedButton.classList.add('active');
+                }
+                
+                // Load tab-specific data
+                switch(tabName) {
+                    case 'dashboard':
+                        loadStats();
+                        break;
+                    case 'news':
+                        loadNews();
+                        break;
+                    case 'rss':
+                        loadRSSFeeds();
+                        break;
+                    case 'analytics':
+                        loadAnalytics();
+                        break;
+                    case 'messages':
+                        loadMessages();
+                        break;
+                    case 'sponsors':
+                        loadSponsors();
+                        break;
+                }
+            } catch (error) {
+                console.error('Error in showTab:', error);
             }
         }
 

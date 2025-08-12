@@ -29,6 +29,7 @@ import { rssService } from "./rss-service";
 import { authenticateToken as authMiddleware, generateToken } from "./middleware/auth";
 import rateLimit from "express-rate-limit";
 import path from 'path';
+import fs from 'fs';
 
 // Cache configuration for faster news loading
 const newsCache = new NodeCache({ stdTTL: 300, checkperiod: 60 }); // 5 minutes
@@ -767,8 +768,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Comments Management Routes
   app.get("/api/comments", async (req, res) => {
     try {
-      const filter = req.query.filter || 'all';
-      const limit = parseInt(req.query.limit as string) || 50;
+      const filter = (req.query.filter as string) || 'all';
+      const limit = parseInt((req.query.limit as string) || '50');
       const comments = await storage.getComments(filter, limit);
       res.json(comments);
     } catch (error) {
