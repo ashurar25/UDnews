@@ -583,7 +583,7 @@ export default function CategoryManager() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>ยืนยันการลบหมวดหมู่</AlertTitle>
+                            <AlertDialogTitle>ยืนยันการลบหมวดหมู่</AlertDialogTitle>
                             <AlertDialogDescription>
                               คุณต้องการลบหมวดหมู่ {category.name} หรือไม่? การดำเนินการนี้ไม่สามารถยกเลิกได้
                             </AlertDialogDescription>

@@ -45,6 +45,10 @@ const CATEGORIES = [
 export default function NewsManager() {
   const [editingNews, setEditingNews] = useState<News | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(20);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [formData, setFormData] = useState<NewsFormData>({
     title: "",
     content: "",
@@ -184,6 +188,44 @@ export default function NewsManager() {
     return new Date(dateString).toLocaleString('th-TH');
   };
 
+  // Filter and pagination logic
+  const filteredNews = news.filter((newsItem) => {
+    const matchesSearch = 
+      newsItem.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      newsItem.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (newsItem.author && newsItem.author.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesCategory = !selectedCategory || newsItem.category === selectedCategory;
+    
+    return matchesSearch && matchesCategory;
+  });
+
+  const totalPages = Math.ceil(filteredNews.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentNews = filteredNews.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // Reset to first page when searching
+  };
+
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    setCurrentPage(1); // Reset to first page when changing category
+  };
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setSelectedCategory("");
+    setCurrentPage(1);
+  };
+
   if (error) {
     return (
       <Card>
@@ -301,6 +343,56 @@ export default function NewsManager() {
         </Card>
       )}
 
+      {/* Search and Filter Controls */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row gap-4 items-center">
+            <div className="flex-1">
+              <Label htmlFor="search" className="text-sm font-medium">ค้นหาข่าว</Label>
+              <Input
+                id="search"
+                placeholder="ค้นหาจากหัวข้อ, เนื้อหา, หรือผู้เขียน..."
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            <div className="w-full md:w-48">
+              <Label htmlFor="category-filter" className="text-sm font-medium">หมวดหมู่</Label>
+              <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="ทุกหมวดหมู่" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">ทุกหมวดหมู่</SelectItem>
+                  {CATEGORIES.map((category) => (
+                    <SelectItem key={category.value} value={category.value}>
+                      {category.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end">
+              <Button variant="outline" onClick={resetFilters} className="h-10">
+                ล้างตัวกรอง
+              </Button>
+            </div>
+          </div>
+          
+          {/* Results Summary */}
+          <div className="mt-4 text-sm text-gray-600">
+            พบ {filteredNews.length.toLocaleString()} ข่าว
+            {selectedCategory && (
+              <span> ในหมวดหมู่ {getCategoryLabel(selectedCategory)}</span>
+            )}
+            {searchTerm && (
+              <span> สำหรับคำค้น "{searchTerm}"</span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* News List */}
       <div className="space-y-4">
         {isLoading ? (
@@ -309,14 +401,19 @@ export default function NewsManager() {
               <div className="text-center">กำลังโหลดข้อมูล...</div>
             </CardContent>
           </Card>
-        ) : news.length === 0 ? (
+        ) : filteredNews.length === 0 ? (
           <Card>
             <CardContent className="p-6">
-              <div className="text-center text-gray-500">ยังไม่มีข่าวในระบบ</div>
+              <div className="text-center text-gray-500">
+                {searchTerm || selectedCategory 
+                  ? "ไม่พบข่าวที่ตรงกับเงื่อนไขการค้นหา" 
+                  : "ยังไม่มีข่าวในระบบ"
+                }
+              </div>
             </CardContent>
           </Card>
         ) : (
-          news.map((newsItem) => (
+          currentNews.map((newsItem) => (
             <Card key={newsItem.id}>
               <CardHeader>
                 <div className="flex justify-between items-start">
@@ -396,6 +493,66 @@ export default function NewsManager() {
               </CardContent>
             </Card>
           ))
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-sm text-gray-600">
+                  แสดง {startIndex + 1}-{Math.min(endIndex, filteredNews.length)} จาก {filteredNews.length} ข่าว
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    ก่อนหน้า
+                  </Button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handlePageChange(pageNum)}
+                          className="w-10 h-10"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    ถัดไป
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

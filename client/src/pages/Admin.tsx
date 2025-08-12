@@ -33,6 +33,7 @@ import { useQuery } from "@tanstack/react-query"
 import React, { useState, useEffect, useCallback, Suspense } from "react"
 import { useLocation } from "wouter"
 import { useToast } from "@/hooks/use-toast";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 function LoadingSpinner() {
   return (
@@ -71,6 +72,7 @@ const LazyPushNotificationManager = React.lazy(() => import("@/components/PushNo
 const LazySystemSettings = React.lazy(() => import("@/components/SystemSettings"));
 const LazyMediaManager = React.lazy(() => import("@/components/MediaManager"));
 const LazyCategoryManager = React.lazy(() => import("@/components/CategoryManager"));
+const LazyDatabaseManager = React.lazy(() => import("@/components/DatabaseManager"));
 
 
 function AdminContent() {
@@ -207,7 +209,7 @@ function AdminContent() {
         <Separator className="mb-8" />
 
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-12">
+          <TabsList className="grid w-full grid-cols-13">
             <TabsTrigger value="overview">ภาพรวม</TabsTrigger>
             <TabsTrigger value="analytics">สถิติ</TabsTrigger>
             <TabsTrigger value="news">จัดการข่าว</TabsTrigger>
@@ -220,6 +222,7 @@ function AdminContent() {
             <TabsTrigger value="newsletter">จดหมายข่าว</TabsTrigger>
             <TabsTrigger value="notifications">การแจ้งเตือน</TabsTrigger>
             <TabsTrigger value="settings">การตั้งค่า</TabsTrigger>
+            <TabsTrigger value="database">ฐานข้อมูล</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -804,6 +807,12 @@ function AdminContent() {
               <LazySystemSettings />
             </Suspense>
           </TabsContent>
+
+          <TabsContent value="database" className="space-y-6">
+            <Suspense fallback={<LoadingSpinner />}>
+              <LazyDatabaseManager />
+            </Suspense>
+          </TabsContent>
         </Tabs>
       </main>
     </div>
@@ -861,5 +870,9 @@ export default function Admin() {
     return null;
   }
 
-  return <AdminContent />;
+  return (
+    <ErrorBoundary>
+      <AdminContent />
+    </ErrorBoundary>
+  );
 }

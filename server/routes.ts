@@ -30,6 +30,8 @@ import { authenticateToken as authMiddleware, generateToken } from "./middleware
 import rateLimit from "express-rate-limit";
 import path from 'path';
 import fs from 'fs';
+import databaseRoutes from './database-api';
+import userRoutes from './user-api';
 
 // Cache configuration for faster news loading
 const newsCache = new NodeCache({ stdTTL: 300, checkperiod: 60 }); // 5 minutes
@@ -1101,6 +1103,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to search news" });
     }
   });
+
+  // Database management routes
+  app.use('/api/database', databaseRoutes);
+  
+  // User management routes
+  app.use('/api/users', userRoutes);
 
   const httpServer = createServer(app);
 

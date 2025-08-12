@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Users, UserPlus, UserEdit, UserX, Shield, Mail, Calendar, Search } from "lucide-react";
+import { Users, UserPlus, UserCog, UserX, Shield, Mail, Calendar, Search } from "lucide-react";
 
 interface User {
   id: string;
@@ -33,44 +33,131 @@ export default function UserManager() {
     username: '',
     email: '',
     password: '',
-    role: 'user' as const,
-    status: 'active' as const
+    role: 'user' as 'admin' | 'editor' | 'user',
+    status: 'active' as 'active' | 'inactive' | 'banned'
   });
 
-  // Mock data for demonstration
+  // Load real data from API
   useEffect(() => {
-    const mockUsers: User[] = [
-      {
-        id: '1',
-        username: 'admin',
-        email: 'admin@udnews.com',
-        role: 'admin',
-        status: 'active',
-        createdAt: '2024-01-01',
-        lastLogin: '2024-12-19 10:30:00'
-      },
-      {
-        id: '2',
-        username: 'editor1',
-        email: 'editor1@udnews.com',
-        role: 'editor',
-        status: 'active',
-        createdAt: '2024-01-15',
-        lastLogin: '2024-12-18 15:45:00'
-      },
-      {
-        id: '3',
-        username: 'user1',
-        email: 'user1@udnews.com',
-        role: 'user',
-        status: 'active',
-        createdAt: '2024-02-01',
-        lastLogin: '2024-12-17 09:15:00'
-      }
-    ];
-    setUsers(mockUsers);
-    setIsLoading(false);
+    loadUsers();
   }, []);
+
+  const loadUsers = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/users', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data);
+      } else {
+        // Check if it's an authentication error
+        if (response.status === 401 || response.status === 403) {
+          toast({
+            title: "สิทธิ์ไม่เพียงพอ",
+            description: "กรุณาเข้าสู่ระบบใหม่",
+            variant: "destructive"
+          });
+          // Redirect to login
+          window.location.href = '/login';
+          return;
+        }
+        
+        // Fallback to mock data if API fails
+        const mockUsers: User[] = [
+          {
+            id: '1',
+            username: 'admin',
+            email: 'admin@udnews.com',
+            role: 'admin',
+            status: 'active',
+            createdAt: '2024-01-01',
+            lastLogin: '2024-12-19 10:30:00'
+          },
+          {
+            id: '2',
+            username: 'editor1',
+            email: 'editor1@udnews.com',
+            role: 'editor',
+            status: 'active',
+            createdAt: '2024-01-15',
+            lastLogin: '2024-12-18 15:45:00'
+          },
+          {
+            id: '3',
+            username: 'user1',
+            email: 'user1@udnews.com',
+            role: 'user',
+            status: 'active',
+            createdAt: '2024-02-01',
+            lastLogin: '2024-12-17 09:15:00'
+          }
+        ];
+        setUsers(mockUsers);
+        
+        toast({
+          title: "ใช้ข้อมูลจำลอง",
+          description: "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ ใช้ข้อมูลจำลองแทน",
+          variant: "default"
+        });
+      }
+    } catch (error) {
+      console.error('Error loading users:', error);
+      
+      let errorMessage = "ไม่สามารถโหลดข้อมูลผู้ใช้ได้";
+      if (error instanceof Error) {
+        if (error.message.includes('Failed to fetch')) {
+          errorMessage = "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: errorMessage,
+        variant: "destructive"
+      });
+      
+      // Fallback to mock data on network error
+      const mockUsers: User[] = [
+        {
+          id: '1',
+          username: 'admin',
+          email: 'admin@udnews.com',
+          role: 'admin',
+          status: 'active',
+          createdAt: '2024-01-01',
+          lastLogin: '2024-12-19 10:30:00'
+        },
+        {
+          id: '2',
+          username: 'editor1',
+          email: 'editor1@udnews.com',
+          role: 'editor',
+          status: 'active',
+          createdAt: '2024-01-15',
+          lastLogin: '2024-12-18 15:45:00'
+        },
+        {
+          id: '3',
+          username: 'user1',
+          email: 'user1@udnews.com',
+          role: 'user',
+          status: 'active',
+          createdAt: '2024-02-01',
+          lastLogin: '2024-12-17 09:15:00'
+        }
+      ];
+      setUsers(mockUsers);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const filteredUsers = users.filter(user =>
     user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -79,25 +166,30 @@ export default function UserManager() {
 
   const handleAddUser = async () => {
     try {
-      // Mock API call
-      const newUser: User = {
-        id: Date.now().toString(),
-        username: formData.username,
-        email: formData.email,
-        role: formData.role,
-        status: formData.status,
-        createdAt: new Date().toISOString().split('T')[0]
-      };
-      
-      setUsers([...users, newUser]);
-      setIsAddDialogOpen(false);
-      setFormData({ username: '', email: '', password: '', role: 'user', status: 'active' });
-      
-      toast({
-        title: "เพิ่มผู้ใช้สำเร็จ",
-        description: `ผู้ใช้ ${newUser.username} ถูกเพิ่มเรียบร้อยแล้ว`,
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        },
+        body: JSON.stringify(formData)
       });
+
+      if (response.ok) {
+        const newUser = await response.json();
+        setUsers([...users, newUser]);
+        setIsAddDialogOpen(false);
+        setFormData({ username: '', email: '', password: '', role: 'user', status: 'active' });
+        
+        toast({
+          title: "เพิ่มผู้ใช้สำเร็จ",
+          description: `ผู้ใช้ ${newUser.username} ถูกเพิ่มเรียบร้อยแล้ว`,
+        });
+      } else {
+        throw new Error('Failed to add user');
+      }
     } catch (error) {
+      console.error('Error adding user:', error);
       toast({
         title: "เกิดข้อผิดพลาด",
         description: "ไม่สามารถเพิ่มผู้ใช้ได้",
@@ -317,13 +409,13 @@ export default function UserManager() {
                   <TableCell>{user.lastLogin || '-'}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openEditDialog(user)}
-                      >
-                        <UserEdit className="h-4 w-4" />
-                      </Button>
+                                              <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openEditDialog(user)}
+                        >
+                          <UserCog className="h-4 w-4" />
+                        </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="outline" size="sm">
