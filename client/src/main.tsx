@@ -23,8 +23,9 @@ function ErrorFallback({error, resetErrorBoundary}: {error: Error, resetErrorBou
   );
 }
 
-createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
+const container = document.getElementById("root");
+if (container) {
+  createRoot(container).render(
     <ErrorBoundary
       FallbackComponent={ErrorFallback}
       onError={(error) => {
@@ -35,5 +36,7 @@ createRoot(document.getElementById("root")!).render(
         <App />
       </ThemeProvider>
     </ErrorBoundary>
-  </React.StrictMode>
-);
+  );
+} else {
+  console.error('Root container not found');
+}
