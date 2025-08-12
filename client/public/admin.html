@@ -812,6 +812,64 @@
                             <button class="btn btn-secondary" onclick="resetTheme()">รีเซ็ตธีม</button>
                         </div>
                         
+                        <!-- Thai Special Days Themes Section -->
+                        <div class="section mb-4">
+                            <div class="section-content">
+                                <h4 class="mb-4">🇹🇭 ธีมวันสำคัญของไทย</h4>
+                                <div class="info mb-4">
+                                    ระบบจะเปลี่ยนธีมอัตโนมัติตามวันสำคัญต่างๆ ของประเทศไทย หรือคุณสามารถทดสอบธีมได้ด้วยตนเอง
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label class="form-label">ทดสอบธีมวันสำคัญ</label>
+                                    <select class="form-select" id="specialDayPreset" onchange="applySpecialDayTheme()">
+                                        <option value="">เลือกวันสำคัญเพื่อทดสอบธีม</option>
+                                        <option value="royal-yellow">วันเฉลิมพระชนมพรรษา พระบาทสมเด็จพระเจ้าอยู่หัว (28 กรกฎาคม)</option>
+                                        <option value="mothers-blue">วันแม่แห่งชาติ (12 สิงหาคม)</option>
+                                        <option value="fathers-yellow">วันพ่อแห่งชาติ (5 ธันวาคม)</option>
+                                        <option value="national-tricolor">วันชาติ (5 ธันวาคม)</option>
+                                        <option value="constitution-gold">วันรัฐธรรมนูญ (10 ธันวาคม)</option>
+                                        <option value="buddhist-saffron">วันมาฆบูชา</option>
+                                        <option value="songkran-blue">วันสงกรานต์ (13-15 เมษายน)</option>
+                                    </select>
+                                </div>
+
+                                <div id="currentSpecialDay" class="mb-4">
+                                    <div class="loading">
+                                        <div class="spinner"></div>
+                                        กำลังตรวจสอบวันสำคัญในปัจจุบัน...
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-3 mb-4" id="themePreviewCards">
+                                    <div class="section" style="margin: 0; border: 2px solid #FCD34D; background: linear-gradient(135deg, #FEF3C7, #FCD34D);">
+                                        <div class="section-content" style="padding: 12px; text-center;">
+                                            <div style="color: #92400E; font-weight: 600;">สีเหลืองหลวง</div>
+                                            <div style="font-size: 12px; color: #B45309;">วันพ่อ/วันในหลวง</div>
+                                        </div>
+                                    </div>
+                                    <div class="section" style="margin: 0; border: 2px solid #3B82F6; background: linear-gradient(135deg, #DBEAFE, #3B82F6);">
+                                        <div class="section-content" style="padding: 12px; text-center;">
+                                            <div style="color: #1E40AF; font-weight: 600;">สีน้ำเงิน</div>
+                                            <div style="font-size: 12px; color: #1E3A8A;">วันแม่/สงกรานต์</div>
+                                        </div>
+                                    </div>
+                                    <div class="section" style="margin: 0; border: 2px solid #F59E0B; background: linear-gradient(135deg, #FEF3C7, #F59E0B);">
+                                        <div class="section-content" style="padding: 12px; text-center;">
+                                            <div style="color: #92400E; font-weight: 600;">สีกุหลาบ</div>
+                                            <div style="font-size: 12px; color: #B45309;">วันพุทธศาสนา</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-gap">
+                                    <button class="btn btn-primary" onclick="checkCurrentSpecialDay()">ตรวจสอบวันสำคัญปัจจุบัน</button>
+                                    <button class="btn btn-secondary" onclick="resetToSystemTheme()">กลับเป็นธีมปกติ</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Regular Theme Settings Section -->
                         <div class="grid grid-2">
                             <div class="section" style="margin: 0;">
                                 <div class="section-content" style="padding: 16px;">
@@ -2087,6 +2145,169 @@
             }
         }
 
+        // Thai Special Days Theme Functions
+        const thaiSpecialDays = {
+            'royal-yellow': {
+                name: 'วันเฉลิมพระชนมพรรษา พระบาทสมเด็จพระเจ้าอยู่หัว',
+                date: '28 กรกฎาคม',
+                colors: {
+                    primary: '#FCD34D',
+                    secondary: '#FEF3C7',
+                    accent: '#F59E0B',
+                    background: '#FFFBEB'
+                }
+            },
+            'mothers-blue': {
+                name: 'วันแม่แห่งชาติ',
+                date: '12 สิงหาคม',
+                colors: {
+                    primary: '#3B82F6',
+                    secondary: '#DBEAFE',
+                    accent: '#1D4ED8',
+                    background: '#EFF6FF'
+                }
+            },
+            'fathers-yellow': {
+                name: 'วันพ่อแห่งชาติ',
+                date: '5 ธันวาคม',
+                colors: {
+                    primary: '#FCD34D',
+                    secondary: '#FEF3C7',
+                    accent: '#F59E0B',
+                    background: '#FFFBEB'
+                }
+            },
+            'national-tricolor': {
+                name: 'วันชาติ',
+                date: '5 ธันวาคม',
+                colors: {
+                    primary: '#DC2626',
+                    secondary: '#3B82F6',
+                    accent: '#FFFFFF',
+                    background: '#F8FAFC'
+                }
+            },
+            'constitution-gold': {
+                name: 'วันรัฐธรรมนูญ',
+                date: '10 ธันวาคม',
+                colors: {
+                    primary: '#F59E0B',
+                    secondary: '#FEF3C7',
+                    accent: '#D97706',
+                    background: '#FFFBEB'
+                }
+            },
+            'buddhist-saffron': {
+                name: 'วันมาฆบูชา',
+                date: 'วันขึ้น 15 ค่ำ เดือน 3',
+                colors: {
+                    primary: '#F59E0B',
+                    secondary: '#FED7AA',
+                    accent: '#EA580C',
+                    background: '#FFF7ED'
+                }
+            },
+            'songkran-blue': {
+                name: 'วันสงกรานต์',
+                date: '13-15 เมษายน',
+                colors: {
+                    primary: '#06B6D4',
+                    secondary: '#CFFAFE',
+                    accent: '#0891B2',
+                    background: '#ECFEFF'
+                }
+            }
+        };
+
+        function applySpecialDayTheme() {
+            const preset = document.getElementById('specialDayPreset').value;
+            if (!preset || !thaiSpecialDays[preset]) return;
+
+            const theme = thaiSpecialDays[preset];
+            
+            // Apply colors to the page temporarily for preview
+            const root = document.documentElement;
+            root.style.setProperty('--theme-primary', theme.colors.primary);
+            root.style.setProperty('--theme-secondary', theme.colors.secondary);
+            root.style.setProperty('--theme-accent', theme.colors.accent);
+            root.style.setProperty('--theme-background', theme.colors.background);
+            
+            // Update status
+            document.getElementById('currentSpecialDay').innerHTML = `
+                <div class="success" style="margin-bottom: 12px;">
+                    ✓ กำลังแสดงธีม: ${theme.name}
+                </div>
+                <div class="text-sm" style="color: #6B7280;">
+                    วันที่: ${theme.date}<br>
+                    ธีมนี้จะแสดงอัตโนมัติในวันที่ระบุ
+                </div>
+            `;
+            
+            showSuccess(`เปลี่ยนเป็นธีม ${theme.name} แล้ว`);
+        }
+
+        function checkCurrentSpecialDay() {
+            // Simple check for current date - in real implementation this would check Thai calendar
+            const today = new Date();
+            const month = today.getMonth() + 1;
+            const day = today.getDate();
+            
+            let currentSpecialDay = null;
+            
+            // Check for special days
+            if (month === 7 && day === 28) {
+                currentSpecialDay = thaiSpecialDays['royal-yellow'];
+            } else if (month === 8 && day === 12) {
+                currentSpecialDay = thaiSpecialDays['mothers-blue'];
+            } else if (month === 12 && day === 5) {
+                currentSpecialDay = thaiSpecialDays['fathers-yellow'];
+            } else if (month === 12 && day === 10) {
+                currentSpecialDay = thaiSpecialDays['constitution-gold'];
+            } else if (month === 4 && (day >= 13 && day <= 15)) {
+                currentSpecialDay = thaiSpecialDays['songkran-blue'];
+            }
+            
+            const statusDiv = document.getElementById('currentSpecialDay');
+            if (currentSpecialDay) {
+                statusDiv.innerHTML = `
+                    <div class="success" style="margin-bottom: 12px;">
+                        🎉 วันนี้เป็น${currentSpecialDay.name}
+                    </div>
+                    <div class="text-sm" style="color: #6B7280;">
+                        ระบบควรเปลี่ยนเป็นธีมพิเศษโดยอัตโนมัติ
+                    </div>
+                `;
+                showSuccess(`วันนี้เป็น${currentSpecialDay.name}!`);
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="info">
+                        📅 วันนี้ไม่ใช่วันสำคัญพิเศษ - ใช้ธีมปกติ
+                    </div>
+                `;
+            }
+        }
+
+        function resetToSystemTheme() {
+            // Reset CSS variables to default
+            const root = document.documentElement;
+            root.style.removeProperty('--theme-primary');
+            root.style.removeProperty('--theme-secondary');
+            root.style.removeProperty('--theme-accent');
+            root.style.removeProperty('--theme-background');
+            
+            // Reset select
+            document.getElementById('specialDayPreset').value = '';
+            
+            // Update status
+            document.getElementById('currentSpecialDay').innerHTML = `
+                <div class="info">
+                    ✓ กลับเป็นธีมปกติแล้ว
+                </div>
+            `;
+            
+            showSuccess('กลับเป็นธีมปกติแล้ว');
+        }
+
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
             if (!checkAuth()) return;
@@ -2098,6 +2319,11 @@
             
             // Load initial tab data
             loadAnalytics();
+            
+            // Initialize special day theme check
+            setTimeout(() => {
+                checkCurrentSpecialDay();
+            }, 1000);
         });
     </script>
 </body>
