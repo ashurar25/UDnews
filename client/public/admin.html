@@ -24,7 +24,7 @@
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 0 20px;
         }
@@ -105,6 +105,40 @@
             transition: all 0.2s;
             text-decoration: none;
             display: inline-block;
+            background: white;
+        }
+        
+        .btn-primary {
+            background: #f97316;
+            color: white;
+            border-color: #f97316;
+        }
+        
+        .btn-primary:hover {
+            background: #ea580c;
+            border-color: #ea580c;
+        }
+        
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+            border-color: #6b7280;
+        }
+        
+        .btn-secondary:hover {
+            background: #4b5563;
+            border-color: #4b5563;
+        }
+        
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+            border-color: #dc2626;
+        }
+        
+        .btn-danger:hover {
+            background: #b91c1c;
+            border-color: #b91c1c;
         }
         
         .btn-logout {
@@ -115,6 +149,11 @@
         
         .btn-logout:hover {
             background: #fef2f2;
+        }
+        
+        .btn-small {
+            padding: 4px 8px;
+            font-size: 12px;
         }
         
         .main {
@@ -187,6 +226,9 @@
         .section-header {
             background: linear-gradient(to right, #fed7aa, #fecaca);
             padding: 20px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
         .section-title {
@@ -232,6 +274,7 @@
             display: flex;
             border-bottom: 1px solid #e5e7eb;
             margin-bottom: 24px;
+            overflow-x: auto;
         }
         
         .tab {
@@ -244,6 +287,7 @@
             color: #6b7280;
             border-bottom: 2px solid transparent;
             transition: all 0.2s;
+            white-space: nowrap;
         }
         
         .tab.active {
@@ -281,6 +325,230 @@
             border: 1px solid #bbf7d0;
         }
         
+        .info {
+            background: #eff6ff;
+            color: #1e40af;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+            border: 1px solid #bfdbfe;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #f97316;
+            box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.1);
+        }
+        
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .form-select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .data-table th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .data-table tr:hover {
+            background: #f9fafb;
+        }
+        
+        .badge-small {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .badge-active {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .badge-inactive {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+        
+        .badge-unread {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .badge-read {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6b7280;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-close:hover {
+            color: #374151;
+        }
+        
+        .grid {
+            display: grid;
+            gap: 16px;
+        }
+        
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        
+        .flex {
+            display: flex;
+        }
+        
+        .flex-between {
+            justify-content: space-between;
+        }
+        
+        .flex-center {
+            align-items: center;
+        }
+        
+        .flex-gap {
+            gap: 8px;
+        }
+        
+        .mb-4 {
+            margin-bottom: 16px;
+        }
+        
+        .mt-4 {
+            margin-top: 16px;
+        }
+        
+        .text-sm {
+            font-size: 14px;
+        }
+        
+        .text-xs {
+            font-size: 12px;
+        }
+        
+        .text-gray {
+            color: #6b7280;
+        }
+        
+        .text-red {
+            color: #dc2626;
+        }
+        
+        .text-green {
+            color: #059669;
+        }
+        
+        .w-full {
+            width: 100%;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
         @media (max-width: 768px) {
             .header-content {
                 flex-direction: column;
@@ -294,6 +562,25 @@
             
             .tabs {
                 flex-wrap: wrap;
+            }
+            
+            .grid-2,
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+            
+            .modal-content {
+                margin: 20px;
+                width: calc(100% - 40px);
+            }
+            
+            .data-table {
+                font-size: 14px;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 8px;
             }
         }
     </style>
@@ -322,6 +609,7 @@
 
     <div class="container">
         <div class="main">
+            <!-- Stats Dashboard -->
             <div class="stats-grid">
                 <div class="stat-card blue">
                     <div class="stat-content">
@@ -338,7 +626,7 @@
                 <div class="stat-card green">
                     <div class="stat-content">
                         <div>
-                            <div class="stat-number">1,234</div>
+                            <div class="stat-number" id="todayViews">0</div>
                             <div class="stat-label">ผู้เข้าชมวันนี้</div>
                         </div>
                         <svg class="stat-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -372,48 +660,210 @@
                 </div>
             </div>
 
+            <!-- Management System -->
             <div class="section">
                 <div class="section-header">
-                    <h2 class="section-title font-kanit">ระบบจัดการ</h2>
-                    <p class="section-description">หน้าแอดมินแบบ Static HTML - ใช้งานได้ปกติ</p>
+                    <div>
+                        <h2 class="section-title font-kanit">ระบบจัดการ</h2>
+                        <p class="section-description">หน้าแอดมินแบบ Static HTML - ครบครันทุกฟีเจอร์</p>
+                    </div>
                 </div>
                 <div class="section-content">
                     <div class="tabs">
                         <button class="tab active" onclick="showTab('overview')">ภาพรวม</button>
+                        <button class="tab" onclick="showTab('analytics')">สถิติ</button>
                         <button class="tab" onclick="showTab('news')">จัดการข่าว</button>
                         <button class="tab" onclick="showTab('rss')">RSS Feeds</button>
-                        <button class="tab" onclick="showTab('settings')">ตั้งค่า</button>
+                        <button class="tab" onclick="showTab('sponsors')">แบนเนอร์</button>
+                        <button class="tab" onclick="showTab('themes')">ธีม</button>
+                        <button class="tab" onclick="showTab('messages')">ข้อความ</button>
                     </div>
 
+                    <!-- Overview Tab -->
                     <div id="overview" class="tab-content active">
                         <div class="success">
-                            ✓ ระบบแอดมิน Static HTML ทำงานได้ปกติ
+                            ✓ ระบบแอดมิน Static HTML ทำงานได้ปกติ ครบครันทุกฟีเจอร์
                         </div>
-                        <p>หน้าแอดมินนี้ใช้ HTML, CSS และ JavaScript ธรรมดา ไม่มี React error #185</p>
-                        <p>สามารถเชื่อมต่อกับ API backend ได้ปกติ และแสดงข้อมูลแบบ real-time</p>
+                        <div class="info">
+                            หน้าแอดมินนี้ใช้ HTML, CSS และ JavaScript ธรรมดา สามารถเชื่อมต่อกับ API backend ได้ปกติ และแสดงข้อมูลแบบ real-time
+                        </div>
+                        <div class="grid grid-2 mt-4">
+                            <div>
+                                <h4 class="font-kanit mb-4">ฟีเจอร์ที่ใช้งานได้</h4>
+                                <ul style="list-style: none; padding: 0;">
+                                    <li style="padding: 4px 0;">✓ การแสดงสถิติแบบ real-time</li>
+                                    <li style="padding: 4px 0;">✓ จัดการข่าว (เพิ่ม แก้ไข ลบ)</li>
+                                    <li style="padding: 4px 0;">✓ จัดการ RSS Feeds</li>
+                                    <li style="padding: 4px 0;">✓ จัดการแบนเนอร์สปอนเซอร์</li>
+                                    <li style="padding: 4px 0;">✓ ดูสถิติการใช้งาน</li>
+                                    <li style="padding: 4px 0;">✓ จัดการข้อความติดต่อ</li>
+                                    <li style="padding: 4px 0;">✓ ตั้งค่าธีมและสี</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-kanit mb-4">สถานะระบบ</h4>
+                                <div id="systemStatus">
+                                    <div class="loading">
+                                        <div class="spinner"></div>
+                                        กำลังตรวจสอบสถานะระบบ...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
+                    <!-- Analytics Tab -->
+                    <div id="analytics" class="tab-content">
+                        <div class="flex flex-between flex-center mb-4">
+                            <h3 class="font-kanit">สถิติการใช้งาน</h3>
+                            <button class="btn btn-secondary btn-small" onclick="refreshAnalytics()">รีเฟรช</button>
+                        </div>
+                        
+                        <div class="grid grid-2 mb-4">
+                            <div class="section" style="margin: 0;">
+                                <div class="section-content" style="padding: 16px;">
+                                    <h4 class="mb-4">สถิติการเข้าชม</h4>
+                                    <div class="text-sm">
+                                        <div class="flex flex-between" style="margin-bottom: 8px;">
+                                            <span>การเข้าชมทั้งหมด:</span>
+                                            <span id="totalViews">-</span>
+                                        </div>
+                                        <div class="flex flex-between" style="margin-bottom: 8px;">
+                                            <span>การเข้าชมวันนี้:</span>
+                                            <span id="analyticsToday">-</span>
+                                        </div>
+                                        <div class="flex flex-between" style="margin-bottom: 8px;">
+                                            <span>เฉลี่ยต่อวัน:</span>
+                                            <span id="avgDaily">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="section" style="margin: 0;">
+                                <div class="section-content" style="padding: 16px;">
+                                    <h4 class="mb-4">ข่าวยอดนิยม</h4>
+                                    <div id="popularNews">
+                                        <div class="loading">
+                                            <div class="spinner"></div>
+                                            กำลังโหลด...
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- News Management Tab -->
                     <div id="news" class="tab-content">
-                        <h3 class="font-kanit" style="margin-bottom: 16px;">จัดการข่าว</h3>
-                        <p>ส่วนนี้จะใช้ในการจัดการข่าวสาร เพิ่ม แก้ไข ลบข่าว</p>
-                        <div class="success">
-                            ✓ ระบบจัดการข่าวพร้อมใช้งาน (จะเพิ่มฟีเจอร์ในอนาคต)
+                        <div class="flex flex-between flex-center mb-4">
+                            <h3 class="font-kanit">จัดการข่าว</h3>
+                            <button class="btn btn-primary" onclick="openNewsModal()">เพิ่มข่าวใหม่</button>
+                        </div>
+                        
+                        <div id="newsList">
+                            <div class="loading">
+                                <div class="spinner"></div>
+                                กำลังโหลดข่าว...
+                            </div>
                         </div>
                     </div>
 
+                    <!-- RSS Management Tab -->
                     <div id="rss" class="tab-content">
-                        <h3 class="font-kanit" style="margin-bottom: 16px;">RSS Feeds</h3>
-                        <p>จัดการแหล่งข่าวอัตโนมัติ RSS feeds</p>
-                        <div id="rssFeedsList" class="success">
-                            ✓ ระบบ RSS Feeds ทำงานอัตโนมัติ
+                        <div class="flex flex-between flex-center mb-4">
+                            <h3 class="font-kanit">RSS Feeds</h3>
+                            <div class="flex flex-gap">
+                                <button class="btn btn-secondary" onclick="processRSS()">ประมวลผล RSS</button>
+                                <button class="btn btn-primary" onclick="openRSSModal()">เพิ่ม RSS Feed</button>
+                            </div>
+                        </div>
+                        
+                        <div id="rssProcessingStatus" class="hidden"></div>
+                        
+                        <div id="rssList">
+                            <div class="loading">
+                                <div class="spinner"></div>
+                                กำลังโหลด RSS Feeds...
+                            </div>
                         </div>
                     </div>
 
-                    <div id="settings" class="tab-content">
-                        <h3 class="font-kanit" style="margin-bottom: 16px;">การตั้งค่า</h3>
-                        <p>ตั้งค่าระบบและปรับแต่งเว็บไซต์</p>
-                        <div class="success">
-                            ✓ ระบบตั้งค่าพร้อมใช้งาน (จะเพิ่มฟีเจอร์ในอนาคต)
+                    <!-- Sponsor Management Tab -->
+                    <div id="sponsors" class="tab-content">
+                        <div class="flex flex-between flex-center mb-4">
+                            <h3 class="font-kanit">จัดการแบนเนอร์สปอนเซอร์</h3>
+                            <button class="btn btn-primary" onclick="openSponsorModal()">เพิ่มแบนเนอร์ใหม่</button>
+                        </div>
+                        
+                        <div id="sponsorsList">
+                            <div class="loading">
+                                <div class="spinner"></div>
+                                กำลังโหลดแบนเนอร์...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Theme Settings Tab -->
+                    <div id="themes" class="tab-content">
+                        <div class="flex flex-between flex-center mb-4">
+                            <h3 class="font-kanit">ตั้งค่าธีมและสี</h3>
+                            <button class="btn btn-secondary" onclick="resetTheme()">รีเซ็ตธีม</button>
+                        </div>
+                        
+                        <div class="grid grid-2">
+                            <div class="section" style="margin: 0;">
+                                <div class="section-content" style="padding: 16px;">
+                                    <h4 class="mb-4">ธีมที่กำหนดไว้</h4>
+                                    <div class="form-group">
+                                        <label class="form-label">เลือกธีม:</label>
+                                        <select class="form-select" id="themePreset" onchange="applyThemePreset()">
+                                            <option value="light">ธีมสว่าง</option>
+                                            <option value="dark">ธีมมืด</option>
+                                            <option value="thai">ธีมไทย</option>
+                                        </select>
+                                    </div>
+                                    <button class="btn btn-primary w-full" onclick="saveTheme()">บันทึกธีม</button>
+                                </div>
+                            </div>
+                            
+                            <div class="section" style="margin: 0;">
+                                <div class="section-content" style="padding: 16px;">
+                                    <h4 class="mb-4">ปรับแต่งสี</h4>
+                                    <div class="form-group">
+                                        <label class="form-label">สีหลัก:</label>
+                                        <input type="color" class="form-input" id="primaryColor" value="#f97316">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">สีรอง:</label>
+                                        <input type="color" class="form-input" id="secondaryColor" value="#fed7aa">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">สีพื้นหลัง:</label>
+                                        <input type="color" class="form-input" id="backgroundColor" value="#ffffff">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="themeStatus" class="mt-4"></div>
+                    </div>
+
+                    <!-- Contact Messages Tab -->
+                    <div id="messages" class="tab-content">
+                        <div class="flex flex-between flex-center mb-4">
+                            <h3 class="font-kanit">ข้อความติดต่อ</h3>
+                            <div class="flex flex-gap">
+                                <button class="btn btn-secondary" onclick="markAllAsRead()">อ่านทั้งหมด</button>
+                                <button class="btn btn-secondary btn-small" onclick="refreshMessages()">รีเฟรช</button>
+                            </div>
+                        </div>
+                        
+                        <div id="messagesList">
+                            <div class="loading">
+                                <div class="spinner"></div>
+                                กำลังโหลดข้อความ...
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -421,7 +871,189 @@
         </div>
     </div>
 
+    <!-- Modals -->
+    
+    <!-- News Modal -->
+    <div id="newsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title font-kanit" id="newsModalTitle">เพิ่มข่าวใหม่</h3>
+                <button class="modal-close" onclick="closeNewsModal()">&times;</button>
+            </div>
+            <form id="newsForm" onsubmit="saveNews(event)">
+                <input type="hidden" id="newsId">
+                <div class="form-group">
+                    <label class="form-label">หัวข้อข่าว:</label>
+                    <input type="text" class="form-input" id="newsTitle" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">สรุปข่าว:</label>
+                    <textarea class="form-input form-textarea" id="newsSummary" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">เนื้อหาข่าว:</label>
+                    <textarea class="form-input form-textarea" id="newsContent" rows="6" required></textarea>
+                </div>
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label class="form-label">หมวดหมู่:</label>
+                        <select class="form-select" id="newsCategory" required>
+                            <option value="general">ทั่วไป</option>
+                            <option value="politics">การเมือง</option>
+                            <option value="local">ท้องถิ่น</option>
+                            <option value="sports">กีฬา</option>
+                            <option value="entertainment">บันเทิง</option>
+                            <option value="crime">อาชญากรรม</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">ผู้เขียน:</label>
+                        <input type="text" class="form-input" id="newsAuthor" placeholder="ชื่อผู้เขียน">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">URL รูปภาพ:</label>
+                    <input type="url" class="form-input" id="newsImageUrl" placeholder="https://example.com/image.jpg">
+                </div>
+                <div class="flex flex-gap" style="justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeNewsModal()">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- RSS Modal -->
+    <div id="rssModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title font-kanit" id="rssModalTitle">เพิ่ม RSS Feed</h3>
+                <button class="modal-close" onclick="closeRSSModal()">&times;</button>
+            </div>
+            <form id="rssForm" onsubmit="saveRSS(event)">
+                <input type="hidden" id="rssId">
+                <div class="form-group">
+                    <label class="form-label">ชื่อ RSS Feed:</label>
+                    <input type="text" class="form-input" id="rssTitle" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">URL RSS Feed:</label>
+                    <input type="url" class="form-input" id="rssUrl" required placeholder="https://example.com/feed">
+                </div>
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label class="form-label">หมวดหมู่:</label>
+                        <select class="form-select" id="rssCategory" required>
+                            <option value="general">ทั่วไป</option>
+                            <option value="politics">การเมือง</option>
+                            <option value="local">ท้องถิ่น</option>
+                            <option value="sports">กีฬา</option>
+                            <option value="entertainment">บันเทิง</option>
+                            <option value="crime">อาชญากรรม</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">สถานะ:</label>
+                        <select class="form-select" id="rssActive">
+                            <option value="true">เปิดใช้งาน</option>
+                            <option value="false">ปิดใช้งาน</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex flex-gap" style="justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeRSSModal()">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sponsor Modal -->
+    <div id="sponsorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title font-kanit" id="sponsorModalTitle">เพิ่มแบนเนอร์สปอนเซอร์</h3>
+                <button class="modal-close" onclick="closeSponsorModal()">&times;</button>
+            </div>
+            <form id="sponsorForm" onsubmit="saveSponsor(event)">
+                <input type="hidden" id="sponsorId">
+                <div class="form-group">
+                    <label class="form-label">ชื่อแบนเนอร์:</label>
+                    <input type="text" class="form-input" id="sponsorTitle" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">URL รูปภาพ:</label>
+                    <input type="url" class="form-input" id="sponsorImageUrl" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">URL ลิงก์:</label>
+                    <input type="url" class="form-input" id="sponsorLinkUrl">
+                </div>
+                <div class="grid grid-3">
+                    <div class="form-group">
+                        <label class="form-label">ตำแหน่ง:</label>
+                        <select class="form-select" id="sponsorPosition" required>
+                            <option value="header">ด้านบน</option>
+                            <option value="sidebar">ด้านข้าง</option>
+                            <option value="footer">ด้านล่าง</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">ลำดับการแสดง:</label>
+                        <input type="number" class="form-input" id="sponsorOrder" value="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">สถานะ:</label>
+                        <select class="form-select" id="sponsorActive">
+                            <option value="true">เปิดใช้งาน</option>
+                            <option value="false">ปิดใช้งาน</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label class="form-label">วันที่เริ่ม:</label>
+                        <input type="date" class="form-input" id="sponsorStartDate">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">วันที่สิ้นสุด:</label>
+                        <input type="date" class="form-input" id="sponsorEndDate">
+                    </div>
+                </div>
+                <div class="flex flex-gap" style="justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeSponsorModal()">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Message Detail Modal -->
+    <div id="messageModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title font-kanit">รายละเอียดข้อความ</h3>
+                <button class="modal-close" onclick="closeMessageModal()">&times;</button>
+            </div>
+            <div id="messageDetail">
+                <!-- Message details will be loaded here -->
+            </div>
+            <div class="flex flex-gap" style="justify-content: flex-end; margin-top: 20px;">
+                <button type="button" class="btn btn-danger" onclick="deleteCurrentMessage()">ลบข้อความ</button>
+                <button type="button" class="btn btn-secondary" onclick="closeMessageModal()">ปิด</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Global variables
+        let currentEditingId = null;
+        let currentMessageId = null;
+        let allNews = [];
+        let allRSS = [];
+        let allSponsors = [];
+        let allMessages = [];
+
         // Tab switching
         function showTab(tabName) {
             // Hide all tab contents
@@ -437,70 +1069,42 @@
             
             // Add active class to clicked tab
             event.target.classList.add('active');
+
+            // Load data for the selected tab
+            switch(tabName) {
+                case 'analytics':
+                    loadAnalytics();
+                    break;
+                case 'news':
+                    loadNews();
+                    break;
+                case 'rss':
+                    loadRSS();
+                    break;
+                case 'sponsors':
+                    loadSponsors();
+                    break;
+                case 'messages':
+                    loadMessages();
+                    break;
+                case 'themes':
+                    loadThemeSettings();
+                    break;
+            }
         }
 
-        // Logout function
+        // Authentication functions
         function logout() {
             localStorage.removeItem('admin-token');
             alert('ออกจากระบบเรียบร้อยแล้ว');
             window.location.href = '/';
         }
 
-        // Load statistics from API
-        async function loadStats() {
-            try {
-                // Load news count
-                const newsResponse = await fetch('/api/news');
-                if (newsResponse.ok) {
-                    const newsData = await newsResponse.json();
-                    document.getElementById('newsCount').textContent = Array.isArray(newsData) ? newsData.length : 0;
-                }
-
-                // Load RSS feeds count
-                const rssResponse = await fetch('/api/rss-feeds');
-                if (rssResponse.ok) {
-                    const rssData = await rssResponse.json();
-                    document.getElementById('rssCount').textContent = Array.isArray(rssData) ? rssData.length : 0;
-                    
-                    // Update RSS feeds list
-                    if (Array.isArray(rssData) && rssData.length > 0) {
-                        const rssListHtml = rssData.map(feed => 
-                            `<div style="margin: 8px 0; padding: 8px; background: #f9fafb; border-radius: 4px;">
-                                <strong>${feed.title}</strong><br>
-                                <small style="color: #6b7280;">${feed.url}</small>
-                            </div>`
-                        ).join('');
-                        document.getElementById('rssFeedsList').innerHTML = 
-                            `<h4 style="margin-bottom: 12px;">RSS Feeds ที่ใช้งาน (${rssData.length} แหล่ง)</h4>` + rssListHtml;
-                    }
-                }
-
-                // Load database stats
-                const statsResponse = await fetch('/api/database/stats');
-                if (statsResponse.ok) {
-                    const stats = await statsResponse.json();
-                    if (stats.contactMessagesCount !== undefined) {
-                        document.getElementById('messageCount').textContent = stats.contactMessagesCount;
-                    }
-                    if (stats.newsCount !== undefined) {
-                        document.getElementById('newsCount').textContent = stats.newsCount;
-                    }
-                }
-            } catch (error) {
-                console.error('Error loading stats:', error);
-                // Show error state instead of loading
-                document.getElementById('newsCount').textContent = 'Error';
-                document.getElementById('rssCount').textContent = 'Error';
-                document.getElementById('messageCount').textContent = 'Error';
-            }
-        }
-
-        // Check authentication
         function checkAuth() {
             const token = localStorage.getItem('admin-token');
             if (!token) {
                 window.location.href = '/login';
-                return;
+                return false;
             }
 
             // Verify token with server
@@ -518,15 +1122,885 @@
                 localStorage.removeItem('admin-token');
                 window.location.href = '/login';
             });
+            
+            return true;
+        }
+
+        // Utility functions
+        function getAuthHeaders() {
+            const token = localStorage.getItem('admin-token');
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+        }
+
+        function showError(message) {
+            console.error(message);
+            // You could implement a toast notification system here
+        }
+
+        function showSuccess(message) {
+            console.log(message);
+            // You could implement a toast notification system here
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'ไม่ระบุ';
+            return new Date(dateString).toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Load statistics from API
+        async function loadStats() {
+            try {
+                // Load database stats
+                const statsResponse = await fetch('/api/database/stats');
+                if (statsResponse.ok) {
+                    const stats = await statsResponse.json();
+                    document.getElementById('newsCount').textContent = stats.newsCount || 0;
+                    document.getElementById('rssCount').textContent = stats.rssFeedsCount || 0;
+                    document.getElementById('messageCount').textContent = stats.contactMessagesCount || 0;
+                }
+
+                // Load analytics for today's views
+                const analyticsResponse = await fetch('/api/analytics/summary');
+                if (analyticsResponse.ok) {
+                    const analytics = await analyticsResponse.json();
+                    document.getElementById('todayViews').textContent = analytics.todayViews || 0;
+                }
+
+                // Load system status
+                updateSystemStatus();
+                
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                // Show error state instead of loading
+                ['newsCount', 'rssCount', 'messageCount', 'todayViews'].forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) element.textContent = 'Error';
+                });
+            }
+        }
+
+        async function updateSystemStatus() {
+            try {
+                const status = document.getElementById('systemStatus');
+                if (!status) return;
+
+                // Check various API endpoints
+                const checks = [
+                    { name: 'ระบบข่าว', url: '/api/news?limit=1' },
+                    { name: 'RSS Feeds', url: '/api/rss-feeds' },
+                    { name: 'ฐานข้อมูล', url: '/api/database/stats' },
+                    { name: 'สถิติ', url: '/api/analytics/summary' }
+                ];
+
+                let html = '<div>';
+                for (const check of checks) {
+                    try {
+                        const response = await fetch(check.url);
+                        const statusClass = response.ok ? 'text-green' : 'text-red';
+                        const statusText = response.ok ? '✓ ทำงานปกติ' : '✗ มีปัญหา';
+                        html += `<div class="flex flex-between" style="margin-bottom: 4px;">
+                            <span>${check.name}:</span>
+                            <span class="${statusClass}">${statusText}</span>
+                        </div>`;
+                    } catch (error) {
+                        html += `<div class="flex flex-between" style="margin-bottom: 4px;">
+                            <span>${check.name}:</span>
+                            <span class="text-red">✗ ไม่สามารถเชื่อมต่อได้</span>
+                        </div>`;
+                    }
+                }
+                html += '</div>';
+                status.innerHTML = html;
+            } catch (error) {
+                console.error('Error checking system status:', error);
+            }
+        }
+
+        // Analytics functions
+        async function loadAnalytics() {
+            try {
+                const response = await fetch('/api/analytics/summary');
+                if (response.ok) {
+                    const analytics = await response.json();
+                    
+                    document.getElementById('totalViews').textContent = analytics.totalViews?.toLocaleString() || '0';
+                    document.getElementById('analyticsToday').textContent = analytics.todayViews?.toLocaleString() || '0';
+                    document.getElementById('avgDaily').textContent = analytics.avgDaily?.toLocaleString() || '0';
+                    
+                    // Load popular news
+                    if (analytics.popularNews && analytics.popularNews.length > 0) {
+                        let html = '<div class="text-sm">';
+                        analytics.popularNews.slice(0, 5).forEach(news => {
+                            html += `<div class="flex flex-between" style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb;">
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 500;">${news.title?.substring(0, 50)}${news.title?.length > 50 ? '...' : ''}</div>
+                                    <div class="text-xs text-gray">${formatDate(news.publishedAt)}</div>
+                                </div>
+                                <div style="margin-left: 8px; color: #059669; font-weight: 500;">
+                                    ${news.views || 0} views
+                                </div>
+                            </div>`;
+                        });
+                        html += '</div>';
+                        document.getElementById('popularNews').innerHTML = html;
+                    } else {
+                        document.getElementById('popularNews').innerHTML = '<div class="text-gray text-sm">ยังไม่มีข้อมูลสถิติ</div>';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+                showError('ไม่สามารถโหลดข้อมูลสถิติได้');
+            }
+        }
+
+        function refreshAnalytics() {
+            loadAnalytics();
+            showSuccess('รีเฟรชข้อมูลสถิติแล้ว');
+        }
+
+        // News management functions
+        async function loadNews() {
+            try {
+                const response = await fetch('/api/news');
+                if (response.ok) {
+                    allNews = await response.json();
+                    displayNews();
+                } else {
+                    throw new Error('Failed to load news');
+                }
+            } catch (error) {
+                console.error('Error loading news:', error);
+                document.getElementById('newsList').innerHTML = '<div class="error">ไม่สามารถโหลดข่าวได้</div>';
+            }
+        }
+
+        function displayNews() {
+            const container = document.getElementById('newsList');
+            if (!allNews || allNews.length === 0) {
+                container.innerHTML = '<div class="info">ยังไม่มีข่าว</div>';
+                return;
+            }
+
+            let html = '<table class="data-table"><thead><tr>';
+            html += '<th>หัวข้อ</th><th>หมวดหมู่</th><th>ผู้เขียน</th><th>วันที่สร้าง</th><th>การดำเนินการ</th>';
+            html += '</tr></thead><tbody>';
+
+            allNews.forEach(news => {
+                const categoryMap = {
+                    'general': 'ทั่วไป',
+                    'politics': 'การเมือง',
+                    'local': 'ท้องถิ่น',
+                    'sports': 'กีฬา',
+                    'entertainment': 'บันเทิง',
+                    'crime': 'อาชญากรรม'
+                };
+                
+                html += `<tr>
+                    <td style="max-width: 300px;">
+                        <div style="font-weight: 500;">${news.title}</div>
+                        <div class="text-xs text-gray">${news.summary ? news.summary.substring(0, 100) + '...' : ''}</div>
+                    </td>
+                    <td>${categoryMap[news.category] || news.category}</td>
+                    <td>${news.author || 'ไม่ระบุ'}</td>
+                    <td class="text-sm">${formatDate(news.publishedAt)}</td>
+                    <td>
+                        <div class="flex flex-gap">
+                            <button class="btn btn-secondary btn-small" onclick="editNews(${news.id})">แก้ไข</button>
+                            <button class="btn btn-danger btn-small" onclick="deleteNews(${news.id})">ลบ</button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function openNewsModal(news = null) {
+            currentEditingId = news ? news.id : null;
+            
+            document.getElementById('newsModalTitle').textContent = news ? 'แก้ไขข่าว' : 'เพิ่มข่าวใหม่';
+            document.getElementById('newsId').value = news ? news.id : '';
+            document.getElementById('newsTitle').value = news ? news.title : '';
+            document.getElementById('newsSummary').value = news ? news.summary || '' : '';
+            document.getElementById('newsContent').value = news ? news.content : '';
+            document.getElementById('newsCategory').value = news ? news.category : 'general';
+            document.getElementById('newsAuthor').value = news ? news.author || '' : '';
+            document.getElementById('newsImageUrl').value = news ? news.imageUrl || '' : '';
+            
+            document.getElementById('newsModal').classList.add('active');
+        }
+
+        function closeNewsModal() {
+            document.getElementById('newsModal').classList.remove('active');
+            currentEditingId = null;
+        }
+
+        function editNews(id) {
+            const news = allNews.find(n => n.id === id);
+            if (news) {
+                openNewsModal(news);
+            }
+        }
+
+        async function saveNews(event) {
+            event.preventDefault();
+            
+            const formData = {
+                title: document.getElementById('newsTitle').value,
+                summary: document.getElementById('newsSummary').value,
+                content: document.getElementById('newsContent').value,
+                category: document.getElementById('newsCategory').value,
+                author: document.getElementById('newsAuthor').value,
+                imageUrl: document.getElementById('newsImageUrl').value
+            };
+
+            try {
+                const url = currentEditingId ? `/api/news/${currentEditingId}` : '/api/news';
+                const method = currentEditingId ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    showSuccess(currentEditingId ? 'แก้ไขข่าวสำเร็จ' : 'เพิ่มข่าวสำเร็จ');
+                    closeNewsModal();
+                    loadNews();
+                    loadStats(); // Refresh stats
+                } else {
+                    throw new Error('Failed to save news');
+                }
+            } catch (error) {
+                console.error('Error saving news:', error);
+                showError('ไม่สามารถบันทึกข่าวได้');
+            }
+        }
+
+        async function deleteNews(id) {
+            if (!confirm('คุณแน่ใจหรือไม่ที่จะลบข่าวนี้?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/news/${id}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
+                    showSuccess('ลบข่าวสำเร็จ');
+                    loadNews();
+                    loadStats(); // Refresh stats
+                } else {
+                    throw new Error('Failed to delete news');
+                }
+            } catch (error) {
+                console.error('Error deleting news:', error);
+                showError('ไม่สามารถลบข่าวได้');
+            }
+        }
+
+        // RSS management functions
+        async function loadRSS() {
+            try {
+                const response = await fetch('/api/rss-feeds');
+                if (response.ok) {
+                    allRSS = await response.json();
+                    displayRSS();
+                } else {
+                    throw new Error('Failed to load RSS feeds');
+                }
+            } catch (error) {
+                console.error('Error loading RSS:', error);
+                document.getElementById('rssList').innerHTML = '<div class="error">ไม่สามารถโหลด RSS Feeds ได้</div>';
+            }
+        }
+
+        function displayRSS() {
+            const container = document.getElementById('rssList');
+            if (!allRSS || allRSS.length === 0) {
+                container.innerHTML = '<div class="info">ยังไม่มี RSS Feeds</div>';
+                return;
+            }
+
+            let html = '<table class="data-table"><thead><tr>';
+            html += '<th>ชื่อ</th><th>URL</th><th>หมวดหมู่</th><th>สถานะ</th><th>อัพเดทล่าสุด</th><th>การดำเนินการ</th>';
+            html += '</tr></thead><tbody>';
+
+            allRSS.forEach(rss => {
+                const categoryMap = {
+                    'general': 'ทั่วไป',
+                    'politics': 'การเมือง',
+                    'local': 'ท้องถิ่น',
+                    'sports': 'กีฬา',
+                    'entertainment': 'บันเทิง',
+                    'crime': 'อาชญากรรม'
+                };
+                
+                const statusBadge = rss.isActive ? 
+                    '<span class="badge-small badge-active">เปิดใช้งาน</span>' : 
+                    '<span class="badge-small badge-inactive">ปิดใช้งาน</span>';
+                
+                html += `<tr>
+                    <td style="font-weight: 500;">${rss.title}</td>
+                    <td style="max-width: 200px; word-break: break-all;" class="text-sm">${rss.url}</td>
+                    <td>${categoryMap[rss.category] || rss.category}</td>
+                    <td>${statusBadge}</td>
+                    <td class="text-sm">${formatDate(rss.lastProcessed)}</td>
+                    <td>
+                        <div class="flex flex-gap">
+                            <button class="btn btn-secondary btn-small" onclick="editRSS(${rss.id})">แก้ไข</button>
+                            <button class="btn btn-danger btn-small" onclick="deleteRSS(${rss.id})">ลบ</button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function openRSSModal(rss = null) {
+            currentEditingId = rss ? rss.id : null;
+            
+            document.getElementById('rssModalTitle').textContent = rss ? 'แก้ไข RSS Feed' : 'เพิ่ม RSS Feed';
+            document.getElementById('rssId').value = rss ? rss.id : '';
+            document.getElementById('rssTitle').value = rss ? rss.title : '';
+            document.getElementById('rssUrl').value = rss ? rss.url : '';
+            document.getElementById('rssCategory').value = rss ? rss.category : 'general';
+            document.getElementById('rssActive').value = rss ? rss.isActive : 'true';
+            
+            document.getElementById('rssModal').classList.add('active');
+        }
+
+        function closeRSSModal() {
+            document.getElementById('rssModal').classList.remove('active');
+            currentEditingId = null;
+        }
+
+        function editRSS(id) {
+            const rss = allRSS.find(r => r.id === id);
+            if (rss) {
+                openRSSModal(rss);
+            }
+        }
+
+        async function saveRSS(event) {
+            event.preventDefault();
+            
+            const formData = {
+                title: document.getElementById('rssTitle').value,
+                url: document.getElementById('rssUrl').value,
+                category: document.getElementById('rssCategory').value,
+                isActive: document.getElementById('rssActive').value === 'true'
+            };
+
+            try {
+                const url = currentEditingId ? `/api/rss-feeds/${currentEditingId}` : '/api/rss-feeds';
+                const method = currentEditingId ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    showSuccess(currentEditingId ? 'แก้ไข RSS Feed สำเร็จ' : 'เพิ่ม RSS Feed สำเร็จ');
+                    closeRSSModal();
+                    loadRSS();
+                    loadStats(); // Refresh stats
+                } else {
+                    throw new Error('Failed to save RSS feed');
+                }
+            } catch (error) {
+                console.error('Error saving RSS:', error);
+                showError('ไม่สามารถบันทึก RSS Feed ได้');
+            }
+        }
+
+        async function deleteRSS(id) {
+            if (!confirm('คุณแน่ใจหรือไม่ที่จะลบ RSS Feed นี้?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/rss-feeds/${id}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
+                    showSuccess('ลบ RSS Feed สำเร็จ');
+                    loadRSS();
+                    loadStats(); // Refresh stats
+                } else {
+                    throw new Error('Failed to delete RSS feed');
+                }
+            } catch (error) {
+                console.error('Error deleting RSS:', error);
+                showError('ไม่สามารถลบ RSS Feed ได้');
+            }
+        }
+
+        async function processRSS() {
+            try {
+                const statusDiv = document.getElementById('rssProcessingStatus');
+                statusDiv.className = 'info';
+                statusDiv.innerHTML = '🔄 กำลังประมวลผล RSS Feeds...';
+                statusDiv.classList.remove('hidden');
+
+                const response = await fetch('/api/rss/process-all', {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    statusDiv.className = 'success';
+                    statusDiv.innerHTML = `✓ ประมวลผล RSS สำเร็จ: ${result.processed || 0} รายการ`;
+                    loadStats(); // Refresh stats
+                } else {
+                    throw new Error('Failed to process RSS');
+                }
+            } catch (error) {
+                console.error('Error processing RSS:', error);
+                const statusDiv = document.getElementById('rssProcessingStatus');
+                statusDiv.className = 'error';
+                statusDiv.innerHTML = '✗ เกิดข้อผิดพลาดในการประมวลผล RSS';
+            }
+        }
+
+        // Sponsor management functions
+        async function loadSponsors() {
+            try {
+                const response = await fetch('/api/sponsor-banners');
+                if (response.ok) {
+                    allSponsors = await response.json();
+                    displaySponsors();
+                } else {
+                    throw new Error('Failed to load sponsors');
+                }
+            } catch (error) {
+                console.error('Error loading sponsors:', error);
+                document.getElementById('sponsorsList').innerHTML = '<div class="error">ไม่สามารถโหลดแบนเนอร์ได้</div>';
+            }
+        }
+
+        function displaySponsors() {
+            const container = document.getElementById('sponsorsList');
+            if (!allSponsors || allSponsors.length === 0) {
+                container.innerHTML = '<div class="info">ยังไม่มีแบนเนอร์สปอนเซอร์</div>';
+                return;
+            }
+
+            let html = '<table class="data-table"><thead><tr>';
+            html += '<th>รูปภาพ</th><th>ชื่อ</th><th>ตำแหน่ง</th><th>ลำดับ</th><th>สถานะ</th><th>วันที่เริ่ม</th><th>การดำเนินการ</th>';
+            html += '</tr></thead><tbody>';
+
+            allSponsors.forEach(sponsor => {
+                const positionMap = {
+                    'header': 'ด้านบน',
+                    'sidebar': 'ด้านข้าง',
+                    'footer': 'ด้านล่าง'
+                };
+                
+                const statusBadge = sponsor.isActive ? 
+                    '<span class="badge-small badge-active">เปิดใช้งาน</span>' : 
+                    '<span class="badge-small badge-inactive">ปิดใช้งาน</span>';
+                
+                html += `<tr>
+                    <td>
+                        <img src="${sponsor.imageUrl}" alt="${sponsor.title}" style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px;">
+                    </td>
+                    <td style="font-weight: 500;">${sponsor.title}</td>
+                    <td>${positionMap[sponsor.position] || sponsor.position}</td>
+                    <td>${sponsor.displayOrder || 0}</td>
+                    <td>${statusBadge}</td>
+                    <td class="text-sm">${formatDate(sponsor.startDate)}</td>
+                    <td>
+                        <div class="flex flex-gap">
+                            <button class="btn btn-secondary btn-small" onclick="editSponsor(${sponsor.id})">แก้ไข</button>
+                            <button class="btn btn-danger btn-small" onclick="deleteSponsor(${sponsor.id})">ลบ</button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function openSponsorModal(sponsor = null) {
+            currentEditingId = sponsor ? sponsor.id : null;
+            
+            document.getElementById('sponsorModalTitle').textContent = sponsor ? 'แก้ไขแบนเนอร์' : 'เพิ่มแบนเนอร์สปอนเซอร์';
+            document.getElementById('sponsorId').value = sponsor ? sponsor.id : '';
+            document.getElementById('sponsorTitle').value = sponsor ? sponsor.title : '';
+            document.getElementById('sponsorImageUrl').value = sponsor ? sponsor.imageUrl : '';
+            document.getElementById('sponsorLinkUrl').value = sponsor ? sponsor.linkUrl || '' : '';
+            document.getElementById('sponsorPosition').value = sponsor ? sponsor.position : 'sidebar';
+            document.getElementById('sponsorOrder').value = sponsor ? sponsor.displayOrder || 0 : 0;
+            document.getElementById('sponsorActive').value = sponsor ? sponsor.isActive : 'true';
+            document.getElementById('sponsorStartDate').value = sponsor && sponsor.startDate ? 
+                new Date(sponsor.startDate).toISOString().split('T')[0] : 
+                new Date().toISOString().split('T')[0];
+            document.getElementById('sponsorEndDate').value = sponsor && sponsor.endDate ? 
+                new Date(sponsor.endDate).toISOString().split('T')[0] : '';
+            
+            document.getElementById('sponsorModal').classList.add('active');
+        }
+
+        function closeSponsorModal() {
+            document.getElementById('sponsorModal').classList.remove('active');
+            currentEditingId = null;
+        }
+
+        function editSponsor(id) {
+            const sponsor = allSponsors.find(s => s.id === id);
+            if (sponsor) {
+                openSponsorModal(sponsor);
+            }
+        }
+
+        async function saveSponsor(event) {
+            event.preventDefault();
+            
+            const formData = {
+                title: document.getElementById('sponsorTitle').value,
+                imageUrl: document.getElementById('sponsorImageUrl').value,
+                linkUrl: document.getElementById('sponsorLinkUrl').value,
+                position: document.getElementById('sponsorPosition').value,
+                displayOrder: parseInt(document.getElementById('sponsorOrder').value) || 0,
+                isActive: document.getElementById('sponsorActive').value === 'true',
+                startDate: document.getElementById('sponsorStartDate').value,
+                endDate: document.getElementById('sponsorEndDate').value || null
+            };
+
+            try {
+                const url = currentEditingId ? `/api/sponsor-banners/${currentEditingId}` : '/api/sponsor-banners';
+                const method = currentEditingId ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    showSuccess(currentEditingId ? 'แก้ไขแบนเนอร์สำเร็จ' : 'เพิ่มแบนเนอร์สำเร็จ');
+                    closeSponsorModal();
+                    loadSponsors();
+                } else {
+                    throw new Error('Failed to save sponsor');
+                }
+            } catch (error) {
+                console.error('Error saving sponsor:', error);
+                showError('ไม่สามารถบันทึกแบนเนอร์ได้');
+            }
+        }
+
+        async function deleteSponsor(id) {
+            if (!confirm('คุณแน่ใจหรือไม่ที่จะลบแบนเนอร์นี้?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/sponsor-banners/${id}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
+                    showSuccess('ลบแบนเนอร์สำเร็จ');
+                    loadSponsors();
+                } else {
+                    throw new Error('Failed to delete sponsor');
+                }
+            } catch (error) {
+                console.error('Error deleting sponsor:', error);
+                showError('ไม่สามารถลบแบนเนอร์ได้');
+            }
+        }
+
+        // Message management functions
+        async function loadMessages() {
+            try {
+                const response = await fetch('/api/contact-messages');
+                if (response.ok) {
+                    allMessages = await response.json();
+                    displayMessages();
+                } else {
+                    throw new Error('Failed to load messages');
+                }
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                document.getElementById('messagesList').innerHTML = '<div class="error">ไม่สามารถโหลดข้อความได้</div>';
+            }
+        }
+
+        function displayMessages() {
+            const container = document.getElementById('messagesList');
+            if (!allMessages || allMessages.length === 0) {
+                container.innerHTML = '<div class="info">ยังไม่มีข้อความติดต่อ</div>';
+                return;
+            }
+
+            let html = '<table class="data-table"><thead><tr>';
+            html += '<th>ชื่อ</th><th>อีเมล</th><th>หัวข้อ</th><th>วันที่</th><th>สถานะ</th><th>การดำเนินการ</th>';
+            html += '</tr></thead><tbody>';
+
+            allMessages.forEach(message => {
+                const statusBadge = message.isRead ? 
+                    '<span class="badge-small badge-read">อ่านแล้ว</span>' : 
+                    '<span class="badge-small badge-unread">ยังไม่อ่าน</span>';
+                
+                html += `<tr style="${!message.isRead ? 'font-weight: 500;' : ''}">
+                    <td>${message.name}</td>
+                    <td class="text-sm">${message.email}</td>
+                    <td style="max-width: 200px;">${message.subject}</td>
+                    <td class="text-sm">${formatDate(message.createdAt)}</td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <div class="flex flex-gap">
+                            <button class="btn btn-secondary btn-small" onclick="viewMessage(${message.id})">ดู</button>
+                            ${!message.isRead ? `<button class="btn btn-primary btn-small" onclick="markAsRead(${message.id})">อ่าน</button>` : ''}
+                            <button class="btn btn-danger btn-small" onclick="deleteMessage(${message.id})">ลบ</button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function viewMessage(id) {
+            const message = allMessages.find(m => m.id === id);
+            if (!message) return;
+
+            currentMessageId = id;
+            
+            const detail = document.getElementById('messageDetail');
+            detail.innerHTML = `
+                <div class="form-group">
+                    <label class="form-label">ชื่อ:</label>
+                    <div style="padding: 8px; background: #f9fafb; border-radius: 6px;">${message.name}</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">อีเมล:</label>
+                    <div style="padding: 8px; background: #f9fafb; border-radius: 6px;">${message.email}</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">หัวข้อ:</label>
+                    <div style="padding: 8px; background: #f9fafb; border-radius: 6px;">${message.subject}</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">ข้อความ:</label>
+                    <div style="padding: 12px; background: #f9fafb; border-radius: 6px; white-space: pre-wrap; line-height: 1.6;">${message.message}</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">วันที่:</label>
+                    <div style="padding: 8px; background: #f9fafb; border-radius: 6px;">${formatDate(message.createdAt)}</div>
+                </div>
+            `;
+            
+            document.getElementById('messageModal').classList.add('active');
+            
+            // Mark as read automatically when viewing
+            if (!message.isRead) {
+                markAsRead(id);
+            }
+        }
+
+        function closeMessageModal() {
+            document.getElementById('messageModal').classList.remove('active');
+            currentMessageId = null;
+        }
+
+        async function markAsRead(id) {
+            try {
+                const response = await fetch(`/api/contact-messages/${id}/read`, {
+                    method: 'PUT',
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
+                    // Update local data
+                    const messageIndex = allMessages.findIndex(m => m.id === id);
+                    if (messageIndex !== -1) {
+                        allMessages[messageIndex].isRead = true;
+                        displayMessages();
+                        loadStats(); // Refresh stats
+                    }
+                    showSuccess('ทำเครื่องหมายอ่านแล้ว');
+                } else {
+                    throw new Error('Failed to mark as read');
+                }
+            } catch (error) {
+                console.error('Error marking as read:', error);
+                showError('ไม่สามารถทำเครื่องหมายอ่านได้');
+            }
+        }
+
+        async function deleteMessage(id) {
+            if (!confirm('คุณแน่ใจหรือไม่ที่จะลบข้อความนี้?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/contact-messages/${id}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
+                    showSuccess('ลบข้อความสำเร็จ');
+                    loadMessages();
+                    loadStats(); // Refresh stats
+                    if (currentMessageId === id) {
+                        closeMessageModal();
+                    }
+                } else {
+                    throw new Error('Failed to delete message');
+                }
+            } catch (error) {
+                console.error('Error deleting message:', error);
+                showError('ไม่สามารถลบข้อความได้');
+            }
+        }
+
+        function deleteCurrentMessage() {
+            if (currentMessageId) {
+                deleteMessage(currentMessageId);
+            }
+        }
+
+        async function markAllAsRead() {
+            if (!confirm('คุณต้องการทำเครื่องหมายข้อความทั้งหมดเป็นอ่านแล้วหรือไม่?')) {
+                return;
+            }
+
+            try {
+                const unreadMessages = allMessages.filter(m => !m.isRead);
+                const promises = unreadMessages.map(m => 
+                    fetch(`/api/contact-messages/${m.id}/read`, {
+                        method: 'PUT',
+                        headers: getAuthHeaders()
+                    })
+                );
+
+                await Promise.all(promises);
+                showSuccess('ทำเครื่องหมายอ่านทั้งหมดแล้ว');
+                loadMessages();
+                loadStats(); // Refresh stats
+            } catch (error) {
+                console.error('Error marking all as read:', error);
+                showError('ไม่สามารถทำเครื่องหมายอ่านทั้งหมดได้');
+            }
+        }
+
+        function refreshMessages() {
+            loadMessages();
+            showSuccess('รีเฟรชข้อความแล้ว');
+        }
+
+        // Theme management functions
+        async function loadThemeSettings() {
+            try {
+                const response = await fetch('/api/site-settings');
+                if (response.ok) {
+                    const settings = await response.json();
+                    // Load current theme settings and display
+                    const themeStatus = document.getElementById('themeStatus');
+                    themeStatus.innerHTML = '<div class="info">ระบบตั้งค่าธีมพร้อมใช้งาน</div>';
+                }
+            } catch (error) {
+                console.error('Error loading theme settings:', error);
+                const themeStatus = document.getElementById('themeStatus');
+                themeStatus.innerHTML = '<div class="error">ไม่สามารถโหลดการตั้งค่าธีมได้</div>';
+            }
+        }
+
+        function applyThemePreset() {
+            const preset = document.getElementById('themePreset').value;
+            const presets = {
+                light: { primary: '#f97316', secondary: '#fed7aa', background: '#ffffff' },
+                dark: { primary: '#1f2937', secondary: '#374151', background: '#111827' },
+                thai: { primary: '#fbbf24', secondary: '#ef4444', background: '#ffffff' }
+            };
+
+            if (presets[preset]) {
+                document.getElementById('primaryColor').value = presets[preset].primary;
+                document.getElementById('secondaryColor').value = presets[preset].secondary;
+                document.getElementById('backgroundColor').value = presets[preset].background;
+            }
+        }
+
+        async function saveTheme() {
+            const themeData = {
+                primary: document.getElementById('primaryColor').value,
+                secondary: document.getElementById('secondaryColor').value,
+                background: document.getElementById('backgroundColor').value
+            };
+
+            try {
+                // Save theme settings via API
+                const promises = Object.entries(themeData).map(([key, value]) =>
+                    fetch('/api/site-settings', {
+                        method: 'POST',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify({
+                            settingKey: `color_${key}`,
+                            settingValue: value,
+                            settingType: 'color',
+                            description: `${key} color setting`
+                        })
+                    })
+                );
+
+                await Promise.all(promises);
+                
+                document.getElementById('themeStatus').innerHTML = '<div class="success">บันทึกธีมสำเร็จ</div>';
+                showSuccess('บันทึกการตั้งค่าธีมสำเร็จ');
+            } catch (error) {
+                console.error('Error saving theme:', error);
+                document.getElementById('themeStatus').innerHTML = '<div class="error">ไม่สามารถบันทึกธีมได้</div>';
+                showError('ไม่สามารถบันทึกการตั้งค่าธีมได้');
+            }
+        }
+
+        function resetTheme() {
+            if (confirm('คุณต้องการรีเซ็ตธีมเป็นค่าเริ่มต้นหรือไม่?')) {
+                document.getElementById('themePreset').value = 'light';
+                applyThemePreset();
+                document.getElementById('themeStatus').innerHTML = '<div class="info">รีเซ็ตธีมเป็นค่าเริ่มต้นแล้ว</div>';
+            }
         }
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
-            checkAuth();
+            if (!checkAuth()) return;
+            
             loadStats();
             
             // Refresh stats every 30 seconds
             setInterval(loadStats, 30000);
+            
+            // Load initial tab data
+            loadAnalytics();
         });
     </script>
 </body>
