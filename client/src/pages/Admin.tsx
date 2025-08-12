@@ -27,7 +27,7 @@ import {
 import { Link } from "wouter"
 // Components will be lazy loaded
 // AnalyticsDashboard will be lazy loaded
-import { useTheme } from "next-themes"
+import { useTheme } from "@/components/ThemeProvider"
 import { useQuery } from "@tanstack/react-query"
 import React, { useState, useEffect, useCallback, Suspense } from "react"
 import { useLocation } from "wouter"
