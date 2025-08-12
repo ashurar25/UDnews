@@ -722,6 +722,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Analytics Routes
+  app.get("/api/analytics/detailed", async (req, res) => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      // Get view statistics
+      const todayViews = await storage.getTodayViews();
+      const yesterdayViews = await storage.getViewsByDate(yesterday);
+      const weekViews = await storage.getViewsSince(weekAgo);
+      const monthViews = await storage.getViewsSince(monthAgo);
+
+      // Get news statistics
+      const newsReadToday = await storage.getNewsReadToday();
+      const popularNews = await storage.getMostViewedNews();
+      const popularCategory = await storage.getMostPopularCategory();
+
+      res.json({
+        todayViews: todayViews || 0,
+        yesterdayViews: yesterdayViews || 0,
+        weekViews: weekViews || 0,
+        monthViews: monthViews || 0,
+        newsReadToday: newsReadToday || 0,
+        popularNews: popularNews || 'ไม่มีข้อมูล',
+        popularCategory: popularCategory || 'ไม่มีข้อมูล'
+      });
+    } catch (error) {
+      console.error('Error fetching detailed analytics:', error);
+      res.status(500).json({ error: "Failed to fetch analytics" });
+    }
+  });
+
+  // Comments Management Routes
+  app.get("/api/comments", async (req, res) => {
+    try {
+      const filter = req.query.filter || 'all';
+      const limit = parseInt(req.query.limit as string) || 50;
+      const comments = await storage.getComments(filter, limit);
+      res.json(comments);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      res.status(500).json({ error: "Failed to fetch comments" });
+    }
+  });
+
+  app.post("/api/comments/:id/approve", authMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.approveComment(id);
+      if (!success) {
+        return res.status(404).json({ error: "Comment not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error approving comment:', error);
+      res.status(500).json({ error: "Failed to approve comment" });
+    }
+  });
+
+  app.delete("/api/comments/:id", authMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteComment(id);
+      if (!success) {
+        return res.status(404).json({ error: "Comment not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      res.status(500).json({ error: "Failed to delete comment" });
+    }
+  });
+
+  // Theme Management Route
+  app.post("/api/admin/theme", authMiddleware, async (req, res) => {
+    try {
+      const { theme } = req.body;
+      if (!['light', 'dark', 'thai'].includes(theme)) {
+        return res.status(400).json({ error: "Invalid theme" });
+      }
+      
+      // Store theme setting in database or config
+      await storage.updateGlobalSetting('theme', theme);
+      
+      res.json({ success: true, theme });
+    } catch (error) {
+      console.error('Error setting theme:', error);
+      res.status(500).json({ error: "Failed to set theme" });
+    }
+  });
+
+  app.get("/api/admin/theme", async (req, res) => {
+    try {
+      const theme = await storage.getGlobalSetting('theme') || 'light';
+      res.json({ theme });
+    } catch (error) {
+      console.error('Error getting theme:', error);
+      res.json({ theme: 'light' });
+    }
+  });
+
   // Database Backup Management Routes
   app.post("/api/backup/create", async (req, res) => {
     try {

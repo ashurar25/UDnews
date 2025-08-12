@@ -88,6 +88,17 @@ export interface IStorage {
   getRSSFeedsCount(): Promise<number>;
   getSponsorBannersCount(): Promise<number>;
   getContactMessagesCount(): Promise<number>;
+  getTodayViews(): Promise<number>;
+  getViewsByDate(date: string): Promise<number>;
+  getViewsSince(date: string): Promise<number>;
+  getNewsReadToday(): Promise<number>;
+  getMostViewedNews(): Promise<string>;
+  getMostPopularCategory(): Promise<string>;
+  getComments(filter?: string, limit?: number): Promise<any[]>;
+  approveComment(id: number): Promise<boolean>;
+  deleteComment(id: number): Promise<boolean>;
+  updateGlobalSetting(key: string, value: string): Promise<boolean>;
+  getGlobalSetting(key: string): Promise<string | null>;
 }
 
 // MemStorage class removed - using only PostgreSQL database storage
@@ -590,17 +601,17 @@ export class DatabaseStorage implements IStorage {
 
   // Get newsletter subscriber by email
   async getNewsletterSubscriberByEmail(email: string) {
-    return await db // Changed from this.db to db
+    return await db
       .select()
       .from(newsletterSubscribers)
       .where(eq(newsletterSubscribers.email, email))
-      .limit(1) // Added limit(1) to get a single subscriber
-      .execute(); // Added execute()
+      .limit(1)
+      .execute();
   }
 
   // Get all newsletter subscribers
   async getAllNewsletterSubscribers(): Promise<NewsletterSubscriber[]> {
-    return await db // Changed from this.db to db
+    return await db
       .select()
       .from(newsletterSubscribers)
       .where(eq(newsletterSubscribers.isActive, true));
@@ -752,6 +763,203 @@ export class DatabaseStorage implements IStorage {
   async getContactMessagesCount(): Promise<number> {
     const result = await db.select({ count: sql<number>`count(*)` }).from(contactMessages);
     return result[0]?.count || 0;
+  }
+
+  // Analytics functions
+  async getTodayViews(): Promise<number> {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const result = await db
+        .select({ count: sql<number>`sum(${newsViews.viewCount})` })
+        .from(newsViews)
+        .where(sql`date(${newsViews.viewedAt}) = ${today}`);
+
+      return result[0]?.count || 0;
+    } catch (error) {
+      console.error('Error getting today views:', error);
+      return 0;
+    }
+  }
+
+  async getViewsByDate(date: string): Promise<number> {
+    try {
+      const result = await db
+        .select({ count: sql<number>`sum(${newsViews.viewCount})` })
+        .from(newsViews)
+        .where(sql`date(${newsViews.viewedAt}) = ${date}`);
+
+      return result[0]?.count || 0;
+    } catch (error) {
+      console.error('Error getting views by date:', error);
+      return 0;
+    }
+  }
+
+  async getViewsSince(date: string): Promise<number> {
+    try {
+      const result = await db
+        .select({ count: sql<number>`sum(${newsViews.viewCount})` })
+        .from(newsViews)
+        .where(sql`date(${newsViews.viewedAt}) >= ${date}`);
+
+      return result[0]?.count || 0;
+    } catch (error) {
+      console.error('Error getting views since date:', error);
+      return 0;
+    }
+  }
+
+  async getNewsReadToday(): Promise<number> {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const result = await db
+        .select({ count: sql<number>`count(distinct ${newsViews.newsId})` })
+        .from(newsViews)
+        .where(sql`date(${newsViews.viewedAt}) = ${today}`);
+
+      return result[0]?.count || 0;
+    } catch (error) {
+      console.error('Error getting news read today:', error);
+      return 0;
+    }
+  }
+
+  async getMostViewedNews(): Promise<string> {
+    try {
+      const result = await db
+        .select({
+          title: newsArticles.title,
+          totalViews: sql<number>`sum(${newsViews.viewCount})`
+        })
+        .from(newsViews)
+        .innerJoin(newsArticles, eq(newsViews.newsId, newsArticles.id))
+        .groupBy(newsArticles.id, newsArticles.title)
+        .orderBy(sql`sum(${newsViews.viewCount}) desc`)
+        .limit(1);
+
+      return result[0]?.title || 'ไม่มีข้อมูล';
+    } catch (error) {
+      console.error('Error getting most viewed news:', error);
+      return 'ไม่มีข้อมูล';
+    }
+  }
+
+  async getMostPopularCategory(): Promise<string> {
+    try {
+      const result = await db
+        .select({
+          category: newsArticles.category,
+          totalViews: sql<number>`sum(${newsViews.viewCount})`
+        })
+        .from(newsViews)
+        .innerJoin(newsArticles, eq(newsViews.newsId, newsArticles.id))
+        .groupBy(newsArticles.category)
+        .orderBy(sql`sum(${newsViews.viewCount}) desc`)
+        .limit(1);
+
+      return result[0]?.category || 'ไม่มีข้อมูล';
+    } catch (error) {
+      console.error('Error getting most popular category:', error);
+      return 'ไม่มีข้อมูล';
+    }
+  }
+
+  // Comments functions
+  async getComments(filter: string = 'all', limit: number = 50): Promise<any[]> {
+    try {
+      let query = db
+        .select({
+          id: comments.id,
+          content: comments.content,
+          author: comments.author,
+          createdAt: comments.createdAt,
+          status: comments.status,
+          newsTitle: newsArticles.title
+        })
+        .from(comments)
+        .innerJoin(newsArticles, eq(comments.newsId, newsArticles.id))
+        .limit(limit)
+        .orderBy(desc(comments.createdAt));
+
+      if (filter !== 'all') {
+        query = query.where(eq(comments.status, filter));
+      }
+
+      return await query;
+    } catch (error) {
+      console.error('Error getting comments:', error);
+      return [];
+    }
+  }
+
+  async approveComment(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .update(comments)
+        .set({ status: 'approved' })
+        .where(eq(comments.id, id));
+
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Error approving comment:', error);
+      return false;
+    }
+  }
+
+  async deleteComment(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(comments)
+        .where(eq(comments.id, id));
+
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      return false;
+    }
+  }
+
+  // Global settings functions
+  async updateGlobalSetting(key: string, value: string): Promise<boolean> {
+    try {
+      // Check if setting exists
+      const existing = await db
+        .select()
+        .from(sql`global_settings`)
+        .where(sql`key = ${key}`)
+        .limit(1);
+
+      if (existing.length > 0) {
+        await db
+          .update(sql`global_settings`)
+          .set({ value, updatedAt: new Date() })
+          .where(sql`key = ${key}`);
+      } else {
+        await db
+          .insert(sql`global_settings`)
+          .values({ key, value, createdAt: new Date(), updatedAt: new Date() });
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error updating global setting:', error);
+      return false;
+    }
+  }
+
+  async getGlobalSetting(key: string): Promise<string | null> {
+    try {
+      const result = await db
+        .select({ value: sql<string>`value` })
+        .from(sql`global_settings`)
+        .where(sql`key = ${key}`)
+        .limit(1);
+
+      return result[0]?.value || null;
+    } catch (error) {
+      console.error('Error getting global setting:', error);
+      return null;
+    }
   }
 }
 

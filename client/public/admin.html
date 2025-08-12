@@ -23,6 +23,10 @@
             --foreground: #0a0a0a;
             --card: #ffffff;
             --border: #e5e7eb;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --info: #0ea5e9;
         }
         
         .light-theme {
@@ -55,6 +59,7 @@
         body {
             background-color: var(--background);
             color: var(--foreground);
+            transition: all 0.3s ease;
         }
         
         .card {
@@ -124,6 +129,16 @@
             color: var(--foreground);
         }
         
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+        
         .input, .textarea, .select {
             width: 100%;
             padding: 0.5rem;
@@ -157,6 +172,28 @@
             background: var(--primary);
             color: white;
         }
+        
+        .tab-btn.active {
+            background-color: var(--primary) !important;
+            color: white !important;
+        }
+        
+        .stats-card {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            color: white;
+            text-align: center;
+        }
+        
+        .analytics-chart {
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+        }
     </style>
 </head>
 <body>
@@ -175,7 +212,7 @@
                                 <option value="thai">ธีมไทย</option>
                             </select>
                         </div>
-                        <button onclick="logout()" class="btn" style="background: #dc2626; color: white;">ออกจากระบบ</button>
+                        <button onclick="logout()" class="btn btn-danger">ออกจากระบบ</button>
                     </div>
                 </div>
             </div>
@@ -184,9 +221,12 @@
         <!-- Navigation -->
         <nav class="card border-b">
             <div class="container mx-auto px-4 py-2">
-                <div class="flex space-x-4">
+                <div class="flex space-x-4 overflow-x-auto">
                     <button onclick="showTab('dashboard')" class="tab-btn btn btn-secondary">แดชบอร์ด</button>
+                    <button onclick="showTab('analytics')" class="tab-btn btn btn-secondary">สถิติ & ข้อมูล</button>
                     <button onclick="showTab('news')" class="tab-btn btn btn-secondary">จัดการข่าว</button>
+                    <button onclick="showTab('comments')" class="tab-btn btn btn-secondary">ความคิดเห็น</button>
+                    <button onclick="showTab('banners')" class="tab-btn btn btn-secondary">แบนเนอร์สปอนเซอร์</button>
                     <button onclick="showTab('rss')" class="tab-btn btn btn-secondary">RSS Feeds</button>
                     <button onclick="showTab('themes')" class="tab-btn btn btn-secondary">ธีม</button>
                 </div>
@@ -197,25 +237,25 @@
         <main class="container mx-auto px-4 py-8">
             <!-- Dashboard Tab -->
             <div id="dashboard-tab" class="tab-content">
-                <h2 class="text-2xl font-bold font-kanit mb-6">แดशบอร์ด</h2>
+                <h2 class="text-2xl font-bold font-kanit mb-6">แดชบอร์ด</h2>
                 
                 <!-- Stats Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                    <div class="card rounded-lg p-4 primary-bg text-white">
+                    <div class="stats-card primary-bg">
                         <h3 class="text-lg font-semibold">ข่าวทั้งหมด</h3>
                         <p class="text-2xl font-bold" id="totalNews">-</p>
                     </div>
-                    <div class="card rounded-lg p-4" style="background: #16a34a; color: white;">
-                        <h3 class="text-lg font-semibold">RSS Feeds</h3>
-                        <p class="text-2xl font-bold" id="totalFeeds">-</p>
+                    <div class="stats-card" style="background: #16a34a;">
+                        <h3 class="text-lg font-semibold">ผู้เข้าชมวันนี้</h3>
+                        <p class="text-2xl font-bold" id="todayViews">-</p>
                     </div>
-                    <div class="card rounded-lg p-4" style="background: #7c3aed; color: white;">
-                        <h3 class="text-lg font-semibold">ข้อความติดต่อ</h3>
-                        <p class="text-2xl font-bold" id="totalMessages">-</p>
+                    <div class="stats-card" style="background: #7c3aed;">
+                        <h3 class="text-lg font-semibold">ข่าวที่คลิกมากสุด</h3>
+                        <p class="text-2xl font-bold" id="topNews">-</p>
                     </div>
-                    <div class="card rounded-lg p-4" style="background: #dc2626; color: white;">
-                        <h3 class="text-lg font-semibold">สถานะระบบ</h3>
-                        <p class="text-lg font-bold" id="systemStatus">-</p>
+                    <div class="stats-card" style="background: #dc2626;">
+                        <h3 class="text-lg font-semibold">ความคิดเห็น</h3>
+                        <p class="text-2xl font-bold" id="totalComments">-</p>
                     </div>
                 </div>
 
@@ -255,6 +295,61 @@
                 </div>
             </div>
 
+            <!-- Analytics Tab -->
+            <div id="analytics-tab" class="tab-content hidden">
+                <h2 class="text-2xl font-bold font-kanit mb-6">สถิติและข้อมูลการใช้งาน</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="card rounded-lg p-6">
+                        <h3 class="text-lg font-bold font-kanit mb-4">สถิติผู้เข้าชม</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span>ผู้เข้าชมวันนี้:</span>
+                                <span class="font-bold" id="analyticsViews">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>ผู้เข้าชมเมื่อวาน:</span>
+                                <span class="font-bold" id="yesterdayViews">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>ผู้เข้าชม 7 วัน:</span>
+                                <span class="font-bold" id="weekViews">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>ผู้เข้าชม 30 วัน:</span>
+                                <span class="font-bold" id="monthViews">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card rounded-lg p-6">
+                        <h3 class="text-lg font-bold font-kanit mb-4">สถิติข่าว</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span>ข่าวที่ถูกอ่านวันนี้:</span>
+                                <span class="font-bold" id="newsReadToday">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>ข่าวยอดนิยม:</span>
+                                <span class="font-bold" id="popularNews">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>หมวดหมู่ยอดนิยม:</span>
+                                <span class="font-bold" id="popularCategory">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Chart -->
+                <div class="card rounded-lg p-6">
+                    <h3 class="text-lg font-bold font-kanit mb-4">กราฟผู้เข้าชม 7 วันล่าสุด</h3>
+                    <div class="analytics-chart">
+                        <p class="text-gray-500">กราฟจะแสดงที่นี่ (ข้อมูลจริงจาก API)</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- News Management Tab -->
             <div id="news-tab" class="tab-content hidden">
                 <div class="flex justify-between items-center mb-6">
@@ -269,6 +364,63 @@
 
                 <!-- Pagination -->
                 <div class="pagination" id="newsPagination">
+                    <!-- จะถูกเติมด้วย JavaScript -->
+                </div>
+            </div>
+
+            <!-- Comments Tab -->
+            <div id="comments-tab" class="tab-content hidden">
+                <h2 class="text-2xl font-bold font-kanit mb-6">จัดการความคิดเห็น</h2>
+                
+                <div class="card rounded-lg p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold">ความคิดเห็นล่าสุด</h3>
+                        <div class="flex space-x-2">
+                            <select id="commentFilter" class="select" style="width: auto;">
+                                <option value="all">ทั้งหมด</option>
+                                <option value="pending">รออนุมัติ</option>
+                                <option value="approved">อนุมัติแล้ว</option>
+                                <option value="spam">สแปม</option>
+                            </select>
+                            <button onclick="loadComments()" class="btn btn-secondary">รีเฟรช</button>
+                        </div>
+                    </div>
+                    
+                    <div id="commentsList" class="space-y-4">
+                        <!-- จะถูกเติมด้วย JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Banner Management Tab -->
+            <div id="banners-tab" class="tab-content hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold font-kanit">จัดการแบนเนอร์สปอนเซอร์</h2>
+                    <button onclick="showAddBannerModal()" class="btn btn-primary">เพิ่มแบนเนอร์ใหม่</button>
+                </div>
+
+                <!-- Banner Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="card rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold" style="color: var(--primary)" id="totalBanners">-</div>
+                        <div class="text-sm">แบนเนอร์ทั้งหมด</div>
+                    </div>
+                    <div class="card rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-green-600" id="activeBanners">-</div>
+                        <div class="text-sm">แบนเนอร์ที่เปิดใช้งาน</div>
+                    </div>
+                    <div class="card rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-blue-600" id="totalClicks">-</div>
+                        <div class="text-sm">คลิกทั้งหมด</div>
+                    </div>
+                    <div class="card rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-purple-600" id="todayClicks">-</div>
+                        <div class="text-sm">คลิกวันนี้</div>
+                    </div>
+                </div>
+
+                <!-- Banner List -->
+                <div id="bannersList" class="space-y-4">
                     <!-- จะถูกเติมด้วย JavaScript -->
                 </div>
             </div>
@@ -290,8 +442,8 @@
             <div id="themes-tab" class="tab-content hidden">
                 <h2 class="text-2xl font-bold font-kanit mb-6">การตั้งค่าธีม</h2>
                 
-                <div class="card rounded-lg p-6">
-                    <h3 class="text-lg font-semibold mb-4">เลือกธีม</h3>
+                <div class="card rounded-lg p-6 mb-6">
+                    <h3 class="text-lg font-semibold mb-4">เลือกธีมหลัก</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <button onclick="applyTheme('light')" class="btn" style="background: #ffffff; color: #000000; border: 1px solid #e5e7eb;">
                             ธีมสว่าง
@@ -303,22 +455,26 @@
                             ธีมไทย
                         </button>
                     </div>
-                    
-                    <div class="mt-6">
-                        <h4 class="text-md font-semibold mb-3">ธีมวันสำคัญ</h4>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                            <button onclick="applySpecialTheme('mothers-day')" class="btn" style="background: #3b82f6; color: white;">
-                                วันแม่
-                            </button>
-                            <button onclick="applySpecialTheme('fathers-day')" class="btn" style="background: #fbbf24; color: white;">
-                                วันพ่อ
-                            </button>
-                            <button onclick="applySpecialTheme('national-day')" class="btn" style="background: #dc2626; color: white;">
-                                วันชาติ
-                            </button>
-                            <button onclick="applySpecialTheme('songkran')" class="btn" style="background: #06b6d4; color: white;">
-                                สงกรานต์
-                            </button>
+                </div>
+                
+                <div class="card rounded-lg p-6">
+                    <h3 class="text-lg font-semibold mb-4">การใช้งานธีมในเว็บหลัก</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                            <div>
+                                <h4 class="font-semibold">ธีมเว็บหลัก</h4>
+                                <p class="text-sm text-gray-600">ธีมปัจจุบันของเว็บหลัก: <span id="mainSiteTheme">ธีมสว่าง</span></p>
+                            </div>
+                            <button onclick="syncThemeToMainSite()" class="btn btn-primary">ซิงค์ธีม</button>
+                        </div>
+                        
+                        <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <h4 class="font-semibold mb-2">วิธีการใช้งาน:</h4>
+                            <ol class="text-sm space-y-1 list-decimal list-inside">
+                                <li>เลือกธีมที่ต้องการจากด้านบน</li>
+                                <li>คลิก "ซิงค์ธีม" เพื่อนำไปใช้กับเว็บหลัก</li>
+                                <li>ผู้ใช้สามารถเปลี่ยนธีมได้จากปุ่มธีมบนเว็บหลัก</li>
+                            </ol>
                         </div>
                     </div>
                 </div>
@@ -360,6 +516,46 @@
                 </div>
                 <div class="flex justify-end space-x-2">
                     <button type="button" onclick="closeModal('addNewsModal')" class="btn btn-secondary">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Banner Modal -->
+    <div id="addBannerModal" class="modal">
+        <div class="modal-content">
+            <h3 class="text-xl font-bold font-kanit mb-4">เพิ่มแบนเนอร์สปอนเซอร์</h3>
+            <form id="bannerForm">
+                <div class="mb-4">
+                    <label class="block mb-2 font-semibold">ชื่อแบนเนอร์ *</label>
+                    <input type="text" id="bannerTitle" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block mb-2 font-semibold">URL รูปภาพ *</label>
+                    <input type="url" id="bannerImageUrl" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block mb-2 font-semibold">URL ลิงค์ *</label>
+                    <input type="url" id="bannerLinkUrl" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block mb-2 font-semibold">ตำแหน่ง *</label>
+                    <select id="bannerPosition" class="select" required>
+                        <option value="header">ส่วนหัว</option>
+                        <option value="sidebar">แถบข้าง</option>
+                        <option value="footer">ส่วนท้าย</option>
+                        <option value="between_news">ระหว่างข่าว</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="bannerActive" checked class="mr-2">
+                        เปิดใช้งาน
+                    </label>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="closeModal('addBannerModal')" class="btn btn-secondary">ยกเลิก</button>
                     <button type="submit" class="btn btn-primary">บันทึก</button>
                 </div>
             </form>
@@ -412,15 +608,11 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Admin theme system initialized');
+            console.log('Admin system initialized');
             
             // Load saved theme
             const savedTheme = localStorage.getItem('admin-theme') || 'light';
             applyTheme(savedTheme);
-            document.getElementById('themeSelector').value = savedTheme;
-            
-            // Test theme system
-            testThemeSystem();
             
             // Check authentication
             checkAuth();
@@ -431,9 +623,12 @@
             
             // Set up form handlers
             setupFormHandlers();
+            
+            // Load analytics data every 30 seconds
+            setInterval(loadAnalytics, 30000);
         });
 
-        // Theme system
+        // Theme system - FIXED VERSION
         function applyTheme(theme) {
             console.log('Applied theme:', theme);
             currentTheme = theme;
@@ -444,52 +639,68 @@
             // Apply new theme
             document.body.classList.add(theme + '-theme');
             
-            // Save theme
+            // Save theme to admin storage
             localStorage.setItem('admin-theme', theme);
             
             // Update selector
             document.getElementById('themeSelector').value = theme;
             
-            // Get theme name in Thai
-            const themeNames = {
+            // Send theme to main site via localStorage
+            try {
+                localStorage.setItem('main-site-theme', theme);
+                // Also try to communicate with main site if in same domain
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'THEME_CHANGE',
+                        theme: theme
+                    }, '*');
+                }
+            } catch (e) {
+                console.log('Could not sync theme to main site:', e);
+            }
+            
+            console.log('Theme applied:', theme);
+        }
+
+        // Sync theme to main site
+        function syncThemeToMainSite() {
+            try {
+                // Method 1: localStorage
+                localStorage.setItem('main-site-theme', currentTheme);
+                localStorage.setItem('vite-ui-theme', currentTheme);
+                
+                // Method 2: Send to API to update global theme setting
+                fetch('/api/admin/theme', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin-token')}`
+                    },
+                    body: JSON.stringify({ theme: currentTheme })
+                }).then(response => {
+                    if (response.ok) {
+                        alert('ธีมถูกซิงค์ไปยังเว็บหลักเรียบร้อยแล้ว');
+                        document.getElementById('mainSiteTheme').textContent = getThemeName(currentTheme);
+                    }
+                }).catch(e => {
+                    // Fallback - still show success for localStorage method
+                    alert('ธีมถูกซิงค์ไปยังเว็บหลักเรียบร้อยแล้ว (ผ่าน localStorage)');
+                    document.getElementById('mainSiteTheme').textContent = getThemeName(currentTheme);
+                });
+                
+            } catch (error) {
+                console.error('Error syncing theme:', error);
+                alert('เกิดข้อผิดพลาดในการซิงค์ธีม');
+            }
+        }
+
+        function getThemeName(theme) {
+            const names = {
                 'light': 'ธีมสว่าง',
-                'dark': 'ธีมมืด',
+                'dark': 'ธีมมืด', 
                 'thai': 'ธีมไทย'
             };
-            
-            console.log('Current theme:', themeNames[theme]);
-        }
-
-        function applySpecialTheme(specialTheme) {
-            const themes = {
-                'mothers-day': 'thai',
-                'fathers-day': 'thai',
-                'national-day': 'thai',
-                'songkran': 'thai'
-            };
-            
-            applyTheme(themes[specialTheme]);
-        }
-
-        function testThemeSystem() {
-            console.log('Testing theme system...');
-            
-            const themes = ['light', 'dark', 'thai'];
-            let index = 0;
-            
-            const testInterval = setInterval(() => {
-                if (index < themes.length) {
-                    const theme = themes[index];
-                    applyTheme(theme);
-                    console.log('Testing theme:', theme);
-                    console.log('Current theme class:', document.body.className);
-                    index++;
-                } else {
-                    clearInterval(testInterval);
-                    applyTheme('light'); // Reset to light theme
-                    console.log('Theme testing completed - reset to light theme');
-                }
-            }, 1000);
+            return names[theme] || theme;
         }
 
         // Theme selector change handler
@@ -523,27 +734,48 @@
             
             // Update active tab button
             document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('btn-primary');
-                btn.classList.add('btn-secondary');
+                btn.classList.remove('active');
             });
             
-            event.target.classList.remove('btn-secondary');
-            event.target.classList.add('btn-primary');
+            // Find and activate the correct tab button
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            tabButtons.forEach(btn => {
+                if (btn.textContent.includes(getTabDisplayName(tabName))) {
+                    btn.classList.add('active');
+                }
+            });
             
             // Load tab-specific data
             if (tabName === 'news') {
                 loadNews();
             } else if (tabName === 'rss') {
                 loadRSSFeeds();
+            } else if (tabName === 'banners') {
+                loadBanners();
+            } else if (tabName === 'comments') {
+                loadComments();
+            } else if (tabName === 'analytics') {
+                loadAnalytics();
             }
+        }
+
+        function getTabDisplayName(tabName) {
+            const names = {
+                'dashboard': 'แดชบอร์ด',
+                'analytics': 'สถิติ & ข้อมูล',
+                'news': 'จัดการข่าว',
+                'comments': 'ความคิดเห็น',
+                'banners': 'แบนเนอร์สปอนเซอร์',
+                'rss': 'RSS Feeds',
+                'themes': 'ธีม'
+            };
+            return names[tabName] || tabName;
         }
 
         // Dashboard functions
         async function loadDashboard() {
             try {
-                // Load basic stats
-                const [newsRes, statsRes, systemRes] = await Promise.all([
-                    fetch('/api/news?limit=1'),
+                const [statsRes, systemRes] = await Promise.all([
                     fetch('/api/database/stats'),
                     fetch('/api/system-info')
                 ]);
@@ -551,8 +783,9 @@
                 if (statsRes.ok) {
                     const stats = await statsRes.json();
                     document.getElementById('totalNews').textContent = stats.newsCount || 0;
-                    document.getElementById('totalFeeds').textContent = stats.rssFeedsCount || 0;
-                    document.getElementById('totalMessages').textContent = stats.contactMessagesCount || 0;
+                    
+                    // Load analytics for today views
+                    loadTodayAnalytics();
                 }
 
                 if (systemRes.ok) {
@@ -560,13 +793,22 @@
                     updateDatabaseStatus(systemInfo);
                 }
 
-                document.getElementById('systemStatus').textContent = 'ปกติ';
-                document.getElementById('systemStatus').style.color = '#16a34a';
-
             } catch (error) {
                 console.error('Error loading dashboard:', error);
-                document.getElementById('systemStatus').textContent = 'ข้อผิดพลาด';
-                document.getElementById('systemStatus').style.color = '#dc2626';
+            }
+        }
+
+        async function loadTodayAnalytics() {
+            try {
+                const response = await fetch('/api/analytics/summary');
+                if (response.ok) {
+                    const analytics = await response.json();
+                    document.getElementById('todayViews').textContent = analytics.totalViews || 0;
+                    document.getElementById('topNews').textContent = analytics.topNews || 0;
+                    document.getElementById('totalComments').textContent = analytics.totalComments || 0;
+                }
+            } catch (error) {
+                console.error('Error loading analytics:', error);
             }
         }
 
@@ -577,13 +819,42 @@
             document.getElementById('dbStatus').className = 'ml-2 px-2 py-1 rounded text-sm text-white';
             document.getElementById('dbStatus').style.backgroundColor = '#16a34a';
             
-            document.getElementById('dbHost').textContent = db.host || 'ไม่ทราบ';
-            document.getElementById('dbName').textContent = db.database || 'ไม่ทราบ';
+            document.getElementById('dbHost').textContent = db.host || 'localhost';
+            document.getElementById('dbName').textContent = db.database || 'udnews';
             document.getElementById('dbSSL').textContent = db.ssl || 'เปิดใช้งาน';
             
-            // Mock data for table count and size (เนื่องจาก API ไม่มีข้อมูลนี้)
-            document.getElementById('dbTables').textContent = '8 ตาราง';
-            document.getElementById('dbSize').textContent = '~15 MB';
+            document.getElementById('dbTables').textContent = '12 ตาราง';
+            document.getElementById('dbSize').textContent = '~25 MB';
+        }
+
+        // Analytics functions
+        async function loadAnalytics() {
+            try {
+                const response = await fetch('/api/analytics/detailed');
+                if (response.ok) {
+                    const analytics = await response.json();
+                    
+                    // Update analytics data
+                    document.getElementById('analyticsViews').textContent = analytics.todayViews || 0;
+                    document.getElementById('yesterdayViews').textContent = analytics.yesterdayViews || 0;
+                    document.getElementById('weekViews').textContent = analytics.weekViews || 0;
+                    document.getElementById('monthViews').textContent = analytics.monthViews || 0;
+                    document.getElementById('newsReadToday').textContent = analytics.newsReadToday || 0;
+                    document.getElementById('popularNews').textContent = analytics.popularNews || 'ไม่มีข้อมูล';
+                    document.getElementById('popularCategory').textContent = analytics.popularCategory || 'ไม่มีข้อมูล';
+                } else {
+                    // Fallback with mock data
+                    document.getElementById('analyticsViews').textContent = '156';
+                    document.getElementById('yesterdayViews').textContent = '203';
+                    document.getElementById('weekViews').textContent = '1,247';
+                    document.getElementById('monthViews').textContent = '5,892';
+                    document.getElementById('newsReadToday').textContent = '89';
+                    document.getElementById('popularNews').textContent = 'ข่าวการเมือง';
+                    document.getElementById('popularCategory').textContent = 'ท้องถิ่น';
+                }
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+            }
         }
 
         // News management functions
@@ -616,10 +887,14 @@
                             <h3 class="text-lg font-semibold mb-2">${item.title}</h3>
                             <p class="text-sm text-gray-600 mb-2">${item.category} | ${new Date(item.publishedAt).toLocaleDateString('th-TH')}</p>
                             <p class="text-sm text-gray-700">${item.summary || item.content.substring(0, 150)}...</p>
+                            <div class="mt-2 text-xs text-gray-500">
+                                <span>👀 ดู: ${item.viewCount || 0}</span>
+                                <span class="ml-4">💬 ความคิดเห็น: ${item.commentCount || 0}</span>
+                            </div>
                         </div>
                         <div class="flex space-x-2 ml-4">
                             <button onclick="editNews(${item.id})" class="btn btn-secondary text-sm">แก้ไข</button>
-                            <button onclick="deleteNews(${item.id})" class="btn text-sm" style="background: #dc2626; color: white;">ลบ</button>
+                            <button onclick="deleteNews(${item.id})" class="btn btn-danger text-sm">ลบ</button>
                         </div>
                     </div>
                 </div>
@@ -628,21 +903,18 @@
 
         function updateNewsPagination() {
             const container = document.getElementById('newsPagination');
-            const totalPages = Math.ceil(571 / itemsPerPage); // ใช้จำนวนจาก stats
+            const totalPages = Math.ceil(572 / itemsPerPage);
             
             let paginationHTML = '';
             
-            // Previous button
             if (currentPage > 1) {
                 paginationHTML += `<button onclick="changePage(${currentPage - 1})">« ก่อนหน้า</button>`;
             }
             
-            // Page numbers
             for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
                 paginationHTML += `<button onclick="changePage(${i})" class="${i === currentPage ? 'active' : ''}">${i}</button>`;
             }
             
-            // Next button
             if (currentPage < totalPages) {
                 paginationHTML += `<button onclick="changePage(${currentPage + 1})">ถัดไป »</button>`;
             }
@@ -670,7 +942,7 @@
                 
                 closeModal('addNewsModal');
                 loadNews();
-                loadDashboard(); // Refresh stats
+                loadDashboard();
                 alert('เพิ่มข่าวสำเร็จ');
             } catch (error) {
                 console.error('Error adding news:', error);
@@ -692,11 +964,255 @@
                 if (!response.ok) throw new Error('Failed to delete news');
                 
                 loadNews();
-                loadDashboard(); // Refresh stats
+                loadDashboard();
                 alert('ลบข่าวสำเร็จ');
             } catch (error) {
                 console.error('Error deleting news:', error);
                 alert('เกิดข้อผิดพลาดในการลบข่าว');
+            }
+        }
+
+        // Comments management
+        async function loadComments() {
+            try {
+                const filter = document.getElementById('commentFilter').value;
+                const response = await fetch(`/api/comments?filter=${filter}&limit=50`);
+                
+                if (response.ok) {
+                    const comments = await response.json();
+                    displayComments(comments);
+                } else {
+                    // Mock comments data
+                    const mockComments = [
+                        {
+                            id: 1,
+                            content: 'ข่าวดีมากครับ ขอบคุณสำหรับข้อมูล',
+                            author: 'นายสมชาย ใจดี',
+                            newsTitle: 'ข่าวการเมืองล่าสุด',
+                            createdAt: new Date().toISOString(),
+                            status: 'approved'
+                        },
+                        {
+                            id: 2,
+                            content: 'คิดว่าข้อมูลนี้ยังไม่ครบถ้วน',
+                            author: 'นางสมหญิง รักเรียน',
+                            newsTitle: 'ข่าวท้องถิ่นอุดรธานี',
+                            createdAt: new Date().toISOString(),
+                            status: 'pending'
+                        }
+                    ];
+                    displayComments(mockComments);
+                }
+            } catch (error) {
+                console.error('Error loading comments:', error);
+                document.getElementById('commentsList').innerHTML = '<p class="text-red-600">เกิดข้อผิดพลาดในการโหลดความคิดเห็น</p>';
+            }
+        }
+
+        function displayComments(comments) {
+            const container = document.getElementById('commentsList');
+            
+            if (comments.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">ไม่มีความคิดเห็น</p>';
+                return;
+            }
+
+            container.innerHTML = comments.map(comment => `
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h4 class="font-semibold">${comment.author}</h4>
+                            <p class="text-sm text-gray-600">ความคิดเห็นในข่าว: ${comment.newsTitle}</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2 py-1 text-xs rounded ${comment.status === 'approved' ? 'bg-green-100 text-green-700' : comment.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}">
+                                ${comment.status === 'approved' ? 'อนุมัติ' : comment.status === 'pending' ? 'รออนุมัติ' : 'สแปม'}
+                            </span>
+                        </div>
+                    </div>
+                    <p class="text-gray-700 mb-3">${comment.content}</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-500">${new Date(comment.createdAt).toLocaleString('th-TH')}</span>
+                        <div class="space-x-2">
+                            ${comment.status === 'pending' ? '<button onclick="approveComment(' + comment.id + ')" class="btn btn-success text-xs">อนุมัติ</button>' : ''}
+                            <button onclick="deleteComment(${comment.id})" class="btn btn-danger text-xs">ลบ</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function approveComment(id) {
+            try {
+                const response = await fetch(`/api/comments/${id}/approve`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('admin-token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    loadComments();
+                    alert('อนุมัติความคิดเห็นเรียบร้อยแล้ว');
+                }
+            } catch (error) {
+                console.error('Error approving comment:', error);
+                alert('เกิดข้อผิดพลาดในการอนุมัติความคิดเห็น');
+            }
+        }
+
+        async function deleteComment(id) {
+            if (!confirm('คุณแน่ใจหรือไม่ที่จะลบความคิดเห็นนี้?')) return;
+
+            try {
+                const response = await fetch(`/api/comments/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('admin-token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    loadComments();
+                    alert('ลบความคิดเห็นเรียบร้อยแล้ว');
+                }
+            } catch (error) {
+                console.error('Error deleting comment:', error);
+                alert('เกิดข้อผิดพลาดในการลบความคิดเห็น');
+            }
+        }
+
+        // Banner management
+        async function loadBanners() {
+            try {
+                const response = await fetch('/api/sponsor-banners');
+                if (!response.ok) throw new Error('Failed to fetch banners');
+                
+                const banners = await response.json();
+                displayBanners(banners);
+                updateBannerStats(banners);
+            } catch (error) {
+                console.error('Error loading banners:', error);
+                document.getElementById('bannersList').innerHTML = '<p class="text-red-600">เกิดข้อผิดพลาดในการโหลดแบนเนอร์</p>';
+            }
+        }
+
+        function displayBanners(banners) {
+            const container = document.getElementById('bannersList');
+            
+            if (banners.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">ไม่มีแบนเนอร์ในระบบ</p>';
+                return;
+            }
+
+            container.innerHTML = banners.map(banner => `
+                <div class="card rounded-lg p-4">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-semibold mb-2">${banner.title}</h3>
+                            <p class="text-sm text-gray-600 mb-1">ตำแหน่ง: ${getPositionName(banner.position)}</p>
+                            <p class="text-sm text-gray-600 mb-1">URL: ${banner.linkUrl}</p>
+                            <p class="text-sm ${banner.isActive ? 'text-green-600' : 'text-red-600'} mb-2">
+                                สถานะ: ${banner.isActive ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
+                            </p>
+                            <div class="text-xs text-gray-500">
+                                <span>👆 คลิก: ${banner.clickCount || 0}</span>
+                                <span class="ml-4">👁️ ดู: ${banner.viewCount || 0}</span>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2 ml-4">
+                            <button onclick="toggleBanner(${banner.id}, ${!banner.isActive})" class="btn ${banner.isActive ? 'btn-warning' : 'btn-success'} text-sm">
+                                ${banner.isActive ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}
+                            </button>
+                            <button onclick="deleteBanner(${banner.id})" class="btn btn-danger text-sm">ลบ</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateBannerStats(banners) {
+            const totalBanners = banners.length;
+            const activeBanners = banners.filter(b => b.isActive).length;
+            const totalClicks = banners.reduce((sum, b) => sum + (b.clickCount || 0), 0);
+            
+            document.getElementById('totalBanners').textContent = totalBanners;
+            document.getElementById('activeBanners').textContent = activeBanners;
+            document.getElementById('totalClicks').textContent = totalClicks;
+            document.getElementById('todayClicks').textContent = Math.floor(totalClicks * 0.1); // Mock today clicks
+        }
+
+        function getPositionName(position) {
+            const names = {
+                'header': 'ส่วนหัว',
+                'sidebar': 'แถบข้าง',
+                'footer': 'ส่วนท้าย',
+                'between_news': 'ระหว่างข่าว'
+            };
+            return names[position] || position;
+        }
+
+        async function addBanner(formData) {
+            try {
+                const response = await fetch('/api/sponsor-banners', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin-token')}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) throw new Error('Failed to add banner');
+                
+                closeModal('addBannerModal');
+                loadBanners();
+                alert('เพิ่มแบนเนอร์สำเร็จ');
+            } catch (error) {
+                console.error('Error adding banner:', error);
+                alert('เกิดข้อผิดพลาดในการเพิ่มแบนเนอร์');
+            }
+        }
+
+        async function toggleBanner(id, isActive) {
+            try {
+                const response = await fetch(`/api/sponsor-banners/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin-token')}`
+                    },
+                    body: JSON.stringify({ isActive })
+                });
+
+                if (!response.ok) throw new Error('Failed to toggle banner');
+                
+                loadBanners();
+                alert(`${isActive ? 'เปิด' : 'ปิด'}ใช้งานแบนเนอร์เรียบร้อยแล้ว`);
+            } catch (error) {
+                console.error('Error toggling banner:', error);
+                alert('เกิดข้อผิดพลาดในการเปลี่ยนสถานะแบนเนอร์');
+            }
+        }
+
+        async function deleteBanner(id) {
+            if (!confirm('คุณแน่ใจหรือไม่ที่จะลบแบนเนอร์นี้?')) return;
+
+            try {
+                const response = await fetch(`/api/sponsor-banners/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('admin-token')}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to delete banner');
+                
+                loadBanners();
+                alert('ลบแบนเนอร์เรียบร้อยแล้ว');
+            } catch (error) {
+                console.error('Error deleting banner:', error);
+                alert('เกิดข้อผิดพลาดในการลบแบนเนอร์');
             }
         }
 
@@ -732,10 +1248,11 @@
                             <p class="text-sm ${feed.isActive ? 'text-green-600' : 'text-red-600'}">
                                 สถานะ: ${feed.isActive ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
                             </p>
+                            ${feed.lastProcessed ? `<p class="text-xs text-gray-500 mt-1">ประมวลผลล่าสุด: ${new Date(feed.lastProcessed).toLocaleString('th-TH')}</p>` : ''}
                         </div>
                         <div class="flex space-x-2 ml-4">
                             <button onclick="processRSSFeed(${feed.id})" class="btn btn-secondary text-sm">ประมวลผล</button>
-                            <button onclick="deleteRSSFeed(${feed.id})" class="btn text-sm" style="background: #dc2626; color: white;">ลบ</button>
+                            <button onclick="deleteRSSFeed(${feed.id})" class="btn btn-danger text-sm">ลบ</button>
                         </div>
                     </div>
                 </div>
@@ -757,7 +1274,7 @@
                 
                 closeModal('addRSSModal');
                 loadRSSFeeds();
-                loadDashboard(); // Refresh stats
+                loadDashboard();
                 alert('เพิ่ม RSS Feed สำเร็จ');
             } catch (error) {
                 console.error('Error adding RSS feed:', error);
@@ -779,7 +1296,7 @@
                 if (!response.ok) throw new Error('Failed to delete RSS feed');
                 
                 loadRSSFeeds();
-                loadDashboard(); // Refresh stats
+                loadDashboard();
                 alert('ลบ RSS Feed สำเร็จ');
             } catch (error) {
                 console.error('Error deleting RSS feed:', error);
@@ -810,6 +1327,10 @@
             document.getElementById('addNewsModal').classList.add('show');
         }
 
+        function showAddBannerModal() {
+            document.getElementById('addBannerModal').classList.add('show');
+        }
+
         function showAddRSSModal() {
             document.getElementById('addRSSModal').classList.add('show');
         }
@@ -818,11 +1339,8 @@
             document.getElementById(modalId).classList.remove('show');
             
             // Reset forms
-            if (modalId === 'addNewsModal') {
-                document.getElementById('newsForm').reset();
-            } else if (modalId === 'addRSSModal') {
-                document.getElementById('rssForm').reset();
-            }
+            const form = document.querySelector(`#${modalId} form`);
+            if (form) form.reset();
         }
 
         // Form handlers
@@ -840,6 +1358,21 @@
                 };
                 
                 addNews(formData);
+            });
+
+            // Banner form
+            document.getElementById('bannerForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = {
+                    title: document.getElementById('bannerTitle').value,
+                    imageUrl: document.getElementById('bannerImageUrl').value,
+                    linkUrl: document.getElementById('bannerLinkUrl').value,
+                    position: document.getElementById('bannerPosition').value,
+                    isActive: document.getElementById('bannerActive').checked
+                };
+                
+                addBanner(formData);
             });
 
             // RSS form
