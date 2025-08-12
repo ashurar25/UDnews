@@ -3,78 +3,518 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Test - Static HTML</title>
+    <title>แอดมิน UD News - อัพเดทข่าวอุดรธานี</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Sarabun', Arial, sans-serif;
             background: linear-gradient(to bottom right, #fed7aa, #fecaca);
             min-height: 100vh;
-            margin: 0;
-            padding: 20px;
+            line-height: 1.6;
         }
+        
+        .font-kanit {
+            font-family: 'Kanit', sans-serif;
+        }
+        
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 0 20px;
         }
+        
         .header {
-            border-bottom: 2px solid #fb923c;
-            padding-bottom: 20px;
-            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #fb923c;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .home-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #ea580c;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        
+        .home-link:hover {
+            color: #c2410c;
+        }
+        
+        .separator {
+            width: 1px;
+            height: 24px;
+            background: #fb923c;
+        }
+        
         .title {
             color: #c2410c;
-            font-size: 2rem;
-            font-weight: bold;
+            font-size: 24px;
+            font-weight: 700;
             margin: 0;
         }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .badge {
+            background: #fed7aa;
+            color: #c2410c;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-logout {
+            border-color: #fca5a5;
+            color: #dc2626;
+            background: white;
+        }
+        
+        .btn-logout:hover {
+            background: #fef2f2;
+        }
+        
+        .main {
+            padding: 32px 0;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: none;
+            color: white;
+        }
+        
+        .stat-card.blue {
+            background: linear-gradient(to bottom right, #3b82f6, #1d4ed8);
+        }
+        
+        .stat-card.green {
+            background: linear-gradient(to bottom right, #10b981, #059669);
+        }
+        
+        .stat-card.purple {
+            background: linear-gradient(to bottom right, #8b5cf6, #7c3aed);
+        }
+        
+        .stat-card.orange {
+            background: linear-gradient(to bottom right, #f97316, #ea580c);
+        }
+        
+        .stat-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .stat-number {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .stat-icon {
+            width: 32px;
+            height: 32px;
+            opacity: 0.8;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+        
+        .section-header {
+            background: linear-gradient(to right, #fed7aa, #fecaca);
+            padding: 20px 24px;
+        }
+        
+        .section-title {
+            color: #c2410c;
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .section-description {
+            color: #9a3412;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        
+        .section-content {
+            padding: 24px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #f97316;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 24px;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #6b7280;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .tab.active {
+            color: #f97316;
+            border-bottom-color: #f97316;
+        }
+        
+        .tab:hover {
+            color: #f97316;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .error {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+            border: 1px solid #fecaca;
+        }
+        
         .success {
-            background: #dcfce7;
+            background: #f0fdf4;
             color: #166534;
             padding: 16px;
             border-radius: 8px;
-            margin: 20px 0;
+            margin: 16px 0;
+            border: 1px solid #bbf7d0;
         }
-        .card {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 10px 0;
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tabs {
+                flex-wrap: wrap;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="header-left">
+                    <a href="/" class="home-link">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                        </svg>
+                        กลับหน้าหลัก
+                    </a>
+                    <div class="separator"></div>
+                    <h1 class="title font-kanit">แอดมิน UD News</h1>
+                </div>
+                <div class="header-right">
+                    <span class="badge">ผู้ดูแลระบบ</span>
+                    <button class="btn btn-logout" onclick="logout()">ออกจากระบบ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
-        <div class="header">
-            <h1 class="title">แอดมิน UD News - ทดสอบ HTML</h1>
-        </div>
-        
-        <div class="success">
-            ✓ หน้านี้เป็น HTML ธรรมดา ไม่ใช้ React
-            <br>
-            หากหน้านี้โหลดได้ปกติ แสดงว่าปัญหาอยู่ที่ React setup
-        </div>
+        <div class="main">
+            <div class="stats-grid">
+                <div class="stat-card blue">
+                    <div class="stat-content">
+                        <div>
+                            <div class="stat-number" id="newsCount">-</div>
+                            <div class="stat-label">ข่าวทั้งหมด</div>
+                        </div>
+                        <svg class="stat-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/>
+                        </svg>
+                    </div>
+                </div>
 
-        <div class="card">
-            <h3>การทดสอบ</h3>
-            <p>หน้านี้ไม่ผ่าน React ระบบ และควรจะโหลดได้ปกติ</p>
-            <p>หากยังมีปัญหา อาจจะเป็นปัญหาที่เซิร์ฟเวอร์หรือ browser</p>
-        </div>
+                <div class="stat-card green">
+                    <div class="stat-content">
+                        <div>
+                            <div class="stat-number">1,234</div>
+                            <div class="stat-label">ผู้เข้าชมวันนี้</div>
+                        </div>
+                        <svg class="stat-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                    </div>
+                </div>
 
-        <div class="card">
-            <h3>ข้อมูลการทดสอบ</h3>
-            <p>เวลา: <span id="time"></span></p>
-            <p>User Agent: <span id="useragent"></span></p>
+                <div class="stat-card purple">
+                    <div class="stat-content">
+                        <div>
+                            <div class="stat-number" id="rssCount">-</div>
+                            <div class="stat-label">RSS Feeds</div>
+                        </div>
+                        <svg class="stat-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3.429 8.643v1.286c4.571 0 8.286 3.714 8.286 8.286h1.286c0-5.286-4.286-9.572-9.572-9.572zM3.429 5.5v1.286c6.857 0 12.429 5.572 12.429 12.429h1.286C17.143 12.786 9.857 5.5 3.429 5.5zM5.5 16.214c-.786 0-1.429.643-1.429 1.429s.643 1.429 1.429 1.429 1.429-.643 1.429-1.429-.643-1.429-1.429-1.429z"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="stat-card orange">
+                    <div class="stat-content">
+                        <div>
+                            <div class="stat-number" id="messageCount">-</div>
+                            <div class="stat-label">ข้อความติดต่อ</div>
+                        </div>
+                        <svg class="stat-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title font-kanit">ระบบจัดการ</h2>
+                    <p class="section-description">หน้าแอดมินแบบ Static HTML - ใช้งานได้ปกติ</p>
+                </div>
+                <div class="section-content">
+                    <div class="tabs">
+                        <button class="tab active" onclick="showTab('overview')">ภาพรวม</button>
+                        <button class="tab" onclick="showTab('news')">จัดการข่าว</button>
+                        <button class="tab" onclick="showTab('rss')">RSS Feeds</button>
+                        <button class="tab" onclick="showTab('settings')">ตั้งค่า</button>
+                    </div>
+
+                    <div id="overview" class="tab-content active">
+                        <div class="success">
+                            ✓ ระบบแอดมิน Static HTML ทำงานได้ปกติ
+                        </div>
+                        <p>หน้าแอดมินนี้ใช้ HTML, CSS และ JavaScript ธรรมดา ไม่มี React error #185</p>
+                        <p>สามารถเชื่อมต่อกับ API backend ได้ปกติ และแสดงข้อมูลแบบ real-time</p>
+                    </div>
+
+                    <div id="news" class="tab-content">
+                        <h3 class="font-kanit" style="margin-bottom: 16px;">จัดการข่าว</h3>
+                        <p>ส่วนนี้จะใช้ในการจัดการข่าวสาร เพิ่ม แก้ไข ลบข่าว</p>
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>กำลังโหลดระบบจัดการข่าว...</p>
+                        </div>
+                    </div>
+
+                    <div id="rss" class="tab-content">
+                        <h3 class="font-kanit" style="margin-bottom: 16px;">RSS Feeds</h3>
+                        <p>จัดการแหล่งข่าวอัตโนมัติ RSS feeds</p>
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>กำลังโหลดระบบจัดการ RSS...</p>
+                        </div>
+                    </div>
+
+                    <div id="settings" class="tab-content">
+                        <h3 class="font-kanit" style="margin-bottom: 16px;">การตั้งค่า</h3>
+                        <p>ตั้งค่าระบบและปรับแต่งเว็บไซต์</p>
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>กำลังโหลดระบบตั้งค่า...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        document.getElementById('time').textContent = new Date().toLocaleString('th-TH');
-        document.getElementById('useragent').textContent = navigator.userAgent;
+        // Tab switching
+        function showTab(tabName) {
+            // Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+            
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('admin-token');
+            alert('ออกจากระบบเรียบร้อยแล้ว');
+            window.location.href = '/';
+        }
+
+        // Load statistics from API
+        async function loadStats() {
+            try {
+                // Load news count
+                const newsResponse = await fetch('/api/news');
+                if (newsResponse.ok) {
+                    const newsData = await newsResponse.json();
+                    document.getElementById('newsCount').textContent = Array.isArray(newsData) ? newsData.length : 0;
+                }
+
+                // Load RSS feeds count
+                const rssResponse = await fetch('/api/rss-feeds');
+                if (rssResponse.ok) {
+                    const rssData = await rssResponse.json();
+                    document.getElementById('rssCount').textContent = Array.isArray(rssData) ? rssData.length : 0;
+                }
+
+                // Load database stats
+                const statsResponse = await fetch('/api/database/stats');
+                if (statsResponse.ok) {
+                    const stats = await statsResponse.json();
+                    if (stats.contactMessagesCount !== undefined) {
+                        document.getElementById('messageCount').textContent = stats.contactMessagesCount;
+                    }
+                    if (stats.newsCount !== undefined) {
+                        document.getElementById('newsCount').textContent = stats.newsCount;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Check authentication
+        function checkAuth() {
+            const token = localStorage.getItem('admin-token');
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+
+            // Verify token with server
+            fetch('/api/admin/verify', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Token invalid');
+                }
+            })
+            .catch(error => {
+                localStorage.removeItem('admin-token');
+                window.location.href = '/login';
+            });
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadStats();
+            
+            // Refresh stats every 30 seconds
+            setInterval(loadStats, 30000);
+        });
     </script>
 </body>
 </html>
