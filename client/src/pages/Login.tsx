@@ -47,8 +47,8 @@ const Login = () => {
           title: "เข้าสู่ระบบสำเร็จ",
           description: "ยินดีต้อนรับสู่แผงควบคุมแอดมิน",
         });
-        // Redirect to static HTML admin page
-        window.location.href = '/admin.html';
+        // Redirect to React admin page
+        setLocation('/admin');
       } else {
         setError(data.message || data.error || 'เข้าสู่ระบบไม่สำเร็จ');
       }
