@@ -12,6 +12,7 @@ import Entertainment from "./pages/Entertainment";
 import Contact from "./pages/Contact";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
+import AdminSimple from "./pages/AdminSimple";
 import NewsDetail from "./pages/NewsDetail";
 import AllNews from "./pages/AllNews";
 import CategoryNews from "./pages/CategoryNews";
@@ -84,7 +85,8 @@ const App = () => (
             <Route path="/test-systems" component={TestSystems} />
             <Route path="/system-status" component={SystemStatus} />
             <Route path="/login" component={Login} />
-            <Route path="/admin" component={Admin} />
+            <Route path="/admin" component={AdminSimple} />
+            <Route path="/admin-old" component={Admin} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route component={NotFound} />
           </Switch>
