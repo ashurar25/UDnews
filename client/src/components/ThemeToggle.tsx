@@ -50,11 +50,16 @@ export function ThemeToggle() {
           <Monitor className="mr-2 h-4 w-4" />
           ตามระบบ
         </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => setTheme("mint")} className="cursor-pointer">
+          <Palette className="mr-2 h-4 w-4" />
+          ธีมมินท์
+        </DropdownMenuItem>
         {specialDay && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => setTheme("thai-special")} className="cursor-pointer">
-              <Palette className="mr-2 h-4 w-4" />
+              <Star className="mr-2 h-4 w-4" />
               🇹🇭 {specialDay.name}
             </DropdownMenuItem>
           </>

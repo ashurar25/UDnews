@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react"
 import { getCurrentThaiSpecialDay, getThaiSpecialDayTheme } from "@/lib/thai-special-days"
 
-type Theme = "dark" | "light" | "system" | "thai-special" | "auto"
+type Theme = "dark" | "light" | "system" | "thai-special" | "auto" | "mint"
 
 type ThemeProviderProps = {
   children: React.ReactNode
@@ -50,7 +50,7 @@ export function ThemeProvider({
     if (theme === "auto") {
       const autoTheme = getAutoTheme()
       const root = window.document.documentElement
-      root.classList.remove("light", "dark", "thai-special")
+      root.classList.remove("light", "dark", "thai-special", "mint")
       root.classList.add(autoTheme)
       
       // Check every hour for auto theme changes
@@ -71,7 +71,7 @@ export function ThemeProvider({
   useEffect(() => {
     const root = window.document.documentElement
 
-    root.classList.remove("light", "dark", "thai-special")
+    root.classList.remove("light", "dark", "thai-special", "mint")
     
     // Remove any existing Thai special day classes
     root.classList.remove(

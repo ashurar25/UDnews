@@ -56,6 +56,13 @@ export default function ThemeSettings() {
       background: "hsl(0, 0%, 100%)",
       foreground: "hsl(222.2, 84%, 4.9%)",
       accent: "hsl(45, 93%, 90%)" // Light gold
+    },
+    mint: {
+      primary: "hsl(160, 50%, 45%)", // Mint green
+      secondary: "hsl(160, 25%, 85%)", // Light mint
+      background: "hsl(160, 20%, 98%)", // Very light mint
+      foreground: "hsl(160, 20%, 10%)", // Dark mint
+      accent: "hsl(160, 30%, 90%)" // Soft mint
     }
   };
 
