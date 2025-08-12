@@ -708,6 +708,7 @@
                                         กำลังตรวจสอบสถานะระบบ...
                                     </div>
                                 </div>
+                                <button class="btn btn-secondary btn-small mt-4 w-full" onclick="checkDatabaseStatus()">ตรวจสอบฐานข้อมูล</button>
                             </div>
                         </div>
                     </div>
@@ -1225,6 +1226,63 @@
             }
         }
 
+        async function checkDatabaseStatus() {
+            try {
+                const status = document.getElementById('systemStatus');
+                status.innerHTML = '<div class="loading"><div class="spinner"></div>กำลังตรวจสอบฐานข้อมูล...</div>';
+
+                // Check database connection and get detailed info
+                const systemResponse = await fetch('/api/system-info');
+                const dbStatsResponse = await fetch('/api/database/stats');
+                
+                let html = '<div>';
+                
+                if (systemResponse.ok && dbStatsResponse.ok) {
+                    const systemInfo = await systemResponse.json();
+                    const dbStats = await dbStatsResponse.json();
+                    
+                    html += '<div class="success" style="margin-bottom: 12px;">✓ ฐานข้อมูลเชื่อมต่อสำเร็จ</div>';
+                    
+                    html += `<div class="text-sm">
+                        <div class="flex flex-between" style="margin-bottom: 4px;">
+                            <span>ประเภท:</span>
+                            <span>${systemInfo.database?.provider || 'PostgreSQL'}</span>
+                        </div>
+                        <div class="flex flex-between" style="margin-bottom: 4px;">
+                            <span>ข่าวทั้งหมด:</span>
+                            <span>${dbStats.newsCount?.toLocaleString() || '0'} รายการ</span>
+                        </div>
+                        <div class="flex flex-between" style="margin-bottom: 4px;">
+                            <span>RSS Feeds:</span>
+                            <span>${dbStats.rssFeedsCount || '0'} รายการ</span>
+                        </div>
+                        <div class="flex flex-between" style="margin-bottom: 4px;">
+                            <span>แบนเนอร์:</span>
+                            <span>${dbStats.sponsorBannersCount || '0'} รายการ</span>
+                        </div>
+                        <div class="flex flex-between" style="margin-bottom: 4px;">
+                            <span>ข้อความติดต่อ:</span>
+                            <span>${dbStats.contactMessagesCount || '0'} รายการ</span>
+                        </div>
+                        <div class="flex flex-between" style="margin-bottom: 4px;">
+                            <span>สถานะเชื่อมต่อ:</span>
+                            <span class="text-green">✓ เชื่อมต่อแล้ว</span>
+                        </div>
+                    </div>`;
+                } else {
+                    html += '<div class="error">✗ ไม่สามารถเชื่อมต่อฐานข้อมูลได้</div>';
+                }
+                
+                html += '</div>';
+                status.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error checking database status:', error);
+                const status = document.getElementById('systemStatus');
+                status.innerHTML = '<div class="error">✗ เกิดข้อผิดพลาดในการตรวจสอบฐานข้อมูล</div>';
+            }
+        }
+
         // Analytics functions
         async function loadAnalytics() {
             try {
@@ -1267,12 +1325,29 @@
             showSuccess('รีเฟรชข้อมูลสถิติแล้ว');
         }
 
+        // News pagination variables
+        let currentNewsPage = 1;
+        const newsPerPage = 10;
+        let totalNewsPages = 1;
+
         // News management functions
-        async function loadNews() {
+        async function loadNews(page = 1) {
             try {
-                const response = await fetch('/api/news');
+                currentNewsPage = page;
+                const offset = (page - 1) * newsPerPage;
+                const response = await fetch(`/api/news?limit=${newsPerPage}&offset=${offset}`);
                 if (response.ok) {
-                    allNews = await response.json();
+                    const newsData = await response.json();
+                    allNews = Array.isArray(newsData) ? newsData : newsData.news || [];
+                    
+                    // Calculate total pages
+                    const totalResponse = await fetch('/api/database/stats');
+                    if (totalResponse.ok) {
+                        const stats = await totalResponse.json();
+                        const totalNews = parseInt(stats.newsCount) || 0;
+                        totalNewsPages = Math.ceil(totalNews / newsPerPage);
+                    }
+                    
                     displayNews();
                 } else {
                     throw new Error('Failed to load news');
@@ -1286,7 +1361,7 @@
         function displayNews() {
             const container = document.getElementById('newsList');
             if (!allNews || allNews.length === 0) {
-                container.innerHTML = '<div class="info">ยังไม่มีข่าว</div>';
+                container.innerHTML = '<div class="info">ยังไม่มีข่าวในหน้านี้</div>';
                 return;
             }
 
@@ -1311,7 +1386,7 @@
                     </td>
                     <td>${categoryMap[news.category] || news.category}</td>
                     <td>${news.author || 'ไม่ระบุ'}</td>
-                    <td class="text-sm">${formatDate(news.publishedAt)}</td>
+                    <td class="text-sm">${formatDate(news.publishedAt || news.createdAt)}</td>
                     <td>
                         <div class="flex flex-gap">
                             <button class="btn btn-secondary btn-small" onclick="editNews(${news.id})">แก้ไข</button>
@@ -1322,6 +1397,28 @@
             });
 
             html += '</tbody></table>';
+            
+            // Add pagination controls
+            html += '<div class="flex flex-between flex-center mt-4">';
+            html += '<div class="text-sm text-gray">หน้า ' + currentNewsPage + ' จาก ' + totalNewsPages + ' (' + allNews.length + ' รายการ)</div>';
+            html += '<div class="flex flex-gap">';
+            
+            if (currentNewsPage > 1) {
+                html += `<button class="btn btn-secondary btn-small" onclick="loadNews(${currentNewsPage - 1})">« ก่อนหน้า</button>`;
+            }
+            
+            // Show page numbers
+            for (let i = Math.max(1, currentNewsPage - 2); i <= Math.min(totalNewsPages, currentNewsPage + 2); i++) {
+                const activeClass = i === currentNewsPage ? 'btn-primary' : 'btn-secondary';
+                html += `<button class="btn ${activeClass} btn-small" onclick="loadNews(${i})">${i}</button>`;
+            }
+            
+            if (currentNewsPage < totalNewsPages) {
+                html += `<button class="btn btn-secondary btn-small" onclick="loadNews(${currentNewsPage + 1})">ถัดไป »</button>`;
+            }
+            
+            html += '</div></div>';
+            
             container.innerHTML = html;
         }
 

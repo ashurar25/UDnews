@@ -486,9 +486,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Site Settings routes for theme management
   app.get("/api/site-settings", async (req, res) => {
     try {
-      const settings = await storage.getAllSiteSettings();
+      // Query the actual site_settings table structure
+      const settings = await db.select().from(siteSettings);
       res.json(settings);
     } catch (error) {
+      console.error('Site settings error:', error);
       res.status(500).json({ error: "Failed to fetch site settings" });
     }
   });
@@ -597,9 +599,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Contact Messages routes
   app.get("/api/contact-messages", async (req, res) => {
     try {
-      const messages = await storage.getAllContactMessages();
+      // Query the actual contact_messages table structure
+      const messages = await db.select().from(contactMessages).orderBy(desc(contactMessages.createdAt));
       res.json(messages);
     } catch (error) {
+      console.error('Contact messages error:', error);
       res.status(500).json({ error: "Failed to fetch contact messages" });
     }
   });
