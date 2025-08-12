@@ -50,7 +50,7 @@ const Login = () => {
         // Redirect to static HTML admin page
         window.location.href = '/admin.html';
       } else {
-        setError(data.error || 'เข้าสู่ระบบไม่สำเร็จ');
+        setError(data.message || data.error || 'เข้าสู่ระบบไม่สำเร็จ');
       }
     } catch (error) {
       setError('เกิดข้อผิดพลาดในการเชื่อมต่อ');

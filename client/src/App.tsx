@@ -85,6 +85,7 @@ const App = () => (
             <Route path="/search" component={Search} />
             <Route path="/test-systems" component={TestSystems} />
             <Route path="/system-status" component={SystemStatus} />
+            <Route path="/login" component={Login} />
             <Route path="/admin" component={() => { window.location.href = '/admin.html'; return null; }} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route component={NotFound} />
