@@ -464,14 +464,50 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Load saved theme
             const savedTheme = localStorage.getItem('admin-theme') || 'light';
-            document.getElementById('themeSelector').value = savedTheme;
-            applyTheme(savedTheme);
+            const themeSelector = document.getElementById('themeSelector');
+            if (themeSelector) {
+                themeSelector.value = savedTheme;
+                applyTheme(savedTheme);
+            }
             
             // Check system status
             checkSystemStatus();
             
+            // Test theme system
+            setTimeout(() => {
+                console.log('Testing theme system...');
+                testAllThemes();
+            }, 2000);
+            
             console.log('Admin theme system initialized');
         });
+        
+        // Additional theme testing function
+        function testAllThemes() {
+            const themes = ['light', 'dark', 'thai'];
+            let index = 0;
+            
+            const testInterval = setInterval(() => {
+                const theme = themes[index];
+                applyTheme(theme);
+                console.log(`Testing theme: ${theme}`);
+                
+                // Check if theme was applied correctly
+                const html = document.documentElement;
+                const currentTheme = html.className;
+                console.log(`Current theme class: ${currentTheme}`);
+                
+                index++;
+                if (index >= themes.length) {
+                    clearInterval(testInterval);
+                    // Reset to light theme
+                    applyTheme('light');
+                    const themeSelector = document.getElementById('themeSelector');
+                    if (themeSelector) themeSelector.value = 'light';
+                    console.log('Theme testing completed - reset to light theme');
+                }
+            }, 1000);
+        }
     </script>
 </body>
 </html>

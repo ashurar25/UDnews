@@ -131,7 +131,6 @@ const Login = () => {
 
           <div className="mt-6 text-center text-sm text-muted-foreground font-sarabun">
             <p>สำหรับผู้ดูแลระบบเท่านั้น</p>
-            <p className="mt-1">Demo: admin / udnews2025secure</p>
           </div>
         </CardContent>
       </Card>

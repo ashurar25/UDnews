@@ -62,7 +62,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Admin routes - serve static HTML
   app.get('/admin.html', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../client/public/admin.html'));
+    res.sendFile(path.resolve(import.meta.dirname, '../client/public/admin.html'));
   });
 
   // Redirect /admin to static HTML
