@@ -37,8 +37,8 @@ const Header = () => {
   // Dynamic theme classes based on current theme
   const getThemeClasses = () => {
     return {
-      topBar: "w-full bg-primary/60 backdrop-blur-md text-primary-foreground py-1 border-b border-primary/20",
-      mainHeader: "w-full py-6 bg-primary/25 backdrop-blur-md border-b border-primary/30",
+      topBar: "w-screen bg-primary/60 backdrop-blur-md text-primary-foreground py-1 border-b border-primary/20",
+      mainHeader: "w-screen py-6 bg-primary/25 backdrop-blur-md border-b border-primary/30",
       title: "text-3xl font-bold font-kanit text-foreground drop-shadow-lg"
     }
   }
@@ -56,12 +56,13 @@ const Header = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-screen border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60"
+    style={{ left: 0, right: 0, margin: 0, padding: 0 }}>
 
 
       {/* Top Bar */}
       <div className={themeClasses.topBar}>
-        <div className="w-full px-4 flex justify-between items-center text-xs">
+        <div className="w-screen px-4 flex justify-between items-center text-xs" style={{ margin: 0, boxSizing: 'border-box' }}>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
@@ -109,7 +110,7 @@ const Header = () => {
 
       {/* Main Header */}
       <div className={themeClasses.mainHeader}>
-        <div className="flex items-center justify-between px-4">
+        <div className="flex items-center justify-between px-4 w-screen" style={{ margin: 0, boxSizing: 'border-box' }}>
           {/* Logo */}
           <Link to="/" className="flex items-center gap-6 hover:opacity-90 transition-opacity" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <img 
