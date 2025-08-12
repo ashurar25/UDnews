@@ -50,7 +50,7 @@ export async function setupVite(app: Express, server: Server) {
   });
 
   app.use(vite.middlewares);
-  // Handle admin.html separately
+  // Handle admin.html separately - ensure we serve the correct admin.html
   app.get("/admin.html", async (req, res) => {
     try {
       const adminTemplate = path.resolve(
@@ -60,9 +60,17 @@ export async function setupVite(app: Express, server: Server) {
         "public",
         "admin.html",
       );
+      
+      // Check if file exists, if not fallback but log error
+      if (!fs.existsSync(adminTemplate)) {
+        console.error("Admin template not found at:", adminTemplate);
+        return res.status(404).send("Admin page not found");
+      }
+      
       const html = await fs.promises.readFile(adminTemplate, "utf-8");
       res.status(200).set({ "Content-Type": "text/html" }).end(html);
     } catch (e) {
+      console.error("Error serving admin page:", e);
       res.status(404).send("Admin page not found");
     }
   });

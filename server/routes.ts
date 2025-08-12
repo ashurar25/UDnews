@@ -60,9 +60,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/', apiLimiter);
   app.use('/admin', adminLimiter);
 
-  // Admin routes - serve static HTML
+  // Admin routes - serve static HTML (ensure correct file)
   app.get('/admin.html', (req, res) => {
-    res.sendFile(path.resolve(import.meta.dirname, '../client/public/admin.html'));
+    const adminFilePath = path.resolve(import.meta.dirname, '../client/public/admin.html');
+    
+    // Check if file exists
+    if (!fs.existsSync(adminFilePath)) {
+      console.error('Admin file not found at:', adminFilePath);
+      return res.status(404).send('Admin page not found');
+    }
+    
+    res.sendFile(adminFilePath);
   });
 
   // Redirect /admin to static HTML
