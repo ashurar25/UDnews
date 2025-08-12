@@ -250,6 +250,7 @@ All colors MUST be HSL.
   }
 
   /* Enhanced sidebar colors for black theme */
+  .dark {
     --sidebar-background: 0 0% 8%;
     --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 20 100% 55%;
