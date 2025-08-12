@@ -68,6 +68,15 @@ const NewsCard = ({
   return (
     <Card
       className={`group cursor-pointer transition-all duration-300 hover:shadow-news hover:-translate-y-1 animate-fade-in ${cardClass} bg-card border-border`}
+      style={{
+        transition: 'all 0.3s ease, box-shadow 0.3s ease',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = '0 4px 20px -2px hsl(20 100% 55% / 0.3)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = '';
+      }}
       onClick={handleClick}
     >
       {image && (
