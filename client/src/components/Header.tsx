@@ -110,36 +110,38 @@ const Header = () => {
       {/* Main Header */}
       <div className={themeClasses.mainHeader}>
         <div className="flex items-center justify-between px-6 w-full">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-6 hover:opacity-90 transition-opacity" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+          {/* Left Side - Logo Only */}
+          <div className="flex items-center">
             <img 
               src="/logo.jpg" 
               alt="UD News Update Logo"
               className="h-16 w-16 object-contain rounded-lg shadow-lg hover:scale-105 hover:shadow-xl transition-all duration-300 cursor-pointer"
               loading="eager"
             />
-            <div>
-              <h1 className="text-2xl font-bold font-kanit text-primary-foreground drop-shadow-lg">
-                {specialDay ? specialDay.name || "อัพเดทข่าวอุดร" : "อัพเดทข่าวอุดร"}
-              </h1>
-              <p className="text-lg text-primary-foreground/90 font-sarabun font-bold drop-shadow-md">
-                UD News Update
-              </p>
-            </div>
+          </div>
+
+          {/* Center - Website Title */}
+          <Link to="/" className="flex-1 flex flex-col items-center justify-center hover:opacity-90 transition-opacity" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+            <h1 className="text-3xl font-bold font-kanit text-white drop-shadow-[2px_2px_4px_rgba(251,146,60,0.8)]">
+              อัพเดทข่าวอุดร
+            </h1>
+            <p className="text-lg text-gray-900 font-sarabun font-bold drop-shadow-[1px_1px_3px_rgba(251,146,60,0.6)]">
+              UD News Update
+            </p>
           </Link>
 
           {/* Right Side - Hamburger Menu Only */}
-          <div className="flex items-center gap-4">
-              {/* Hamburger Menu Button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="relative"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-              >
-                <Menu className="h-6 w-6" />
-              </Button>
-            </div>
+          <div className="flex items-center justify-end">
+            {/* Hamburger Menu Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="relative"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              <Menu className="h-6 w-6" />
+            </Button>
+          </div>
         </div>
 
         {/* Hamburger Menu Dropdown */}
