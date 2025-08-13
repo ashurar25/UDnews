@@ -102,6 +102,7 @@ export interface IStorage {
   // Donations
   createDonation(donation: InsertDonation): Promise<Donation>;
   approveDonation(id: number): Promise<Donation | null>;
+  getDonations(params?: { status?: 'pending'|'approved'|'rejected'; limit?: number }): Promise<Donation[]>;
   getDonationRanking(range: 'today'|'week'|'all'): Promise<Array<{ name: string; total: number; count: number }>>;
   getRecentDonations(limit?: number): Promise<Donation[]>;
 }
@@ -980,6 +981,26 @@ export class DatabaseStorage implements IStorage {
       .where(eq(donations.id, id))
       .returning();
     return row || null;
+  }
+
+  async getDonations(params?: { status?: 'pending'|'approved'|'rejected'; limit?: number }): Promise<Donation[]> {
+    const status = params?.status;
+    const limit = params?.limit ?? 50;
+    if (status) {
+      const rows = await db
+        .select()
+        .from(donations)
+        .where(eq(donations.status, status as any))
+        .orderBy(desc(donations.createdAt))
+        .limit(limit);
+      return rows as Donation[];
+    }
+    const rows = await db
+      .select()
+      .from(donations)
+      .orderBy(desc(donations.createdAt))
+      .limit(limit);
+    return rows as Donation[];
   }
 
   async getDonationRanking(range: 'today'|'week'|'all'): Promise<Array<{ name: string; total: number; count: number }>> {

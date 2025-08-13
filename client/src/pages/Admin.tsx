@@ -21,7 +21,8 @@ import {
   Clock,
   Bell,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Heart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -43,6 +44,7 @@ const PushNotificationManager = lazy(() => import('@/components/PushNotification
 const ThemeSettings = lazy(() => import('@/components/ThemeSettings').catch(() => ({ default: () => <PlaceholderComponent title="ธีมและการแสดงผล" /> })));
 const SystemSettings = lazy(() => import('@/components/SystemSettings').catch(() => ({ default: () => <PlaceholderComponent title="การตั้งค่าระบบ" /> })));
 const DatabaseManager = lazy(() => import('@/components/DatabaseManager').catch(() => ({ default: () => <PlaceholderComponent title="จัดการฐานข้อมูล" /> })));
+const DonationManager = lazy(() => import('@/components/DonationManager').catch(() => ({ default: () => <PlaceholderComponent title="การบริจาค" /> })));
 
 // Placeholder component for components that don't exist yet
 const PlaceholderComponent = ({ title }: { title: string }) => (
@@ -203,6 +205,7 @@ const menuItems = [
       { id: 'comments', label: 'ความคิดเห็น', icon: MessageSquare },
       { id: 'newsletter', label: 'จดหมายข่าว', icon: Mail },
       { id: 'notifications', label: 'การแจ้งเตือน', icon: Bell },
+      { id: 'donations', label: 'การบริจาค', icon: Heart },
     ]
   },
   {
@@ -390,6 +393,16 @@ function AdminDashboard() {
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จดหมายข่าว</h3>
             <Suspense fallback={<LoadingSpinner />}>
               <NewsletterManager />
+            </Suspense>
+          </div>
+        );
+
+      case 'donations':
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">การบริจาค</h3>
+            <Suspense fallback={<LoadingSpinner />}>
+              <DonationManager />
             </Suspense>
           </div>
         );
