@@ -1,1015 +1,592 @@
-import { ThemeToggle } from "@/components/ThemeToggle"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Settings,
-  Users,
-  FileText,
-  BarChart3,
-  Home,
-  Newspaper,
-  Rss,
-  Image,
-  Palette,
-  Monitor,
-  UserCog,
+import React, { useState, Suspense, lazy } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { 
+  Menu, 
+  X, 
+  Home, 
+  BarChart3, 
+  FileText, 
+  Rss, 
+  Image, 
+  Users, 
+  Mail, 
+  MessageSquare, 
+  Settings, 
   Database,
-  Sun,
-  Moon,
-  Clock,
-  Mail,
   LogOut,
-  MessageSquare,
   FolderOpen,
-  Menu,
-  X
-} from "lucide-react"
-import { Link } from "wouter"
-// Components will be lazy loaded
-// AnalyticsDashboard will be lazy loaded
-import { useTheme } from "@/components/ThemeProvider"
-import { useQuery } from "@tanstack/react-query"
-import React, { useState, useEffect, useCallback, Suspense } from "react"
-import { useLocation } from "wouter"
-import { useToast } from "@/hooks/use-toast";
-import ErrorBoundary from "@/components/ErrorBoundary";
-
-function LoadingSpinner() {
-  return (
-    <div className="flex items-center justify-center min-h-[400px]">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-    </div>
-  );
-}
-
-function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
-  return (
-    <Card className="m-4">
-      <CardHeader>
-        <CardTitle className="text-red-600">เกิดข้อผิดพลาด</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-gray-600 mb-4">เกิดข้อผิดพลาดในการโหลดส่วนของผู้ดูแลระบบ</p>
-        <p className="text-sm text-gray-500 mb-4">ข้อผิดพลาด: {error.message}</p>
-        <Button onClick={resetErrorBoundary}>ลองใหม่</Button>
-      </CardContent>
-    </Card>
-  );
-}
+  Palette,
+  UserCog,
+  Monitor,
+  Clock,
+  Bell
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 // Lazy load components
-const LazyNewsManager = React.lazy(() => import("@/components/NewsManager"));
-const LazyRSSManager = React.lazy(() => import("@/components/RSSManager"));
-const LazySponsorManager = React.lazy(() => import("@/components/SponsorManager"));
-const LazyContactMessagesManager = React.lazy(() => import("@/components/ContactMessagesManager"));
-const LazyAnalyticsDashboard = React.lazy(() => import("@/components/AnalyticsDashboard"));
-const LazyThemeSettings = React.lazy(() => import("@/components/ThemeSettings"));
-const LazyUserManager = React.lazy(() => import("@/components/UserManager"));
-const LazyCommentManager = React.lazy(() => import("@/components/CommentManager"));
-const LazyNewsletterManager = React.lazy(() => import("@/components/NewsletterManager"));
-const LazyPushNotificationManager = React.lazy(() => import("@/components/PushNotificationManager"));
-const LazySystemSettings = React.lazy(() => import("@/components/SystemSettings"));
-const LazyMediaManager = React.lazy(() => import("@/components/MediaManager"));
-const LazyCategoryManager = React.lazy(() => import("@/components/CategoryManager"));
-const LazyDatabaseManager = React.lazy(() => import("@/components/DatabaseManager"));
+const LazyAnalyticsDashboard = lazy(() => import('@/components/AnalyticsDashboard'));
+const LazyNewsManager = lazy(() => import('@/components/NewsManager'));
+const LazyRSSManager = lazy(() => import('@/components/RSSManager'));
+const LazySponsorManager = lazy(() => import('@/components/SponsorManager'));
+const LazyMediaManager = lazy(() => import('@/components/MediaManager'));
+const LazyCategoryManager = lazy(() => import('@/components/CategoryManager'));
+const LazyUserManager = lazy(() => import('@/components/UserManager'));
+const LazyContactMessagesManager = lazy(() => import('@/components/ContactMessagesManager'));
+const LazyCommentManager = lazy(() => import('@/components/CommentManager'));
+const LazyNewsletterManager = lazy(() => import('@/components/NewsletterManager'));
+const LazyPushNotificationManager = lazy(() => import('@/components/PushNotificationManager'));
+const LazySystemSettings = lazy(() => import('@/components/SystemSettings'));
+const LazyDatabaseManager = lazy(() => import('@/components/DatabaseManager'));
 
+// Loading spinner component
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center p-8">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+  </div>
+);
 
-function AdminContent() {
-  const { setTheme } = useTheme()
-  const [, setLocation] = useLocation()
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("overview")
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [systemStats, setSystemStats] = useState({
-    totalNews: 0,
-    totalMessages: 0,
-    totalFeeds: 0
-  });
+// Error boundary component
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
 
-  const fetchSystemStats = useCallback(async () => {
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-8 text-center">
+          <h2 className="text-xl font-bold text-red-600 mb-2">เกิดข้อผิดพลาด</h2>
+          <p className="text-gray-600">ไม่สามารถโหลดส่วนประกอบนี้ได้ กรุณาลองใหม่อีกครั้ง</p>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// Admin login component
+const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
     try {
-      const [newsRes, statsRes] = await Promise.all([
-        fetch('/api/news?limit=1'),
-        fetch('/api/database/stats')
-      ]);
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
 
-      if (newsRes.ok && statsRes.ok) {
-        const stats = await statsRes.json();
-        setSystemStats({
-          totalNews: stats.newsCount || 0,
-          totalMessages: stats.contactMessagesCount || 0,
-          totalFeeds: stats.rssFeedsCount || 0
-        });
+      if (response.ok) {
+        const { token } = await response.json();
+        localStorage.setItem('adminToken', token);
+        onLogin();
       } else {
-         console.error("Failed to fetch stats. News response:", newsRes.status, "Stats response:", statsRes.status);
+        alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
       }
     } catch (error) {
-      console.error('Error fetching system stats:', error);
+      alert('เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    fetchSystemStats();
-  }, [fetchSystemStats]);
-
-
-  const handleLogout = () => {
-    localStorage.removeItem('admin-token');
-    toast({
-      title: "ออกจากระบบสำเร็จ",
-      description: "คุณได้ออกจากระบบผู้ดูแลเรียบร้อยแล้ว",
-    });
-    setLocation('/');
   };
 
-  // Fetch real database stats
-  const { data: newsData } = useQuery({
-    queryKey: ['/api/news'],
-    queryFn: async () => {
-      const response = await fetch('/api/news');
-      if (!response.ok) throw new Error('Failed to fetch news');
-      return response.json();
-    }
-  })
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold font-kanit text-orange-800">
+            เข้าสู่ระบบผู้ดูแล
+          </CardTitle>
+          <CardDescription className="font-sarabun">
+            กรุณาเข้าสู่ระบบเพื่อจัดการเว็บไซต์
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1 font-sarabun">ชื่อผู้ใช้</label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 font-sarabun">รหัสผ่าน</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                required
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full bg-orange-600 hover:bg-orange-700 font-sarabun"
+              disabled={isLoading}
+            >
+              {isLoading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
 
-  const { data: rssFeedsData } = useQuery({
-    queryKey: ['/api/rss-feeds'],
-    queryFn: async () => {
-      const response = await fetch('/api/rss-feeds');
-      if (!response.ok) throw new Error('Failed to fetch RSS feeds');
-      return response.json();
-    }
-  })
+// Menu items configuration
+const menuItems = [
+  {
+    group: 'ภาพรวม',
+    items: [
+      { id: 'overview', label: 'ภาพรวมระบบ', icon: Home },
+      { id: 'analytics', label: 'สถิติและการวิเคราะห์', icon: BarChart3 },
+    ]
+  },
+  {
+    group: 'จัดการเนื้อหา',
+    items: [
+      { id: 'news', label: 'จัดการข่าว', icon: FileText },
+      { id: 'rss', label: 'RSS Feeds', icon: Rss },
+      { id: 'sponsors', label: 'แบนเนอร์สปอนเซอร์', icon: Image },
+      { id: 'categories', label: 'หมวดหมู่', icon: FolderOpen },
+      { id: 'media', label: 'จัดการสื่อ', icon: Image },
+    ]
+  },
+  {
+    group: 'ผู้ใช้และการสื่อสาร',
+    items: [
+      { id: 'users', label: 'จัดการผู้ใช้', icon: Users },
+      { id: 'messages', label: 'ข้อความติดต่อ', icon: Mail },
+      { id: 'comments', label: 'ความคิดเห็น', icon: MessageSquare },
+      { id: 'newsletter', label: 'จดหมายข่าว', icon: Mail },
+      { id: 'notifications', label: 'การแจ้งเตือน', icon: Bell },
+    ]
+  },
+  {
+    group: 'การตั้งค่า',
+    items: [
+      { id: 'themes', label: 'ธีมและการแสดงผล', icon: Palette },
+      { id: 'settings', label: 'การตั้งค่าระบบ', icon: Settings },
+      { id: 'database', label: 'จัดการฐานข้อมูล', icon: Database },
+    ]
+  }
+];
 
-  const { data: sponsorBannersData } = useQuery({
-    queryKey: ['/api/sponsor-banners'],
-    queryFn: async () => {
-      const response = await fetch('/api/sponsor-banners');
-      if (!response.ok) throw new Error('Failed to fetch sponsor banners');
-      return response.json();
-    }
-  })
+// Main admin component
+function AdminDashboard() {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Fetch database stats
   const { data: databaseStats } = useQuery({
-    queryKey: ['/api/database/stats'],
+    queryKey: ['database-stats'],
     queryFn: async () => {
-      const response = await fetch('/api/database/stats');
+      const response = await fetch('/api/admin/database/stats');
       if (!response.ok) throw new Error('Failed to fetch database stats');
       return response.json();
     },
-    refetchInterval: 30000
-  })
+    refetchInterval: 30000,
+  });
 
-  const { data: systemInfo } = useQuery({
-    queryKey: ['/api/system-info'],
-    queryFn: async () => {
-      const response = await fetch('/api/system-info');
-      if (!response.ok) throw new Error('Failed to fetch system info');
-      return response.json();
-    },
-    refetchInterval: 60000
-  })
+  const handleLogout = () => {
+    localStorage.removeItem('adminToken');
+    window.location.href = '/';
+  };
 
-  const newsStats = Array.isArray(newsData) ? newsData.length : 0
-  const rssFeeds = Array.isArray(rssFeedsData) ? rssFeedsData.length : 0
-  const sponsorBanners = Array.isArray(sponsorBannersData) ? sponsorBannersData.length : 0
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'overview':
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">ภาพรวมระบบ</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
+                <CardContent className="p-6">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-orange-600">
+                      {databaseStats?.newsCount || 0}
+                    </div>
+                    <div className="text-sm font-sarabun text-gray-600">ข่าวทั้งหมด</div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
+                <CardContent className="p-6">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-blue-600">
+                      {databaseStats?.rssFeedsCount || 0}
+                    </div>
+                    <div className="text-sm font-sarabun text-gray-600">RSS Feeds</div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
+                <CardContent className="p-6">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-green-600">
+                      {databaseStats?.sponsorBannersCount || 0}
+                    </div>
+                    <div className="text-sm font-sarabun text-gray-600">แบนเนอร์</div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
+                <CardContent className="p-6">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-purple-600">
+                      {databaseStats?.totalUsers || 0}
+                    </div>
+                    <div className="text-sm font-sarabun text-gray-600">ผู้ใช้งาน</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        );
+
+      case 'analytics':
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">สถิติและการวิเคราะห์</h3>
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <LazyAnalyticsDashboard />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+        );
+
+      case 'news':
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการข่าว</h3>
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <LazyNewsManager />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+        );
+
+      case 'rss':
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการ RSS Feeds</h3>
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <LazyRSSManager />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+        );
+
+      case 'sponsors':
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการแบนเนอร์สปอนเซอร์</h3>
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <LazySponsorManager />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+        );
+
+      case 'media':
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการไฟล์มีเดีย</h3>
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <LazyMediaManager />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+        );
+
+      case 'categories':
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการหมวดหมู่</h3>
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <LazyCategoryManager />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+        );
+
+      case 'users':
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการผู้ใช้</h3>
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <LazyUserManager />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+        );
+
+      case 'messages':
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">ข้อความติดต่อ</h3>
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <LazyContactMessagesManager />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+        );
+
+      case 'comments':
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">ความคิดเห็น</h3>
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <LazyCommentManager />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+        );
+
+      case 'newsletter':
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จดหมายข่าว</h3>
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <LazyNewsletterManager />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+        );
+
+      case 'notifications':
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">การแจ้งเตือน</h3>
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <LazyPushNotificationManager />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+        );
+
+      case 'themes':
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">ธีมและการแสดงผล</h3>
+            <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 font-kanit text-orange-700">
+                  <Palette className="h-5 w-5" />
+                  การตั้งค่าธีม
+                </CardTitle>
+                <CardDescription className="font-sarabun">
+                  เปลี่ยนธีมสีของเว็บไซต์
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold">ธีมปัจจุบัน</h3>
+                    <p className="text-sm text-muted-foreground">
+                      เปลี่ยนธีมของเว็บไซต์
+                    </p>
+                  </div>
+                  <ThemeToggle />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case 'settings':
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">การตั้งค่าระบบ</h3>
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <LazySystemSettings />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+        );
+
+      case 'database':
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการฐานข้อมูล</h3>
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <LazyDatabaseManager />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+        );
+
+      default:
+        return (
+          <div className="p-8 text-center">
+            <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">เลือกเมนูที่ต้องการจัดการ</h3>
+            <p className="text-gray-600 font-sarabun">กรุณาเลือกเมนูจากแถบด้านซ้าย</p>
+          </div>
+        );
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50">
-      <header className="border-b border-orange-200 bg-white/90 backdrop-blur-sm shadow-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <h2 className="text-lg font-bold font-kanit text-orange-800">ระบบจัดการ</h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <nav className="p-4 space-y-6">
+          {menuItems.map((group) => (
+            <div key={group.group}>
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 font-sarabun">
+                {group.group}
+              </h3>
+              <div className="space-y-1">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setActiveTab(item.id);
+                        setSidebarOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors font-sarabun ${
+                        activeTab === item.id
+                          ? 'bg-orange-100 text-orange-700 border-r-2 border-orange-500'
+                          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
+      </div>
+
+      {/* Main content */}
+      <div className="lg:ml-64">
+        {/* Header */}
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-4">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="lg:hidden"
+                onClick={() => setSidebarOpen(true)}
               >
-                {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                <Menu className="h-5 w-5" />
               </Button>
-              <Link to="/" className="flex items-center space-x-2 text-orange-600 hover:text-orange-700 transition-colors">
-                <Home className="h-5 w-5" />
-                <span className="text-sm font-sarabun font-medium hidden sm:inline">กลับหน้าหลัก</span>
-              </Link>
-              <Separator orientation="vertical" className="h-6 hidden sm:block" />
-              <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-orange-800 font-kanit">แอดมิน UD News</h1>
+              <h1 className="text-xl font-bold font-kanit text-orange-800">
+                อัพเดทข่าวอุดร - ระบบจัดการ
+              </h1>
             </div>
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              <Badge variant="secondary" className="font-sarabun bg-orange-100 text-orange-700 hover:bg-orange-200 hidden sm:inline-flex">
-                ผู้ดูแลระบบ
-              </Badge>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleLogout}
-                className="font-sarabun border-red-300 text-red-600 hover:bg-red-50"
+                className="text-red-600 border-red-200 hover:bg-red-50"
               >
-                <LogOut className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">ออกจากระบบ</span>
+                <LogOut className="h-4 w-4 mr-2" />
+                ออกจากระบบ
               </Button>
-              <ThemeToggle />
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <div className="flex">
-        {/* Sidebar */}
-        <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-orange-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}>
-          <div className="flex flex-col h-full">
-            <div className="p-4 border-b border-orange-200">
-              <h2 className="text-lg font-bold text-orange-800 font-kanit">เมนูจัดการ</h2>
-            </div>
-            <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-            {/* กลุ่ม 1: ภาพรวมและสถิติ */}
-            <div className="mb-4">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">ภาพรวม</h3>
-              <button
-                onClick={() => { setActiveTab('overview'); setSidebarOpen(false); }}
-                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeTab === 'overview' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <BarChart3 className="mr-3 h-4 w-4" />
-                ภาพรวมระบบ
-              </button>
-              <button
-                onClick={() => { setActiveTab('analytics'); setSidebarOpen(false); }}
-                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeTab === 'analytics' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <BarChart3 className="mr-3 h-4 w-4" />
-                สถิติและการวิเคราะห์
-              </button>
-            </div>
-
-            {/* กลุ่ม 2: จัดการเนื้อหา */}
-            <div className="mb-4">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">จัดการเนื้อหา</h3>
-              <button
-                onClick={() => { setActiveTab('news'); setSidebarOpen(false); }}
-                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeTab === 'news' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <Newspaper className="mr-3 h-4 w-4" />
-                จัดการข่าว
-              </button>
-              <button
-                onClick={() => { setActiveTab('rss'); setSidebarOpen(false); }}
-                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeTab === 'rss' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <Rss className="mr-3 h-4 w-4" />
-                RSS Feeds
-              </button>
-              <button
-                onClick={() => { setActiveTab('sponsors'); setSidebarOpen(false); }}
-                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeTab === 'sponsors' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <Image className="mr-3 h-4 w-4" />
-                แบนเนอร์สปอนเซอร์
-              </button>
-            </div>
-
-            {/* กลุ่ม 3: จัดการผู้ใช้และการสื่อสาร */}
-            <div className="mb-4">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">ผู้ใช้และการสื่อสาร</h3>
-              <button
-                onClick={() => { setActiveTab('users'); setSidebarOpen(false); }}
-                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeTab === 'users' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <Users className="mr-3 h-4 w-4" />
-                จัดการผู้ใช้
-              </button>
-              <button
-                onClick={() => { setActiveTab('messages'); setSidebarOpen(false); }}
-                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeTab === 'messages' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <Mail className="mr-3 h-4 w-4" />
-                ข้อความติดต่อ
-              </button>
-              <button
-                onClick={() => { setActiveTab('comments'); setSidebarOpen(false); }}
-                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeTab === 'comments' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <MessageSquare className="mr-3 h-4 w-4" />
-                ความคิดเห็น
-              </button>
-              <button
-                onClick={() => { setActiveTab('newsletter'); setSidebarOpen(false); }}
-                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeTab === 'newsletter' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <Mail className="mr-3 h-4 w-4" />
-                จดหมายข่าว
-              </button>
-              <button
-                onClick={() => { setActiveTab('notifications'); setSidebarOpen(false); }}
-                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeTab === 'notifications' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <Clock className="mr-3 h-4 w-4" />
-                การแจ้งเตือน
-              </button>
-            </div>
-
-            {/* กลุ่ม 4: การตั้งค่า */}
-            <div className="mb-4">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">การตั้งค่า</h3>
-              <button
-                onClick={() => { setActiveTab('themes'); setSidebarOpen(false); }}
-                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeTab === 'themes' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <Palette className="mr-3 h-4 w-4" />
-                ธีมและการแสดงผล
-              </button>
-              <button
-                onClick={() => { setActiveTab('settings'); setSidebarOpen(false); }}
-                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeTab === 'settings' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <Settings className="mr-3 h-4 w-4" />
-                การตั้งค่าระบบ
-              </button>
-              <button
-                onClick={() => { setActiveTab('database'); setSidebarOpen(false); }}
-                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeTab === 'database' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <Database className="mr-3 h-4 w-4" />
-                จัดการฐานข้อมูล
-              </button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* ข่าวและเนื้อหา */}
-              <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl font-bold">{(databaseStats as any)?.newsCount || newsStats}</p>
-                      <p className="text-sm opacity-90">ข่าวทั้งหมด</p>
-                    </div>
-                    <Newspaper className="h-8 w-8 opacity-80" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* RSS Feeds */}
-              <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl font-bold">{(databaseStats as any)?.rssFeedsCount || rssFeeds}</p>
-                      <p className="text-sm opacity-90">RSS Feeds</p>
-                    </div>
-                    <Rss className="h-8 w-8 opacity-80" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* ผู้ใช้และข้อความ */}
-              <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl font-bold">1,234</p>
-                      <p className="text-sm opacity-90">ผู้เข้าชมวันนี้</p>
-                    </div>
-                    <Users className="h-8 w-8 opacity-80" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* ข้อความติดต่อ */}
-              <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl font-bold">{(databaseStats as any)?.contactMessagesCount || 0}</p>
-                      <p className="text-sm opacity-90">ข้อความติดต่อ</p>
-                    </div>
-                    <Mail className="h-8 w-8 opacity-80" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="analytics" className="space-y-6">
-            <div className="flex items-center gap-2 mb-6">
-              <BarChart3 className="h-6 w-6 text-primary" />
-              <h2 className="text-2xl font-bold">สถิติและการวิเคราะห์</h2>
-            </div>
-            <React.Suspense fallback={<LoadingSpinner />}>
-              <LazyAnalyticsDashboard />
-            </React.Suspense>
-          </TabsContent>
-
-          <TabsContent value="news">
-            <div className="space-y-6">
-              <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการข่าว</h3>
-              <React.Suspense fallback={<LoadingSpinner />}>
-                <LazyNewsManager />
-              </React.Suspense>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="rss">
-            <div className="space-y-6">
-              <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการ RSS Feeds</h3>
-              <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
-                <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-t-xl">
-                  <CardTitle className="flex items-center gap-2 font-kanit text-purple-700">
-                    <Rss className="h-5 w-5" />
-                    จัดการ RSS Feeds
-                  </CardTitle>
-                  <CardDescription className="font-sarabun">
-                    จัดการแหล่งข่าวอัตโนมัติ
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <Suspense fallback={<LoadingSpinner />}>
-                    <LazyRSSManager />
-                  </Suspense>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="sponsors">
-            <div className="space-y-6">
-              <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการแบนเนอร์สปอนเซอร์</h3>
-              <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
-                <CardHeader className="bg-gradient-to-r from-green-50 to-teal-50 rounded-t-xl">
-                  <CardTitle className="flex items-center gap-2 font-kanit text-green-700">
-                    <Image className="h-5 w-5" />
-                    จัดการแบนเนอร์สปอนเซอร์
-                  </CardTitle>
-                  <CardDescription className="font-sarabun">
-                    จัดการโฆษณาและแบนเนอร์
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <Suspense fallback={<LoadingSpinner />}>
-                    <LazySponsorManager />
-                  </Suspense>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="themes">
-            <div className="space-y-6">
-              <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">การตั้งค่ารูปลักษณ์</h3>
-              <Suspense fallback={<LoadingSpinner />}>
-                <LazyThemeSettings />
-              </Suspense>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
-                  <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-xl">
-                    <CardTitle className="flex items-center gap-2 font-kanit text-blue-700">
-                      <Image className="h-5 w-5" />
-                      จัดการไฟล์มีเดีย
-                    </CardTitle>
-                    <CardDescription className="font-sarabun">
-                      อัปโหลดและจัดการไฟล์รูปภาพ วิดีโอ และเอกสาร
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <React.Suspense fallback={<LoadingSpinner />}>
-                      <LazyMediaManager />
-                    </React.Suspense>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
-                  <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-xl">
-                    <CardTitle className="flex items-center gap-2 font-kanit text-green-700">
-                      <FolderOpen className="h-5 w-5" />
-                      จัดการหมวดหมู่
-                    </CardTitle>
-                    <CardDescription className="font-sarabun">
-                      สร้างและจัดการหมวดหมู่ข่าว
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <React.Suspense fallback={<LoadingSpinner />}>
-                      <LazyCategoryManager />
-                    </React.Suspense>
-                  </CardContent>
-                </Card>
-              </div>
-              
-              <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
-                <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-t-xl">
-                  <CardTitle className="flex items-center gap-2 font-kanit text-pink-700">
-                    <Palette className="h-5 w-5" />
-                    การตั้งค่าธีมพื้นฐาน
-                  </CardTitle>
-                  <CardDescription className="font-sarabun">
-                    เปลี่ยนธีมสีของเว็บไซต์ และทดสอบธีมวันสำคัญ
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="space-y-6">
-                    <div className="space-y-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-lg font-semibold">ธีมปัจจุบัน</h3>
-                          <p className="text-sm text-muted-foreground">
-                            เปลี่ยนธีมของเว็บไซต์ - รองรับโหมดอัตโนมัติตามเวลา
-                          </p>
-                        </div>
-                        <ThemeToggle />
-                      </div>
-
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <Button
-                          variant="outline"
-                          onClick={() => setTheme("light")}
-                          className="p-4 h-auto flex-col gap-2"
-                        >
-                          <Sun className="h-8 w-8" />
-                          <span>โหมดสว่าง</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => setTheme("dark")}
-                          className="p-4 h-auto flex-col gap-2"
-                        >
-                          <Moon className="h-8 w-8" />
-                          <span>โหมดมืด</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => setTheme("auto")}
-                          className="p-4 h-auto flex-col gap-2 relative"
-                        >
-                          <Clock className="h-8 w-8" />
-                          <span>อัตโนมัติ</span>
-                          <div className="text-xs text-muted-foreground">
-                            18:00-06:00
-                          </div>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => setTheme("system")}
-                          className="p-4 h-auto flex-col gap-2"
-                        >
-                          <Monitor className="h-8 w-8" />
-                          <span>ตามระบบ</span>
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="border-t pt-6">
-                      <h4 className="text-lg font-semibold font-kanit text-orange-700 mb-4">ทดสอบธีมวันสำคัญ</h4>
-                      <p className="text-sm text-gray-600 font-sarabun mb-4">คลิกเพื่อดูธีมสำหรับวันสำคัญต่างๆ ของไทย</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-auto p-3 text-xs font-sarabun border-yellow-300 text-yellow-700 hover:bg-yellow-50 flex flex-col items-center gap-1"
-                          onClick={() => {
-                            const root = document.documentElement;
-                            root.classList.remove("light", "dark", "royal-yellow", "mothers-blue", "fathers-yellow", "national-tricolor", "constitution-gold", "buddhist-saffron", "songkran-blue");
-                            root.classList.add("thai-special", "royal-yellow");
-                            const style = root.style;
-                            style.setProperty('--primary', '45 93% 58%');
-                            style.setProperty('--secondary', '43 74% 66%');
-                            style.setProperty('--accent', '38 92% 50%');
-                          }}
-                        >
-                          <div className="w-4 h-4 bg-yellow-400 rounded-full mb-1"></div>
-                          วันเฉลิมพระชนมพรรษา
-                        </Button>
-
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-auto p-3 text-xs font-sarabun border-blue-300 text-blue-700 hover:bg-blue-50 flex flex-col items-center gap-1"
-                          onClick={() => {
-                            const root = document.documentElement;
-                            root.classList.remove("light", "dark", "royal-yellow", "mothers-blue", "fathers-yellow", "national-tricolor", "constitution-gold", "buddhist-saffron", "songkran-blue");
-                            root.classList.add("thai-special", "mothers-blue");
-                            const style = root.style;
-                            style.setProperty('--primary', '214 100% 59%');
-                            style.setProperty('--secondary', '213 94% 68%');
-                            style.setProperty('--accent', '212 100% 45%');
-                          }}
-                        >
-                          <div className="w-4 h-4 bg-blue-500 rounded-full mb-1"></div>
-                          วันแม่แห่งชาติ
-                        </Button>
-
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-auto p-3 text-xs font-sarabun border-yellow-300 text-yellow-700 hover:bg-yellow-50 flex flex-col items-center gap-1"
-                          onClick={() => {
-                            const root = document.documentElement;
-                            root.classList.remove("light", "dark", "royal-yellow", "mothers-blue", "fathers-yellow", "national-tricolor", "constitution-gold", "buddhist-saffron", "songkran-blue");
-                            root.classList.add("thai-special", "fathers-yellow");
-                            const style = root.style;
-                            style.setProperty('--primary', '45 93% 58%');
-                            style.setProperty('--secondary', '43 74% 66%');
-                            style.setProperty('--accent', '38 92% 50%');
-                          }}
-                        >
-                          <div className="w-4 h-4 bg-yellow-400 rounded-full mb-1"></div>
-                          วันพ่อแห่งชาติ
-                        </Button>
-
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-auto p-3 text-xs font-sarabun border-red-300 text-red-700 hover:bg-red-50 flex flex-col items-center gap-1"
-                          onClick={() => {
-                            const root = document.documentElement;
-                            root.classList.remove("light", "dark", "royal-yellow", "mothers-blue", "fathers-yellow", "national-tricolor", "constitution-gold", "buddhist-saffron", "songkran-blue");
-                            root.classList.add("thai-special", "national-tricolor");
-                            const style = root.style;
-                            style.setProperty('--primary', '0 72% 51%');
-                            style.setProperty('--secondary', '220 100% 50%');
-                            style.setProperty('--accent', '0 0% 100%');
-                          }}
-                        >
-                          <div className="flex gap-1 mb-1">
-                            <div className="w-1 h-4 bg-red-500"></div>
-                            <div className="w-1 h-4 bg-white border"></div>
-                            <div className="w-1 h-4 bg-blue-500"></div>
-                          </div>
-                          วันชาติ
-                        </Button>
-
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-auto p-3 text-xs font-sarabun border-orange-300 text-orange-700 hover:bg-orange-50 flex flex-col items-center gap-1"
-                          onClick={() => {
-                            const root = document.documentElement;
-                            root.classList.remove("light", "dark", "royal-yellow", "mothers-blue", "fathers-yellow", "national-tricolor", "constitution-gold", "buddhist-saffron", "songkran-blue");
-                            root.classList.add("thai-special", "constitution-gold");
-                            const style = root.style;
-                            style.setProperty('--primary', '38 92% 50%');
-                            style.setProperty('--secondary', '45 93% 58%');
-                            style.setProperty('--accent', '0 0% 95%');
-                          }}
-                        >
-                          <div className="w-4 h-4 bg-orange-400 rounded-full mb-1"></div>
-                          วันรัฐธรรมนูญ
-                        </Button>
-
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-auto p-3 text-xs font-sarabun border-orange-400 text-orange-800 hover:bg-orange-50 flex flex-col items-center gap-1"
-                          onClick={() => {
-                            const root = document.documentElement;
-                            root.classList.remove("light", "dark", "royal-yellow", "mothers-blue", "fathers-yellow", "national-tricolor", "constitution-gold", "buddhist-saffron", "songkran-blue");
-                            root.classList.add("thai-special", "buddhist-saffron");
-                            const style = root.style;
-                            style.setProperty('--primary', '33 100% 50%');
-                            style.setProperty('--secondary', '35 85% 60%');
-                            style.setProperty('--accent', '30 95% 40%');
-                          }}
-                        >
-                          <div className="w-4 h-4 bg-amber-500 rounded-full mb-1"></div>
-                          วันมาฆบูชา
-                        </Button>
-
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-auto p-3 text-xs font-sarabun border-cyan-300 text-cyan-700 hover:bg-cyan-50 flex flex-col items-center gap-1"
-                          onClick={() => {
-                            const root = document.documentElement;
-                            root.classList.remove("light", "dark", "royal-yellow", "mothers-blue", "fathers-yellow", "national-tricolor", "constitution-gold", "buddhist-saffron", "songkran-blue");
-                            root.classList.add("thai-special", "songkran-blue");
-                            const style = root.style;
-                            style.setProperty('--primary', '195 100% 50%');
-                            style.setProperty('--secondary', '200 100% 70%');
-                            style.setProperty('--accent', '190 100% 42%');
-                          }}
-                        >
-                          <div className="w-4 h-4 bg-cyan-400 rounded-full mb-1"></div>
-                          วันสงกรานต์
-                        </Button>
-
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-auto p-3 text-xs font-sarabun border-gray-300 text-gray-700 hover:bg-gray-50 flex flex-col items-center gap-1"
-                          onClick={() => {
-                            const root = document.documentElement;
-                            root.classList.remove("light", "dark", "thai-special", "royal-yellow", "mothers-blue", "fathers-yellow", "national-tricolor", "constitution-gold", "buddhist-saffron", "songkran-blue");
-                            root.classList.add("light");
-                            const style = root.style;
-                            style.removeProperty('--primary');
-                            style.removeProperty('--secondary');
-                            style.removeProperty('--accent');
-                          }}
-                        >
-                          <div className="w-4 h-4 bg-gray-400 rounded-full mb-1"></div>
-                          รีเซ็ตธีม
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="system">
-            <div className="space-y-6">
-              <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">การจัดการระบบ</h3>
-
-              <div className="grid gap-6 md:grid-cols-2">
-                <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
-                  <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-xl">
-                    <CardTitle className="flex items-center gap-2 font-kanit text-blue-700">
-                      <UserCog className="h-5 w-5" />
-                      จัดการผู้ใช้
-                    </CardTitle>
-                    <CardDescription className="font-sarabun">
-                      ดูรายชื่อและจัดการสิทธิ์ผู้ใช้
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                        <span className="font-sarabun text-sm">ผู้ใช้ออนไลน์</span>
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-700">24</Badge>
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                        <span className="font-sarabun text-sm">ผู้ดูแลระบบ</span>
-                        <Badge variant="secondary" className="bg-green-100 text-green-700">3</Badge>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 mt-4">
-                        <Button size="sm" className="w-full font-sarabun bg-blue-600 hover:bg-blue-700">
-                          ดูรายชื่อ
-                        </Button>
-                        <Button variant="outline" size="sm" className="w-full font-sarabun border-blue-300 text-blue-600 hover:bg-blue-50">
-                          จัดการสิทธิ์
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
-                  <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-xl">
-                    <CardTitle className="flex items-center gap-2 font-kanit text-green-700">
-                      <Monitor className="h-5 w-5" />
-                      การตรวจสอบระบบ
-                    </CardTitle>
-                    <CardDescription className="font-sarabun">
-                      ตรวจสอบสถานะและประสิทธิภาพระบบ
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                        <span className="font-sarabun text-sm">สถานะเซิร์ฟเวอร์</span>
-                        <Badge className="bg-green-500 text-white">ปกติ</Badge>
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                        <span className="font-sarabun text-sm">การใช้งาน CPU</span>
-                        <Badge variant="outline" className="border-yellow-400 text-yellow-700">45%</Badge>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 mt-4">
-                        <Button size="sm" className="w-full font-sarabun bg-green-600 hover:bg-green-700">
-                          ดูสถานะ
-                        </Button>
-                        <Button variant="outline" size="sm" className="w-full font-sarabun border-green-300 text-green-600 hover:bg-green-50">
-                          รายงานข้อผิดพลาด
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white rounded-xl shadow-lg border border-orange-100 md:col-span-2">
-                  <CardHeader className="bg-gradient-to-r from-purple-50 to-violet-50 rounded-t-xl">
-                    <CardTitle className="flex items-center gap-2 font-kanit text-purple-700">
-                      <Database className="h-5 w-5" />
-                      จัดการฐานข้อมูล
-                    </CardTitle>
-                    <CardDescription className="font-sarabun">
-                      สำรองข้อมูลและบำรุงรักษาฐานข้อมูล
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center p-3 bg-purple-50 rounded-lg">
-                        <div className="text-2xl font-bold text-purple-700">
-                          {(databaseStats as any)?.newsCount ?? newsStats}
-                        </div>
-                        <div className="text-sm font-sarabun text-purple-600">ข่าวทั้งหมด</div>
-                      </div>
-                      <div className="text-center p-3 bg-blue-50 rounded-lg">
-                        <div className="text-2xl font-bold text-blue-700">
-                          {(databaseStats as any)?.rssFeedsCount ?? rssFeeds}
-                        </div>
-                        <div className="text-sm font-sarabun text-blue-600">RSS Feeds</div>
-                      </div>
-                      <div className="text-center p-3 bg-green-50 rounded-lg">
-                        <div className="text-2xl font-bold text-green-700">
-                          {(databaseStats as any)?.sponsorBannersCount ?? sponsorBanners}
-                        </div>
-                        <div className="text-sm font-sarabun text-green-600">แบนเนอร์</div>
-                      </div>
-                      <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                        <div className="text-2xl font-bold text-yellow-700">
-                          {(databaseStats as any)?.totalUsers ?? 0}
-                        </div>
-                        <div className="text-sm font-sarabun text-yellow-600">ผู้ใช้งาน</div>
-                      </div>
-                    </div>
-                    <div className="mt-4 p-4 bg-orange-50 rounded-lg">
-                      <h4 className="text-lg font-bold text-orange-700 mb-3 font-kanit">ข้อมูลการเชื่อมต่อฐานข้อมูล</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-sarabun">
-                        <div className="space-y-2">
-                          <div className="flex justify-between">
-                            <span className="text-orange-600">ประเภทฐานข้อมูล:</span>
-                            <span className="text-orange-800 font-medium">{(systemInfo as any)?.database?.provider ?? "PostgreSQL"}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-orange-600">เซิร์ฟเวอร์:</span>
-                            <span className="text-orange-800 font-mono text-xs">
-                              {(systemInfo as any)?.database?.host || "dpg-d2a2dp2dbo4c73at42ug-a.singapore-postgres.render.com"}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-orange-600">พอร์ต:</span>
-                            <span className="text-orange-800 font-mono">{(systemInfo as any)?.database?.port ?? "5432"}</span>
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex justify-between">
-                            <span className="text-orange-600">ฐานข้อมูล:</span>
-                            <span className="text-orange-800 font-mono text-xs">
-                              {(systemInfo as any)?.database?.database || "udnewsdb_8d2c"}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-orange-600">SSL:</span>
-                            <span className={`font-medium ${(systemInfo as any)?.database?.ssl === 'Enabled' ? 'text-green-600' : 'text-red-600'}`}>
-                              {(systemInfo as any)?.database?.ssl ?? "Enabled"}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-orange-600">สภาพแวดล้อม:</span>
-                            <span className={`font-medium ${(systemInfo as any)?.environment === 'production' ? 'text-green-600' : 'text-blue-600'}`}>
-                              {(systemInfo as any)?.environment ?? "development"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-6">
-                      <Button size="sm" variant="outline" className="font-sarabun border-purple-300 text-purple-600 hover:bg-purple-50">
-                        สำรองข้อมูล
-                      </Button>
-                      <Button size="sm" variant="outline" className="font-sarabun border-blue-300 text-blue-600 hover:bg-blue-50">
-                        กู้คืนข้อมูล
-                      </Button>
-                      <Button size="sm" variant="outline" className="font-sarabun border-orange-300 text-orange-600 hover:bg-orange-50">
-                        ล้างแคช
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="messages" className="space-y-6">
-            <React.Suspense fallback={<LoadingSpinner />}>
-              <LazyContactMessagesManager />
-            </React.Suspense>
-          </TabsContent>
-
-          <TabsContent value="users" className="space-y-6">
-            <React.Suspense fallback={<LoadingSpinner />}>
-              <LazyUserManager />
-            </React.Suspense>
-          </TabsContent>
-
-          <TabsContent value="comments" className="space-y-6">
-            <React.Suspense fallback={<LoadingSpinner />}>
-              <LazyCommentManager />
-            </React.Suspense>
-          </TabsContent>
-
-          <TabsContent value="newsletter" className="space-y-6">
-            <React.Suspense fallback={<LoadingSpinner />}>
-              <LazyNewsletterManager />
-            </React.Suspense>
-          </TabsContent>
-
-          <TabsContent value="notifications" className="space-y-6">
-            <React.Suspense fallback={<LoadingSpinner />}>
-              <LazyPushNotificationManager />
-            </React.Suspense>
-          </TabsContent>
-
-          <TabsContent value="settings" className="space-y-6">
-            <React.Suspense fallback={<LoadingSpinner />}>
-              <LazySystemSettings />
-            </React.Suspense>
-          </TabsContent>
-
-          <TabsContent value="database" className="space-y-6">
-            <React.Suspense fallback={<LoadingSpinner />}>
-              <LazyDatabaseManager />
-            </React.Suspense>
-          </TabsContent>
-        </Tabs>
-      </main>
+        {/* Main content area */}
+        <main className="p-6">
+          {renderContent()}
+        </main>
+      </div>
     </div>
   );
 }
 
 export default function Admin() {
-  const [, setLocation] = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const token = localStorage.getItem('admin-token');
-        if (!token) {
-          setLocation('/login');
-          return;
-        }
-
-        const response = await fetch('/api/admin/verify', {
-          headers: {
-            'Authorization': `Bearer ${token}`
+  React.useEffect(() => {
+    const token = localStorage.getItem('adminToken');
+    if (token) {
+      // Verify token with server
+      fetch('/api/auth/verify', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then(response => {
+          if (response.ok) {
+            setIsAuthenticated(true);
+          } else {
+            localStorage.removeItem('adminToken');
           }
+        })
+        .catch(() => {
+          localStorage.removeItem('adminToken');
         });
-
-        if (!response.ok) {
-          throw new Error('Token invalid');
-        }
-
-        setIsAuthenticated(true);
-      } catch (error) {
-        localStorage.removeItem('admin-token');
-        setLocation('/login');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, [setLocation]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">กำลังตรวจสอบสิทธิ์...</p>
-        </div>
-      </div>
-    );
-  }
+    }
+  }, []);
 
   if (!isAuthenticated) {
-    return null;
+    return <AdminLogin onLogin={() => setIsAuthenticated(true)} />;
   }
 
-  return (
-    <ErrorBoundary>
-      <AdminContent />
-    </ErrorBoundary>
-  );
+  return <AdminDashboard />;
 }
