@@ -23,8 +23,8 @@ interface NewsItem {
   content: string;
   imageUrl?: string;
   category: string;
-  author: string;
-  publishedAt: string;
+  author?: string;
+  createdAt: string;
   source: string;
   originalUrl: string;
   viewCount?: number;
@@ -80,8 +80,8 @@ const AllNews: React.FC = () => {
         item.title.toLowerCase().includes(query) ||
         item.description.toLowerCase().includes(query) ||
         item.content.toLowerCase().includes(query) ||
-        item.author.toLowerCase().includes(query) ||
-        item.tags?.some(tag => tag.toLowerCase().includes(query))
+        (item.author?.toLowerCase().includes(query) ?? false) ||
+        item.tags?.some((tag: string) => tag.toLowerCase().includes(query))
       );
     }
 
@@ -98,15 +98,15 @@ const AllNews: React.FC = () => {
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'latest':
-          return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         case 'oldest':
-          return new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime();
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         case 'popular':
           return (b.viewCount || 0) - (a.viewCount || 0);
         case 'breaking':
           if (a.isBreaking && !b.isBreaking) return -1;
           if (!a.isBreaking && b.isBreaking) return 1;
-          return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         default:
           return 0;
       }
@@ -176,7 +176,6 @@ const AllNews: React.FC = () => {
       <MetaTags 
         title="ข่าวทั้งหมด - อัพเดทข่าวอุดร - UD News Update"
         description="ติดตามข่าวสารทั้งหมดจากอุดรธานีและภาคอีสาน ข่าวท้องถิ่น การเมือง กีฬา บันเทิง และอื่นๆ อีกมากมาย"
-        keywords="ข่าว, อุดรธานี, ภาคอีสาน, ข่าวท้องถิ่น, การเมือง, กีฬา, บันเทิง"
       />
       
       <div className="container mx-auto px-4 py-8">
@@ -340,9 +339,9 @@ const AllNews: React.FC = () => {
                       <div className="flex items-center justify-between text-xs text-muted-foreground font-sarabun mb-3">
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          {formatTimeAgo(item.publishedAt)}
+                          {formatTimeAgo(item.createdAt)}
                         </span>
-                        <span>โดย {item.author}</span>
+                        <span>โดย {item.author || 'ไม่ระบุ'}</span>
                       </div>
                       
                       {/* Tags */}

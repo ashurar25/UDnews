@@ -33,6 +33,10 @@ import path from 'path';
 import fs from 'fs';
 import databaseRoutes from './database-api';
 import userRoutes from './user-api';
+import { nanoid } from 'nanoid';
+import QRCode from 'qrcode';
+import type { InsertDonation } from "@shared/schema";
+import { SitemapGenerator } from './sitemap-generator';
 
 // Cache configuration for faster news loading
 const newsCache = new NodeCache({ stdTTL: 300, checkperiod: 60 }); // 5 minutes
@@ -284,6 +288,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Redirect /admin to static HTML
   app.get('/admin', (req, res) => {
     res.redirect('/admin.html');
+  });
+
+  // SEO: Dynamic sitemap.xml
+  app.get('/sitemap.xml', async (req, res) => {
+    try {
+      const xml = await SitemapGenerator.generateSitemap();
+      res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+      res.setHeader('Cache-Control', 'public, max-age=3600'); // 1 hour
+      res.send(xml);
+    } catch (err) {
+      console.error('sitemap.xml error', err);
+      res.status(500).send('');
+    }
+  });
+
+  // SEO: Dynamic robots.txt (overrides static if present)
+  app.get('/robots.txt', async (req, res) => {
+    try {
+      const txt = await SitemapGenerator.generateRobotsTxt();
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.send(txt);
+    } catch (err) {
+      console.error('robots.txt error', err);
+      res.status(500).send('');
+    }
   });
 
   // Admin Login Route

@@ -64,7 +64,7 @@ export default function TestSystems() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <CommentsSection newsId={1} />
+            <CommentsSection newsId={String(sampleNewsArticle.id)} newsTitle={sampleNewsArticle.title} />
           </CardContent>
         </Card>
 
@@ -76,7 +76,12 @@ export default function TestSystems() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <SocialShare url={`/news/${sampleNewsArticle.id}`} title={sampleNewsArticle.title} />
+            <SocialShare 
+              newsId={String(sampleNewsArticle.id)} 
+              title={sampleNewsArticle.title} 
+              description={sampleNewsArticle.content}
+              url={`/news/${sampleNewsArticle.id}`} 
+            />
           </CardContent>
         </Card>
 

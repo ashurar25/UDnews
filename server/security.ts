@@ -1,9 +1,9 @@
 
-import DOMPurify from 'dompurify';
+import createDOMPurify from 'dompurify';
 import { JSDOM } from 'jsdom';
 
 const window = new JSDOM('').window;
-const purify = DOMPurify(window);
+const purify = createDOMPurify(window as any);
 
 export class SecurityUtils {
   // Sanitize HTML content
@@ -11,7 +11,6 @@ export class SecurityUtils {
     return purify.sanitize(html, {
       ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a'],
       ALLOWED_ATTR: ['href', 'title'],
-      FORBID_SCRIPTS: true,
       FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed'],
     });
   }
@@ -44,7 +43,7 @@ export class SecurityUtils {
   // Remove SQL injection patterns
   static sanitizeSql(input: string): string {
     return input
-      .replace(/('|(\\')|(;)|(\\)|(--|#)|(\|)|(\*)|(%)|(\+)|(=)/g, '')
+      .replace(/["'`;\\%*+=|#-]/g, '')
       .replace(/(union|select|insert|update|delete|drop|create|alter|exec|execute)/gi, '');
   }
 

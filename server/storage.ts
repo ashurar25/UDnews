@@ -168,17 +168,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllNews(limit?: number, offset?: number): Promise<NewsArticle[]> {
-    let query = db.select().from(newsArticles).orderBy(desc(newsArticles.createdAt));
+    const base = db.select().from(newsArticles).orderBy(desc(newsArticles.createdAt));
 
-    if (limit) {
-      query = query.limit(limit);
+    if (typeof limit === 'number' && typeof offset === 'number') {
+      return await base.limit(limit).offset(offset);
     }
-
-    if (offset) {
-      query = query.offset(offset);
+    if (typeof limit === 'number') {
+      return await base.limit(limit);
     }
-
-    return await query;
+    if (typeof offset === 'number') {
+      return await base.offset(offset);
+    }
+    return await base;
   }
 
   async getNewsById(id: number): Promise<NewsArticle | null> {
@@ -694,9 +695,9 @@ export class DatabaseStorage implements IStorage {
     offset?: number;
   }): Promise<NewsArticle[]> {
     try {
-      let query = db.select().from(newsArticles);
+      const base = db.select().from(newsArticles);
 
-      const conditions = [];
+      const conditions: any[] = [];
 
       if (params.query) {
         conditions.push(
@@ -720,30 +721,16 @@ export class DatabaseStorage implements IStorage {
         conditions.push(lte(newsArticles.createdAt, new Date(params.dateTo)));
       }
 
-      if (conditions.length > 0) {
-        query = query.where(and(...conditions));
-      }
+      const withWhere = conditions.length > 0 ? base.where(and(...conditions)) : base;
 
-      // Sort by
-      if (params.sortBy === 'popularity') {
-        // Could join with view counts here if needed
-        query = query.orderBy(desc(newsArticles.createdAt));
-      } else {
-        query = query.orderBy(desc(newsArticles.createdAt));
-      }
+      // Sort by (placeholder for popularity sorting)
+      const withOrder = withWhere.orderBy(desc(newsArticles.createdAt));
 
-      // Pagination
-      if (params.offset) {
-        query = query.offset(params.offset);
-      }
+      const withOffset = typeof params.offset === 'number' ? withOrder.offset(params.offset) : withOrder;
+      const limit = typeof params.limit === 'number' ? params.limit : 20;
+      const withLimit = withOffset.limit(limit);
 
-      if (params.limit) {
-        query = query.limit(params.limit);
-      } else {
-        query = query.limit(20); // Default limit
-      }
-
-      return await query;
+      return await withLimit;
     } catch (error) {
       console.error('Error searching news:', error);
       return [];
@@ -776,7 +763,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const today = new Date().toISOString().split('T')[0];
       const result = await db
-        .select({ count: sql<number>`sum(${newsViews.viewCount})` })
+        .select({ count: sql<number>`count(*)` })
         .from(newsViews)
         .where(sql`date(${newsViews.viewedAt}) = ${today}`);
 
@@ -790,7 +777,7 @@ export class DatabaseStorage implements IStorage {
   async getViewsByDate(date: string): Promise<number> {
     try {
       const result = await db
-        .select({ count: sql<number>`sum(${newsViews.viewCount})` })
+        .select({ count: sql<number>`count(*)` })
         .from(newsViews)
         .where(sql`date(${newsViews.viewedAt}) = ${date}`);
 
@@ -804,7 +791,7 @@ export class DatabaseStorage implements IStorage {
   async getViewsSince(date: string): Promise<number> {
     try {
       const result = await db
-        .select({ count: sql<number>`sum(${newsViews.viewCount})` })
+        .select({ count: sql<number>`count(*)` })
         .from(newsViews)
         .where(sql`date(${newsViews.viewedAt}) >= ${date}`);
 
@@ -835,12 +822,12 @@ export class DatabaseStorage implements IStorage {
       const result = await db
         .select({
           title: newsArticles.title,
-          totalViews: sql<number>`sum(${newsViews.viewCount})`
+          totalViews: sql<number>`count(*)`
         })
         .from(newsViews)
         .innerJoin(newsArticles, eq(newsViews.newsId, newsArticles.id))
         .groupBy(newsArticles.id, newsArticles.title)
-        .orderBy(sql`sum(${newsViews.viewCount}) desc`)
+        .orderBy(sql`count(*) desc`)
         .limit(1);
 
       return result[0]?.title || 'ไม่มีข้อมูล';
@@ -855,12 +842,12 @@ export class DatabaseStorage implements IStorage {
       const result = await db
         .select({
           category: newsArticles.category,
-          totalViews: sql<number>`sum(${newsViews.viewCount})`
+          totalViews: sql<number>`count(*)`
         })
         .from(newsViews)
         .innerJoin(newsArticles, eq(newsViews.newsId, newsArticles.id))
         .groupBy(newsArticles.category)
-        .orderBy(sql`sum(${newsViews.viewCount}) desc`)
+        .orderBy(sql`count(*) desc`)
         .limit(1);
 
       return result[0]?.category || 'ไม่มีข้อมูล';
@@ -873,25 +860,32 @@ export class DatabaseStorage implements IStorage {
   // Comments functions
   async getComments(filter: string = 'all', limit: number = 50): Promise<any[]> {
     try {
-      let query = db
-        .select({
-          id: comments.id,
-          content: comments.content,
-          author: comments.author,
-          createdAt: comments.createdAt,
-          status: comments.status,
-          newsTitle: newsArticles.title
-        })
-        .from(comments)
-        .innerJoin(newsArticles, eq(comments.newsId, newsArticles.id))
-        .limit(limit)
-        .orderBy(desc(comments.createdAt));
+      const selectShape = {
+        id: comments.id,
+        content: comments.content,
+        authorName: comments.authorName,
+        createdAt: comments.createdAt,
+        isApproved: comments.isApproved,
+        newsTitle: newsArticles.title,
+      };
 
-      if (filter !== 'all') {
-        query = query.where(eq(comments.status, filter));
+      if (filter === 'all') {
+        return await db
+          .select(selectShape)
+          .from(comments)
+          .innerJoin(newsArticles, eq(comments.newsId, newsArticles.id))
+          .orderBy(desc(comments.createdAt))
+          .limit(limit);
       }
 
-      return await query;
+      const approved = filter === 'approved';
+      return await db
+        .select(selectShape)
+        .from(comments)
+        .innerJoin(newsArticles, eq(comments.newsId, newsArticles.id))
+        .where(eq(comments.isApproved, approved))
+        .orderBy(desc(comments.createdAt))
+        .limit(limit);
     } catch (error) {
       console.error('Error getting comments:', error);
       return [];
@@ -902,10 +896,10 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await db
         .update(comments)
-        .set({ status: 'approved' })
+        .set({ isApproved: true })
         .where(eq(comments.id, id));
 
-      return result.rowCount > 0;
+      return (result.rowCount ?? 0) > 0;
     } catch (error) {
       console.error('Error approving comment:', error);
       return false;
@@ -918,7 +912,7 @@ export class DatabaseStorage implements IStorage {
         .delete(comments)
         .where(eq(comments.id, id));
 
-      return result.rowCount > 0;
+      return (result.rowCount ?? 0) > 0;
     } catch (error) {
       console.error('Error deleting comment:', error);
       return false;
@@ -928,25 +922,24 @@ export class DatabaseStorage implements IStorage {
   // Global settings functions
   async updateGlobalSetting(key: string, value: string): Promise<boolean> {
     try {
-      // Check if setting exists
       const existing = await db
         .select()
-        .from(sql`global_settings`)
-        .where(sql`key = ${key}`)
+        .from(siteSettings)
+        .where(eq(siteSettings.settingKey, key))
         .limit(1);
 
       if (existing.length > 0) {
-        await db
-          .update(sql`global_settings`)
-          .set({ value, updatedAt: new Date() })
-          .where(sql`key = ${key}`);
+        const res = await db
+          .update(siteSettings)
+          .set({ settingValue: value, updatedAt: new Date() })
+          .where(eq(siteSettings.settingKey, key));
+        return (res.rowCount ?? 0) > 0;
       } else {
-        await db
-          .insert(sql`global_settings`)
-          .values({ key, value, createdAt: new Date(), updatedAt: new Date() });
+        const res = await db
+          .insert(siteSettings)
+          .values({ settingKey: key, settingValue: value, settingType: 'general', createdAt: new Date(), updatedAt: new Date(), isActive: true });
+        return (res.rowCount ?? 0) > 0;
       }
-
-      return true;
     } catch (error) {
       console.error('Error updating global setting:', error);
       return false;
@@ -956,12 +949,12 @@ export class DatabaseStorage implements IStorage {
   async getGlobalSetting(key: string): Promise<string | null> {
     try {
       const result = await db
-        .select({ value: sql<string>`value` })
-        .from(sql`global_settings`)
-        .where(sql`key = ${key}`)
+        .select({ value: siteSettings.settingValue })
+        .from(siteSettings)
+        .where(eq(siteSettings.settingKey, key))
         .limit(1);
 
-      return result[0]?.value || null;
+      return result[0]?.value ?? null;
     } catch (error) {
       console.error('Error getting global setting:', error);
       return null;

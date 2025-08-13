@@ -37,6 +37,15 @@ if (container) {
       </ThemeProvider>
     </ErrorBoundary>
   );
+
+  // Register Service Worker for PWA (only in production and if supported)
+  if ('serviceWorker' in navigator && import.meta.env.PROD) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker
+        .register('/sw.js')
+        .catch((err) => console.warn('SW registration failed:', err));
+    });
+  }
 } else {
   console.error('Root container not found');
 }

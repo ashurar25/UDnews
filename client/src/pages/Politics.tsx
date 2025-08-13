@@ -4,10 +4,19 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import NewsCard from "@/components/NewsCard";
 import { Badge } from "@/components/ui/badge";
-import { Building, Clock } from "lucide-react";
+import { Building } from "lucide-react";
+
+type SimpleNews = {
+  title: string;
+  summary: string;
+  category: string;
+  time: string;
+  views: string;
+  isBreaking?: boolean;
+};
 
 const Politics = () => {
-  const [news, setNews] = useState([]);
+  const [news, setNews] = useState<SimpleNews[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

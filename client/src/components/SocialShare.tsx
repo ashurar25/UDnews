@@ -106,8 +106,9 @@ const SocialShare: React.FC<SocialShareProps> = ({
           title: "แชร์สำเร็จ",
           description: "ข่าวได้รับการแชร์แล้ว",
         });
-      } catch (error) {
-        if (error.name !== 'AbortError') {
+      } catch (err) {
+        const e = err as { name?: string };
+        if (e.name !== 'AbortError') {
           toast({
             title: "ไม่สามารถแชร์ได้",
             description: "กรุณาลองใช้วิธีอื่น",
@@ -202,7 +203,7 @@ const SocialShare: React.FC<SocialShareProps> = ({
   if (compact) {
     return (
       <div className="flex items-center gap-2">
-        {navigator.share && (
+        {typeof navigator !== 'undefined' && 'share' in navigator && (
           <Button
             variant="outline"
             size="sm"
@@ -267,7 +268,7 @@ const SocialShare: React.FC<SocialShareProps> = ({
       <CardContent className="space-y-6">
         {/* Quick Actions */}
         <div className="flex flex-wrap gap-2">
-          {navigator.share && (
+          {typeof navigator !== 'undefined' && 'share' in navigator && (
             <Button
               onClick={() => handleShare('native')}
               className="gap-2 bg-primary hover:bg-primary/90"

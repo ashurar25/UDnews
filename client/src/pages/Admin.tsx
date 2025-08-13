@@ -116,19 +116,40 @@ const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // Check credentials
-    setTimeout(() => {
-      if (username === 'admin' && password === 'udnews2025secure') {
-        localStorage.setItem('adminToken', 'admin-token-' + Date.now());
-        onLogin();
-      } else if (!username || !password) {
+    try {
+      if (!username || !password) {
         alert('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
-      } else {
-        alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+        return;
       }
+
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const msg = (data && (data.message || data.error)) || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+        alert(msg);
+        return;
+      }
+
+      const data = await res.json();
+      if (data?.token) {
+        localStorage.setItem('adminToken', data.token);
+        onLogin();
+      } else {
+        alert('ไม่พบโทเค็นเข้าสู่ระบบ');
+      }
+    } catch (err) {
+      console.error('Admin login error:', err);
+      alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (

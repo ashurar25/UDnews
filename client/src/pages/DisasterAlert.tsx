@@ -56,7 +56,7 @@ const DisasterAlert = () => {
   }
 
   const getSeverityColor = (severity: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       low: 'border-blue-500 bg-blue-50 dark:bg-blue-950/20',
       medium: 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20', 
       high: 'border-orange-500 bg-orange-50 dark:bg-orange-950/20',
@@ -66,7 +66,7 @@ const DisasterAlert = () => {
   };
 
   const getSeverityText = (severity: string) => {
-    const texts = {
+    const texts: Record<string, string> = {
       low: 'ต่ำ',
       medium: 'ปานกลาง',
       high: 'สูง',

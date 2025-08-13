@@ -47,13 +47,13 @@ export class SitemapGenerator {
       const news = await storage.getAllNews();
       
       news.forEach(article => {
-        const isRecent = new Date(article.publishedAt).getTime() > Date.now() - (7 * 24 * 60 * 60 * 1000);
+        const isRecent = new Date(article.createdAt).getTime() > Date.now() - (7 * 24 * 60 * 60 * 1000);
         
         sitemap += `  <url>
     <loc>${baseUrl}/news/${article.id}</loc>
     <changefreq>${isRecent ? 'daily' : 'weekly'}</changefreq>
     <priority>${isRecent ? '0.9' : '0.7'}</priority>
-    <lastmod>${new Date(article.publishedAt).toISOString()}</lastmod>
+    <lastmod>${new Date(article.createdAt).toISOString()}</lastmod>
 `;
 
         // Add Google News sitemap for recent articles
@@ -63,7 +63,7 @@ export class SitemapGenerator {
         <news:name>UD News</news:name>
         <news:language>th</news:language>
       </news:publication>
-      <news:publication_date>${new Date(article.publishedAt).toISOString()}</news:publication_date>
+      <news:publication_date>${new Date(article.createdAt).toISOString()}</news:publication_date>
       <news:title>${article.title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</news:title>
     </news:news>
 `;

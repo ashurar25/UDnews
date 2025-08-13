@@ -248,6 +248,36 @@ const NewsDetail = () => {
           type="article"
         />
       )}
+      {news && (
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'NewsArticle',
+              headline: news.title,
+              description: news.description || news.summary,
+              image: news.imageUrl ? [news.imageUrl] : undefined,
+              datePublished: news.createdAt,
+              dateModified: news.updatedAt || news.createdAt,
+              mainEntityOfPage: `${window.location.origin}/news/${news.id}`,
+              author: {
+                '@type': 'Organization',
+                name: 'UD News Update',
+              },
+              publisher: {
+                '@type': 'Organization',
+                name: 'UD News Update',
+                logo: {
+                  '@type': 'ImageObject',
+                  url: `${window.location.origin}/logo.jpg`,
+                },
+              },
+            }),
+          }}
+        />
+      )}
       <Header />
 
       <main className="container mx-auto px-4 py-8">
@@ -347,7 +377,7 @@ const NewsDetail = () => {
 
               {/* Mid-Content Banner */}
               <div className="my-8">
-                <SponsorBannerBar position="content" autoPlay={true} showNavigation={false} bannerCount={1} />
+                <SponsorBannerBar position="between_news" autoPlay={true} showNavigation={false} bannerCount={1} />
               </div>
             </article>
           </div>

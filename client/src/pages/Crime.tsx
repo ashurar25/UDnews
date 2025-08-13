@@ -4,10 +4,19 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import NewsCard from "@/components/NewsCard";
 import { Badge } from "@/components/ui/badge";
-import { Shield, Clock } from "lucide-react";
+import { Shield } from "lucide-react";
+
+type SimpleNews = {
+  title: string;
+  summary: string;
+  category: string;
+  time: string;
+  views: string;
+  isBreaking?: boolean;
+};
 
 const Crime = () => {
-  const [news, setNews] = useState([]);
+  const [news, setNews] = useState<SimpleNews[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

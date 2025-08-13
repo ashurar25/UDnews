@@ -202,7 +202,7 @@ const SearchPage = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {processedResults.map((news) => (
-              <NewsCard key={news.id} news={news} />
+              <NewsCard key={news.id} {...news} />
             ))}
           </div>
         )}

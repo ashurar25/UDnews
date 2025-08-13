@@ -4,10 +4,19 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import NewsCard from "@/components/NewsCard";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Clock } from "lucide-react";
+import { Trophy } from "lucide-react";
+
+type SimpleNews = {
+  title: string;
+  summary: string;
+  category: string;
+  time: string;
+  views: string;
+  isBreaking?: boolean;
+};
 
 const Sports = () => {
-  const [news, setNews] = useState([]);
+  const [news, setNews] = useState<SimpleNews[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
