@@ -206,17 +206,17 @@ function AdminContent() {
       </header>
               <h2 className="text-2xl font-bold">สถิติและการวิเคราะห์</h2>
             </div>
-            <Suspense fallback={<LoadingSpinner />}>
+            <React.Suspense fallback={<LoadingSpinner />}>
               <LazyAnalyticsDashboard />
-            </Suspense>
+            </React.Suspense>
           </TabsContent>
 
           <TabsContent value="news">
             <div className="space-y-6">
               <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการข่าว</h3>
-              <Suspense fallback={<LoadingSpinner />}>
+              <React.Suspense fallback={<LoadingSpinner />}>
                 <LazyNewsManager />
-              </Suspense>
+              </React.Suspense>
             </div>
           </TabsContent>
 
@@ -283,9 +283,9 @@ function AdminContent() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-6">
-                    <Suspense fallback={<LoadingSpinner />}>
+                    <React.Suspense fallback={<LoadingSpinner />}>
                       <LazyMediaManager />
-                    </Suspense>
+                    </React.Suspense>
                   </CardContent>
                 </Card>
 
@@ -300,9 +300,9 @@ function AdminContent() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-6">
-                    <Suspense fallback={<LoadingSpinner />}>
+                    <React.Suspense fallback={<LoadingSpinner />}>
                       <LazyCategoryManager />
-                    </Suspense>
+                    </React.Suspense>
                   </CardContent>
                 </Card>
               </div>
