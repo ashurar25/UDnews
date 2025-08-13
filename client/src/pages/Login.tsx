@@ -70,7 +70,7 @@ const Login = () => {
             เข้าสู่ระบบแอดมิน
           </CardTitle>
           <CardDescription className="font-sarabun">
-            UD News Management System
+            อัพเดทข่าวอุดร - UD News Update Management System
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -185,7 +185,7 @@ function AdminContent() {
                 <span className="text-sm font-sarabun font-medium">กลับหน้าหลัก</span>
               </Link>
               <Separator orientation="vertical" className="h-6" />
-              <h1 className="text-3xl font-bold text-orange-800 font-kanit">แอดมิน UD News</h1>
+              <h1 className="text-3xl font-bold text-orange-800 font-kanit">แอดมิน อัพเดทข่าวอุดร - UD News Update</h1>
             </div>
             <div className="flex items-center space-x-4">
               <Badge variant="secondary" className="font-sarabun bg-orange-100 text-orange-700 hover:bg-orange-200">
