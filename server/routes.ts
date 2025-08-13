@@ -1110,6 +1110,163 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User management routes
   app.use('/api/users', userRoutes);
 
+  // =========================
+  // Donations (Phase 1)
+  // =========================
+  // PromptPay config (Phase 1 - can later move to env)
+  const PROMPTPAY_ID = '0968058732';
+  const PROMPTPAY_DISPLAY = 'อัพเดทข่าวอุดร - UD News Update';
+
+  // SSE clients for realtime updates
+  const donationClients = new Set<import('express').Response>();
+  function broadcastDonationEvent(event: any) {
+    const data = `data: ${JSON.stringify(event)}\n\n`;
+    for (const res of donationClients) {
+      try { res.write(data); } catch {}
+    }
+  }
+
+  app.get('/api/donations/stream', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders?.();
+
+    donationClients.add(res);
+    // Send hello
+    res.write(`data: ${JSON.stringify({ type: 'hello' })}\n\n`);
+
+    req.on('close', () => {
+      donationClients.delete(res);
+    });
+  });
+
+  // Helper: build EMVCo PromptPay payload for mobile number
+  function buildPromptPayPayload(mobileOrId: string, amount?: number) {
+    const formatId = (id: string) => {
+      // If phone, ensure it's 10 digits mobile in Thailand, strip non-digits
+      const digits = id.replace(/\D/g, '');
+      if (digits.length === 10 && digits.startsWith('0')) {
+        // Convert to 13-digit national mobile format: add country code 66 and drop leading 0
+        return `0066${digits.substring(1)}`;
+      }
+      // If citizen ID or tax ID, return as is
+      return digits;
+    };
+
+    const id = formatId(mobileOrId);
+
+    // TLV builder
+    const tlv = (id: string, value: string) => id + String(value.length).padStart(2, '0') + value;
+
+    // Merchant account info (PromptPay - GUID A000000677010111)
+    const guid = 'A000000677010111';
+    const acc = tlv('00', guid) + tlv('01', id);
+    const mai = tlv('29', acc);
+
+    const payloadFormat = tlv('00', '01');
+    const poi = tlv('01', amount ? '11' : '12'); // 11 dynamic (amount fixed), 12 static
+    const country = tlv('58', 'TH');
+    const currency = tlv('53', '764');
+    const amountTlv = amount ? tlv('54', amount.toFixed(2)) : '';
+    const name = PROMPTPAY_DISPLAY ? tlv('59', PROMPTPAY_DISPLAY.substring(0, 25)) : '';
+    const city = tlv('60', 'Bangkok');
+
+    let payload = payloadFormat + poi + mai + country + currency + amountTlv + name + city + '6304';
+    const crc = crc16ccitt(payload);
+    payload += crc;
+    return payload;
+  }
+
+  // CRC16-CCITT (0x1021, initial 0xFFFF) uppercase hex
+  function crc16ccitt(str: string) {
+    let crc = 0xFFFF;
+    for (let i = 0; i < str.length; i++) {
+      crc ^= str.charCodeAt(i) << 8;
+      for (let j = 0; j < 8; j++) {
+        if ((crc & 0x8000) !== 0) crc = (crc << 1) ^ 0x1021; else crc <<= 1;
+        crc &= 0xFFFF;
+      }
+    }
+    return crc.toString(16).toUpperCase().padStart(4, '0');
+  }
+
+  app.post('/api/donations/create', async (req, res) => {
+    try {
+      const { amount, donorName, isAnonymous, message } = req.body as {
+        amount: number; donorName?: string; isAnonymous?: boolean; message?: string;
+      };
+
+      if (!amount || amount < 1) return res.status(400).json({ error: 'Invalid amount' });
+
+      const reference = nanoid(12);
+      const payload = buildPromptPayPayload(PROMPTPAY_ID, amount);
+      const qrDataUrl = await QRCode.toDataURL(payload, { margin: 2, width: 320 });
+
+      const donation = await storage.createDonation({
+        amount: Math.round(amount),
+        currency: 'THB',
+        donorName: donorName?.trim() || null as any,
+        isAnonymous: !!isAnonymous,
+        message: message?.trim() || null as any,
+        reference,
+        status: 'pending',
+      } as InsertDonation);
+
+      res.json({
+        id: donation.id,
+        reference,
+        amount: donation.amount,
+        currency: donation.currency,
+        qrDataUrl,
+        promptPayDisplay: PROMPTPAY_DISPLAY,
+      });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Failed to create donation' });
+    }
+  });
+
+  app.post('/api/donations/approve/:id', authMiddleware, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const updated = await storage.approveDonation(id);
+      if (!updated) return res.status(404).json({ error: 'Donation not found' });
+
+      // Broadcast update
+      broadcastDonationEvent({ type: 'donation_approved', donation: updated });
+      // Also broadcast new ranks
+      const ranks = await storage.getDonationRanking('all');
+      broadcastDonationEvent({ type: 'ranks', ranks });
+
+      res.json(updated);
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Failed to approve donation' });
+    }
+  });
+
+  app.get('/api/donations/rank', async (req, res) => {
+    try {
+      const range = (req.query.range as 'today'|'week'|'all') || 'all';
+      const ranks = await storage.getDonationRanking(range);
+      res.json(ranks);
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Failed to get ranking' });
+    }
+  });
+
+  app.get('/api/donations/recent', async (_req, res) => {
+    try {
+      const recent = await storage.getRecentDonations(10);
+      res.json(recent);
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Failed to get recent donations' });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

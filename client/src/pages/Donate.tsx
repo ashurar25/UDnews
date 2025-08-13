@@ -5,9 +5,108 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, ArrowLeft, CreditCard, Smartphone, QrCode, Trophy } from "lucide-react";
 import { useLocation } from "wouter";
+import { useEffect, useMemo, useState } from "react";
 
 const Donate = () => {
   const [, setLocation] = useLocation();
+
+  // Form state
+  const [amount, setAmount] = useState<number>(100);
+  const [donorName, setDonorName] = useState<string>("");
+  const [isAnonymous, setIsAnonymous] = useState<boolean>(false);
+  const [message, setMessage] = useState<string>("");
+
+  // Donation session state
+  const [qrDataUrl, setQrDataUrl] = useState<string>("");
+  const [donationId, setDonationId] = useState<number | null>(null);
+  const [reference, setReference] = useState<string>("");
+  const [creating, setCreating] = useState<boolean>(false);
+  const [status, setStatus] = useState<string>("idle");
+
+  // Ranking / recent supporters
+  const [range, setRange] = useState<"today" | "week" | "all">("all");
+  const [ranks, setRanks] = useState<Array<{ name: string; total: number; count: number }>>([]);
+  const [recent, setRecent] = useState<Array<{ id: number; donorName: string | null; isAnonymous: boolean; amount: number }>>([]);
+
+  const maskedName = useMemo(() => {
+    if (!donorName) return "";
+    if (donorName.length <= 1) return "*";
+    return donorName[0] + "*".repeat(Math.max(1, donorName.length - 1));
+  }, [donorName]);
+
+  useEffect(() => {
+    // Fetch initial ranks and recent
+    const fetchData = async () => {
+      try {
+        const [r, rc] = await Promise.all([
+          fetch(`/api/donations/rank?range=${range}`).then((res) => res.json()),
+          fetch(`/api/donations/recent`).then((res) => res.json()),
+        ]);
+        setRanks(r || []);
+        setRecent(rc || []);
+      } catch (e) {
+        // noop
+      }
+    };
+    fetchData();
+  }, [range]);
+
+  useEffect(() => {
+    // Connect SSE for realtime updates
+    const es = new EventSource("/api/donations/stream");
+    es.onmessage = (ev) => {
+      try {
+        const data = JSON.parse(ev.data);
+        if (data?.type === "donation_approved") {
+          // refresh recent and ranks
+          Promise.all([
+            fetch(`/api/donations/rank?range=${range}`).then((res) => res.json()),
+            fetch(`/api/donations/recent`).then((res) => res.json()),
+          ]).then(([r, rc]) => {
+            setRanks(r || []);
+            setRecent(rc || []);
+          });
+
+          if (donationId && data.donation?.id === donationId) {
+            setStatus("approved");
+          }
+        } else if (data?.type === "ranks") {
+          setRanks(data.ranks || []);
+        }
+      } catch {}
+    };
+    es.onerror = () => {
+      // auto-close; browser may retry
+    };
+    return () => es.close();
+  }, [range, donationId]);
+
+  const createDonation = async () => {
+    try {
+      setCreating(true);
+      setStatus("creating");
+      setQrDataUrl("");
+      setReference("");
+      setDonationId(null);
+
+      const res = await fetch("/api/donations/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: Number(amount), donorName, isAnonymous, message }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "สร้าง QR ไม่สำเร็จ");
+
+      setQrDataUrl(data.qrDataUrl);
+      setReference(data.reference);
+      setDonationId(data.id);
+      setStatus("pending");
+    } catch (e) {
+      setStatus("error");
+    } finally {
+      setCreating(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -70,18 +169,78 @@ const Donate = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 font-kanit">
                   <CreditCard className="h-5 w-5 text-green-500" />
-                  วิธีการสนับสนุน
+                  สนับสนุนผ่าน PromptPay
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="text-center p-6 bg-muted/30 rounded-lg border-2 border-dashed border-muted-foreground/20">
-                  <QrCode className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-xl font-bold font-kanit mb-2">QR Code การบริจาค</h3>
-                  <p className="text-muted-foreground font-sarabun">
-                    กำลังจัดเตรียม QR Code สำหรับการโอนเงินผ่านแอปธนาคาร
-                  </p>
-                  <Badge className="mt-3 bg-yellow-100 text-yellow-800">เร็วๆ นี้</Badge>
+                <div className="grid grid-cols-1 gap-3">
+                  <div>
+                    <label className="block text-sm mb-1 font-sarabun">จำนวนเงิน (บาท)</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={amount}
+                      onChange={(e) => setAmount(Number(e.target.value))}
+                      className="w-full border rounded-md px-3 py-2 bg-background"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-1 font-sarabun">ชื่อผู้สนับสนุน</label>
+                    <input
+                      type="text"
+                      value={donorName}
+                      onChange={(e) => setDonorName(e.target.value)}
+                      placeholder="ไม่กรอกก็ได้"
+                      className="w-full border rounded-md px-3 py-2 bg-background"
+                    />
+                    <div className="flex items-center gap-2 mt-2">
+                      <input id="anon" type="checkbox" checked={isAnonymous} onChange={(e) => setIsAnonymous(e.target.checked)} />
+                      <label htmlFor="anon" className="text-sm text-muted-foreground font-sarabun">ไม่เปิดเผยชื่อ</label>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-1 font-sarabun">ข้อความกำลังใจ (ตัวเลือก)</label>
+                    <textarea
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      rows={3}
+                      className="w-full border rounded-md px-3 py-2 bg-background"
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    <Button onClick={createDonation} disabled={creating} className="font-sarabun">
+                      <QrCode className="h-4 w-4 mr-2" /> สร้าง QR เพื่อสแกน
+                    </Button>
+                    {status === 'pending' && (
+                      <Badge variant="secondary" className="font-sarabun">รอสแกนและชำระ</Badge>
+                    )}
+                    {status === 'approved' && (
+                      <Badge className="bg-green-600 text-white font-sarabun">ได้รับการยืนยันแล้ว</Badge>
+                    )}
+                    {status === 'error' && (
+                      <Badge className="bg-red-600 text-white font-sarabun">เกิดข้อผิดพลาด</Badge>
+                    )}
+                  </div>
                 </div>
+
+                {qrDataUrl ? (
+                  <div className="mt-4 p-4 rounded-lg border text-center">
+                    <div className="mb-2 text-sm text-muted-foreground font-sarabun">สแกนด้วยแอปธนาคาร พร้อมเพย์ไปยัง "อัพเดทข่าวอุดร - UD News Update"</div>
+                    <img src={qrDataUrl} alt="PromptPay QR" className="mx-auto w-64 h-64" />
+                    <div className="mt-2 text-xs text-muted-foreground font-sarabun">อ้างอิง (reference): {reference}</div>
+                    {donorName && !isAnonymous && (
+                      <div className="mt-1 text-xs text-muted-foreground font-sarabun">ชื่อที่จะแสดง: {maskedName}</div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center p-6 bg-muted/30 rounded-lg border-2 border-dashed border-muted-foreground/20">
+                    <QrCode className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-bold font-kanit mb-2">QR Code การบริจาค</h3>
+                    <p className="text-muted-foreground font-sarabun">
+                      ใส่จำนวนเงินและกด "สร้าง QR เพื่อสแกน"
+                    </p>
+                  </div>
+                )}
 
                 <div className="space-y-3">
                   <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
@@ -91,132 +250,40 @@ const Donate = () => {
                       <p className="text-sm text-muted-foreground font-sarabun">PromptPay, ธนาคารทุกสาขา</p>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                    <CreditCard className="h-5 w-5 text-green-600" />
-                    <div>
-                      <p className="font-semibold font-kanit">โอนเงินธนาคาร</p>
-                      <p className="text-sm text-muted-foreground font-sarabun">โอนผ่านเคาน์เตอร์ ATM</p>
-                    </div>
-                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Support Tiers */}
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="text-center font-kanit">ระดับการสนับสนุน</CardTitle>
-              <p className="text-center text-muted-foreground font-sarabun">
-                เลือกระดับการสนับสนุนตามความสมัครใจ
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="text-center p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-500 transition-colors">
-                  <div className="text-gray-600 text-4xl mb-4">🥉</div>
-                  <h3 className="text-xl font-bold font-kanit mb-2">ผู้สนับสนุนใหม่</h3>
-                  <p className="text-3xl font-bold text-gray-600 mb-4">20-49 บาท</p>
-                  <div className="text-sm text-muted-foreground font-sarabun space-y-1">
-                    <p>• แสดงชื่อในหน้าสนับสนุน</p>
-                    <p>• รับ Badge "ผู้สนับสนุน"</p>
-                  </div>
-                </div>
-
-                <div className="text-center p-6 border-2 border-orange-400 bg-orange-50 dark:bg-orange-950/20 rounded-lg hover:shadow-lg transition-all">
-                  <div className="text-orange-600 text-4xl mb-4">🥈</div>
-                  <h3 className="text-xl font-bold font-kanit mb-2">ผู้สนับสนุนเงิน</h3>
-                  <p className="text-3xl font-bold text-orange-600 mb-4">50-199 บาท</p>
-                  <div className="text-sm text-muted-foreground font-sarabun space-y-1">
-                    <p>• ประโยชน์ระดับก่อนหน้า</p>
-                    <p>• รับ Badge "ผู้สนับสนุนเงิน"</p>
-                    <p>• แสดงชื่อขนาดใหญ่กว่า</p>
-                  </div>
-                </div>
-
-                <div className="text-center p-6 border-2 border-yellow-400 bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20 rounded-lg hover:shadow-lg transition-all">
-                  <div className="text-yellow-600 text-4xl mb-4">🥇</div>
-                  <h3 className="text-xl font-bold font-kanit mb-2">ผู้สนับสนุนทอง</h3>
-                  <p className="text-3xl font-bold text-yellow-600 mb-4">200-499 บาท</p>
-                  <div className="text-sm text-muted-foreground font-sarabun space-y-1">
-                    <p>• ประโยชน์ระดับก่อนหน้า</p>
-                    <p>• รับ Badge "ผู้สนับสนุนทอง"</p>
-                    <p>• แสดงชื่อใน Top Supporters</p>
-                    <p>• ได้รับการขอบคุณพิเศษ</p>
-                  </div>
-                </div>
-
-                <div className="text-center p-6 border-2 border-purple-400 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-lg hover:shadow-lg transition-all relative overflow-hidden">
-                  <div className="absolute top-2 right-2 text-xs bg-purple-500 text-white px-2 py-1 rounded-full">VIP</div>
-                  <div className="text-purple-600 text-4xl mb-4">💎</div>
-                  <h3 className="text-xl font-bold font-kanit mb-2">ผู้สนับสนุนเพชร</h3>
-                  <p className="text-3xl font-bold text-purple-600 mb-4">500+ บาท</p>
-                  <div className="text-sm text-muted-foreground font-sarabun space-y-1">
-                    <p>• ประโยชน์ระดับก่อนหน้าทั้งหมด</p>
-                    <p>• รับ Badge "ผู้สนับสนุนเพชร"</p>
-                    <p>• อันดับ 1 ใน Hall of Fame</p>
-                    <p>• ได้รับการขอบคุณพิเศษ</p>
-                    <p>• สิทธิ์แนะนำข่าวพิเศษ</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Hall of Fame & Top Supporters */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            {/* Hall of Fame */}
+            {/* Hall of Fame (Top Ranking) */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 font-kanit">
                   <Trophy className="h-5 w-5 text-yellow-500" />
-                  Hall of Fame
+                  อันดับผู้สนับสนุน
                 </CardTitle>
-                <p className="text-sm text-muted-foreground font-sarabun">
-                  ผู้สนับสนุนระดับเพชรและทองคำ
-                </p>
+                <div className="flex gap-2">
+                  {(["today","week","all"] as const).map((r) => (
+                    <Button key={r} size="sm" variant={range===r?"default":"outline"} onClick={() => setRange(r)} className="font-sarabun">
+                      {r === 'today' ? 'วันนี้' : r === 'week' ? 'สัปดาห์นี้' : 'ทั้งหมด'}
+                    </Button>
+                  ))}
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-lg">
-                    <div className="text-2xl">💎</div>
-                    <div>
-                      <p className="font-semibold font-kanit">คุณสมชาย ใจดี</p>
-                      <p className="text-sm text-muted-foreground font-sarabun">ผู้สนับสนุนเพชร • 1,000 บาท</p>
+                <div className="space-y-3">
+                  {ranks.length === 0 && (
+                    <div className="text-sm text-muted-foreground font-sarabun">ยังไม่มีรายการ</div>
+                  )}
+                  {ranks.map((r, idx) => (
+                    <div key={idx} className="flex items-center gap-3 p-3 rounded-lg border">
+                      <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">#{idx+1}</Badge>
+                      <div className="font-kanit">{r.name}</div>
+                      <div className="ml-auto font-sarabun"><Badge variant="outline">{r.total} บาท</Badge></div>
                     </div>
-                    <div className="ml-auto">
-                      <Badge variant="secondary" className="bg-purple-100 text-purple-700">
-                        #1
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20 rounded-lg">
-                    <div className="text-2xl">🥇</div>
-                    <div>
-                      <p className="font-semibold font-kanit">คุณวิไล สนับสนุน</p>
-                      <p className="text-sm text-muted-foreground font-sarabun">ผู้สนับสนุนทอง • 350 บาท</p>
-                    </div>
-                    <div className="ml-auto">
-                      <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">
-                        #2
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 rounded-lg">
-                    <div className="text-2xl">🥈</div>
-                    <div>
-                      <p className="font-semibold font-kanit">คุณประยุทธ ช่วยเหลือ</p>
-                      <p className="text-sm text-muted-foreground font-sarabun">ผู้สนับสนุนเงิน • 150 บาท</p>
-                    </div>
-                    <div className="ml-auto">
-                      <Badge variant="secondary" className="bg-orange-100 text-orange-700">
-                        #3
-                      </Badge>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -234,49 +301,24 @@ const Donate = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <div className="text-sm">🥉</div>
-                      <span className="font-sarabun text-sm">คุณสมหญิง</span>
+                  {recent.length === 0 && (
+                    <div className="text-sm text-muted-foreground font-sarabun">ยังไม่มีรายการ</div>
+                  )}
+                  {recent.map((d) => (
+                    <div key={d.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm">💖</div>
+                        <span className="font-sarabun text-sm">{d.isAnonymous ? 'ผู้ไม่ประสงค์ออกนาม' : (d.donorName || 'ผู้สนับสนุน')}</span>
+                      </div>
+                      <Badge variant="outline" className="text-xs">{d.amount} บาท</Badge>
                     </div>
-                    <Badge variant="outline" className="text-xs">25 บาท</Badge>
-                  </div>
-
-                  <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <div className="text-sm">🥈</div>
-                      <span className="font-sarabun text-sm">คุณอนันต์</span>
-                    </div>
-                    <Badge variant="outline" className="text-xs">80 บาท</Badge>
-                  </div>
-
-                  <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <div className="text-sm">🥉</div>
-                      <span className="font-sarabun text-sm">คุณมาลี</span>
-                    </div>
-                    <Badge variant="outline" className="text-xs">30 บาท</Badge>
-                  </div>
-
-                  <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <div className="text-sm">🥇</div>
-                      <span className="font-sarabun text-sm">คุณสุรชัย</span>
-                    </div>
-                    <Badge variant="outline" className="text-xs">250 บาท</Badge>
-                  </div>
-
-                  <div className="text-center pt-4">
-                    <Button variant="outline" size="sm" className="font-sarabun">
-                      ดูผู้สนับสนุนทั้งหมด
-                    </Button>
-                  </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Statistics */}
+          {/* Statistics - keep placeholder for now */}
           <Card className="mb-8">
             <CardHeader>
               <CardTitle className="text-center font-kanit">สถิติการสนับสนุน</CardTitle>
@@ -284,19 +326,19 @@ const Donate = () => {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">127</div>
+                  <div className="text-2xl font-bold text-blue-600">—</div>
                   <div className="text-sm text-muted-foreground font-sarabun">ผู้สนับสนุนทั้งหมด</div>
                 </div>
                 <div className="text-center p-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">15,750</div>
+                  <div className="text-2xl font-bold text-green-600">—</div>
                   <div className="text-sm text-muted-foreground font-sarabun">บาท ที่ได้รับ</div>
                 </div>
                 <div className="text-center p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
-                  <div className="text-2xl font-bold text-orange-600">85%</div>
+                  <div className="text-2xl font-bold text-orange-600">—</div>
                   <div className="text-sm text-muted-foreground font-sarabun">เป้าหมายประจำเดือน</div>
                 </div>
                 <div className="text-center p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">23</div>
+                  <div className="text-2xl font-bold text-purple-600">—</div>
                   <div className="text-sm text-muted-foreground font-sarabun">วัน ที่เหลือ</div>
                 </div>
               </div>

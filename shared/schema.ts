@@ -274,3 +274,30 @@ export const insertNewsRatingSchema = createInsertSchema(newsRatings).pick({
 
 export type NewsRating = typeof newsRatings.$inferSelect;
 export type InsertNewsRating = typeof newsRatings.$inferInsert;
+
+// Donations Table (Phase 1: manual approval)
+export const donations = pgTable("donations", {
+  id: serial("id").primaryKey(),
+  amount: integer("amount").notNull(), // in THB satang? here store THB integer amount
+  currency: varchar("currency", { length: 10 }).notNull().default("THB"),
+  status: varchar("status", { length: 20 }).notNull().default("pending"), // pending | approved | rejected
+  donorName: varchar("donor_name", { length: 200 }),
+  isAnonymous: boolean("is_anonymous").notNull().default(false),
+  message: text("message"),
+  reference: varchar("reference", { length: 64 }).notNull().unique(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  approvedAt: timestamp("approved_at"),
+});
+
+export const insertDonationSchema = createInsertSchema(donations).pick({
+  amount: true,
+  currency: true,
+  donorName: true,
+  isAnonymous: true,
+  message: true,
+  reference: true,
+  status: true,
+});
+
+export type Donation = typeof donations.$inferSelect;
+export type InsertDonation = typeof donations.$inferInsert;

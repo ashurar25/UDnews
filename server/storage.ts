@@ -1,4 +1,4 @@
-import { users, rssFeeds, newsArticles, sponsorBanners, rssProcessingHistory, siteSettings, contactMessages, newsViews, dailyStats, comments, newsletterSubscribers, pushSubscriptions, newsRatings, type InsertUser, type User, type InsertRssFeed, type RssFeed, type InsertNews, type NewsArticle, type InsertSponsorBanner, type SponsorBanner, type InsertRssHistory, type RssProcessingHistory, type InsertSiteSetting, type SiteSetting, type InsertContactMessage, type ContactMessage, type NewsView, type DailyStats, type Comment, type InsertComment, type NewsletterSubscriber, type InsertNewsletterSubscriber, type PushSubscription, type InsertPushSubscription, type NewsRating, type InsertNewsRating } from "@shared/schema";
+import { users, rssFeeds, newsArticles, sponsorBanners, rssProcessingHistory, siteSettings, contactMessages, newsViews, dailyStats, comments, newsletterSubscribers, pushSubscriptions, newsRatings, donations, type InsertUser, type User, type InsertRssFeed, type RssFeed, type InsertNews, type NewsArticle, type InsertSponsorBanner, type SponsorBanner, type InsertRssHistory, type RssProcessingHistory, type InsertSiteSetting, type SiteSetting, type InsertContactMessage, type ContactMessage, type NewsView, type DailyStats, type Comment, type InsertComment, type NewsletterSubscriber, type InsertNewsletterSubscriber, type PushSubscription, type InsertPushSubscription, type NewsRating, type InsertNewsRating, type Donation, type InsertDonation } from "@shared/schema";
 import { eq, sql, desc, and, or, ilike, gte, lte } from "drizzle-orm";
 import { db, backupDb } from "./db";
 
@@ -99,6 +99,11 @@ export interface IStorage {
   deleteComment(id: number): Promise<boolean>;
   updateGlobalSetting(key: string, value: string): Promise<boolean>;
   getGlobalSetting(key: string): Promise<string | null>;
+  // Donations
+  createDonation(donation: InsertDonation): Promise<Donation>;
+  approveDonation(id: number): Promise<Donation | null>;
+  getDonationRanking(range: 'today'|'week'|'all'): Promise<Array<{ name: string; total: number; count: number }>>;
+  getRecentDonations(limit?: number): Promise<Donation[]>;
 }
 
 // MemStorage class removed - using only PostgreSQL database storage
@@ -960,6 +965,66 @@ export class DatabaseStorage implements IStorage {
       console.error('Error getting global setting:', error);
       return null;
     }
+  }
+
+  // Donations
+  async createDonation(donation: InsertDonation): Promise<Donation> {
+    const [row] = await db.insert(donations).values(donation).returning();
+    return row;
+  }
+
+  async approveDonation(id: number): Promise<Donation | null> {
+    const [row] = await db
+      .update(donations)
+      .set({ status: 'approved' as any, approvedAt: new Date() })
+      .where(eq(donations.id, id))
+      .returning();
+    return row || null;
+  }
+
+  async getDonationRanking(range: 'today'|'week'|'all'): Promise<Array<{ name: string; total: number; count: number }>> {
+    // compute time filter
+    let since: Date | null = null;
+    const now = new Date();
+    if (range === 'today') {
+      since = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    } else if (range === 'week') {
+      since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    }
+
+    // Build base where
+    let whereSql = sql`status = 'approved'`;
+    if (since) {
+      whereSql = sql`${whereSql} AND ${donations.createdAt} >= ${since}`;
+    }
+
+    const rows = await db.execute<{ name: string; total: number; count: number }>(
+      sql`SELECT 
+            CASE 
+              WHEN COALESCE(${donations.isAnonymous}, false) = true OR ${donations.donorName} IS NULL OR ${donations.donorName} = ''
+              THEN 'ผู้ไม่ประสงค์ออกนาม'
+              ELSE ${donations.donorName}
+            END as name,
+            SUM(${donations.amount})::int as total,
+            COUNT(*)::int as count
+          FROM ${donations}
+          WHERE ${whereSql}
+          GROUP BY name
+          ORDER BY total DESC, count DESC
+          LIMIT 50`
+    );
+
+    return rows.rows || [];
+  }
+
+  async getRecentDonations(limit: number = 10): Promise<Donation[]> {
+    const rows = await db
+      .select()
+      .from(donations)
+      .where(eq(donations.status, 'approved' as any))
+      .orderBy(desc(donations.approvedAt), desc(donations.createdAt))
+      .limit(limit);
+    return rows as Donation[];
   }
 }
 
