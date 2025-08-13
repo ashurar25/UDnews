@@ -76,6 +76,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.sendFile(adminFilePath);
   });
 
+  // Reconcile donations from bank transactions (admin only)
+  // Request body example:
+  // {
+  //   "transactions": [
+  //     { "amount": 500, "time": "2025-08-13T09:15:00Z", "reference": "UDN-ABC123", "note": "PromptPay Bill Payment UDN-ABC123" }
+  //   ],
+  //   "matchWindowMinutes": 60, // optional, default 120
+  //   "dryRun": true // optional
+  // }
+  app.post('/api/donations/reconcile', authMiddleware, async (req, res) => {
+    try {
+      const { transactions, matchWindowMinutes, dryRun } = req.body || {};
+      if (!Array.isArray(transactions)) {
+        return res.status(400).json({ error: 'Invalid transactions array' });
+      }
+
+      const windowMin: number = Number.isFinite(matchWindowMinutes) ? Math.max(0, Number(matchWindowMinutes)) : 120;
+
+      // Load pending donations
+      const pending = await storage.getDonations({ status: 'pending', limit: 1000 });
+
+      // Build indexes
+      const byRef = new Map<string, typeof pending[number]>();
+      for (const d of pending) {
+        if (d.reference) byRef.set(d.reference.trim().toLowerCase(), d);
+      }
+
+      const matched: Array<{ donationId: number; reference: string; amount: number; method: 'reference'|'amount_time'; transaction: any }>[] = [] as any;
+      const approvals: Array<{ donationId: number; txIndex: number }>[] = [] as any;
+
+      const results: Array<{ txIndex: number; matchedDonationId?: number; reason?: string; method?: string }> = [];
+
+      const txs = transactions as Array<{ amount: number; time?: string; reference?: string; note?: string }>; 
+
+      for (let i = 0; i < txs.length; i++) {
+        const tx = txs[i];
+        const txRef = (tx.reference || tx.note || '').trim().toLowerCase();
+        const txTime = tx.time ? new Date(tx.time).getTime() : undefined;
+        const txAmount = Number(tx.amount);
+
+        if (!Number.isFinite(txAmount)) {
+          results.push({ txIndex: i, reason: 'Invalid amount' });
+          continue;
+        }
+
+        // 1) Exact reference match (best)
+        if (txRef) {
+          // Find any ref token present in note/reference
+          // We try to match the donation reference as a substring within txRef
+          let found: typeof pending[number] | undefined;
+          for (const [refKey, d] of byRef.entries()) {
+            if (txRef.includes(refKey)) { found = d; break; }
+          }
+          if (found && found.amount === txAmount) {
+            results.push({ txIndex: i, matchedDonationId: found.id, method: 'reference' });
+            approvals.push({ donationId: found.id, txIndex: i } as any);
+            // mark as used
+            byRef.delete(found.reference.trim().toLowerCase());
+            continue;
+          }
+        }
+
+        // 2) Amount + time window (fallback)
+        if (typeof txTime === 'number') {
+          const windowMs = windowMin * 60 * 1000;
+          let candidate: typeof pending[number] | undefined;
+          let minDelta = Number.POSITIVE_INFINITY;
+          for (const d of pending) {
+            if (d.status !== 'pending') continue;
+            if (d.amount !== txAmount) continue;
+            const dTime = new Date(d.createdAt).getTime();
+            const delta = Math.abs(dTime - txTime);
+            if (delta <= windowMs && delta < minDelta) {
+              // ensure not already matched by ref
+              const key = d.reference?.trim().toLowerCase();
+              if (key && !byRef.has(key)) continue; // already matched before
+              candidate = d;
+              minDelta = delta;
+            }
+          }
+          if (candidate) {
+            results.push({ txIndex: i, matchedDonationId: candidate.id, method: 'amount_time' });
+            approvals.push({ donationId: candidate.id, txIndex: i } as any);
+            if (candidate.reference) byRef.delete(candidate.reference.trim().toLowerCase());
+            continue;
+          }
+        }
+
+        results.push({ txIndex: i, reason: 'No match' });
+      }
+
+      // Apply approvals unless dryRun
+      const approvedIds: number[] = [];
+      if (!dryRun) {
+        for (const ap of approvals as any) {
+          try {
+            const updated = await storage.approveDonation(ap.donationId);
+            if (updated) {
+              approvedIds.push(ap.donationId);
+              // SSE broadcast
+              const payload = `data: ${JSON.stringify({ type: 'donation_approved', id: ap.donationId })}\n\n`;
+              donationSseClients.forEach(({ res }) => { try { res.write(payload); } catch {} });
+            }
+          } catch {}
+        }
+      }
+
+      res.json({
+        dryRun: !!dryRun,
+        windowMinutes: windowMin,
+        totalTransactions: txs.length,
+        matched: results.filter(r => !!r.matchedDonationId).length,
+        approvedIds,
+        results,
+      });
+    } catch (error) {
+      console.error('Error reconciling donations:', error);
+      res.status(500).json({ error: 'Failed to reconcile donations' });
+    }
+  });
+
   // Redirect /admin to static HTML
   app.get('/admin', (req, res) => {
     res.redirect('/admin.html');
