@@ -10,12 +10,15 @@ interface Donation {
   amount: number;
   currency: string;
   status: 'pending'|'approved'|'rejected';
-  donorName: string | null;
+  donorName?: string;
   isAnonymous: boolean;
-  message: string | null;
+  message?: string;
   reference: string;
   createdAt: string;
-  approvedAt?: string | null;
+  approvedAt?: string;
+  slipUrl?: string;
+  slipUploadedAt?: string;
+  rejectedReason?: string;
 }
 
 const DonationManager: React.FC = () => {
@@ -29,6 +32,7 @@ const DonationManager: React.FC = () => {
   const [maxAmount, setMaxAmount] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [notice, setNotice] = useState<string>('');
+  const [onlyWithSlip, setOnlyWithSlip] = useState<boolean>(false);
 
   const adminToken = useMemo(() => localStorage.getItem('adminToken') || '', []);
 
@@ -53,6 +57,31 @@ const DonationManager: React.FC = () => {
       setError(e instanceof Error ? e.message : 'เกิดข้อผิดพลาด');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const rejectDonation = async (id: number) => {
+    if (!adminToken) {
+      setError('ไม่พบสิทธิ์ผู้ดูแลระบบ กรุณาเข้าสู่ระบบใหม่');
+      return;
+    }
+    const reason = window.prompt('ระบุเหตุผลที่ปฏิเสธ (เช่น สลิปไม่ถูกต้อง/ไม่พบรายการ)');
+    if (reason === null) return; // cancelled
+    try {
+      const res = await fetch(`/api/donations/reject/${id}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: reason || 'rejected' }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as any)?.error || 'Reject failed');
+      }
+      setPending((prev) => prev.filter((d) => d.id !== id));
+      setNotice('ปฏิเสธรายการสำเร็จ');
+      setTimeout(() => setNotice(''), 2000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'ปฏิเสธไม่สำเร็จ');
     }
   };
 
@@ -122,7 +151,7 @@ const DonationManager: React.FC = () => {
     return true;
   };
 
-  const filteredPending = useMemo(() => pending.filter(matchFilters), [pending, filter, dateFrom, dateTo, minAmount, maxAmount]);
+  const filteredPending = useMemo(() => pending.filter(d => matchFilters(d) && (!onlyWithSlip || !!d.slipUrl)), [pending, filter, dateFrom, dateTo, minAmount, maxAmount, onlyWithSlip]);
   const filteredApproved = useMemo(() => approved.filter(matchFilters), [approved, filter, dateFrom, dateTo, minAmount, maxAmount]);
 
   return (
@@ -145,6 +174,10 @@ const DonationManager: React.FC = () => {
           <Button variant="outline" onClick={fetchDonations} disabled={loading} className="border-orange-200 hover:bg-orange-50">
             <RefreshCcw className="h-4 w-4 mr-2" /> รีเฟรช
           </Button>
+          <label className="flex items-center gap-2 text-sm font-sarabun ml-2 select-none">
+            <input type="checkbox" className="accent-orange-600" checked={onlyWithSlip} onChange={(e) => setOnlyWithSlip(e.target.checked)} />
+            เฉพาะที่มีสลิป
+          </label>
         </div>
       </div>
 
@@ -171,7 +204,7 @@ const DonationManager: React.FC = () => {
               <div className="text-sm text-muted-foreground font-sarabun">ไม่มีรายการรออนุมัติ</div>
             )}
             {filteredPending.map((d) => (
-              <div key={d.id} className="p-3 border rounded-lg flex items-center gap-3 hover:bg-orange-50/40 transition-colors">
+              <div key={d.id} className="p-3 border rounded-lg flex items-start gap-3 hover:bg-orange-50/40 transition-colors">
                 <div>
                   <div className="font-sarabun">
                     {d.isAnonymous || !d.donorName ? 'ผู้ไม่ประสงค์ออกนาม' : d.donorName}
@@ -182,11 +215,22 @@ const DonationManager: React.FC = () => {
                   {d.message && (
                     <div className="text-xs text-muted-foreground font-sarabun mt-1">“{d.message}”</div>
                   )}
+                  {d.slipUrl ? (
+                    <div className="mt-2 flex items-center gap-2">
+                      <a href={d.slipUrl} target="_blank" rel="noreferrer" className="text-xs text-orange-700 underline font-sarabun">ดูสลิป</a>
+                      <span className="text-[11px] text-muted-foreground font-sarabun">อัปโหลด: {d.slipUploadedAt ? new Date(d.slipUploadedAt).toLocaleString() : '-'}</span>
+                    </div>
+                  ) : (
+                    <div className="mt-2 text-xs text-muted-foreground font-sarabun">ยังไม่มีสลิปแนบ</div>
+                  )}
                 </div>
                 <div className="ml-auto flex items-center gap-2">
                   <Badge variant="outline" className="font-sarabun">{d.amount} บาท</Badge>
                   <Button size="sm" onClick={() => approveDonation(d.id)} className="font-sarabun bg-orange-600 hover:bg-orange-700">
                     <ShieldCheck className="h-4 w-4 mr-2" /> อนุมัติ
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => rejectDonation(d.id)} className="font-sarabun">
+                    ปฏิเสธ
                   </Button>
                 </div>
               </div>

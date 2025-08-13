@@ -285,6 +285,9 @@ export const donations = pgTable("donations", {
   isAnonymous: boolean("is_anonymous").notNull().default(false),
   message: text("message"),
   reference: varchar("reference", { length: 64 }).notNull().unique(),
+  slipUrl: text("slip_url"),
+  slipUploadedAt: timestamp("slip_uploaded_at"),
+  rejectedReason: text("rejected_reason"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   approvedAt: timestamp("approved_at"),
 });

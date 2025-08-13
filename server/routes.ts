@@ -22,7 +22,8 @@ import {
   dailyStats,
   comments,
   newsRatings,
-  rssProcessingHistory
+  rssProcessingHistory,
+  donations
 } from "@shared/schema";
 import { eq, desc, and, gte, lte, sql, asc } from "drizzle-orm";
 import { rssService } from "./rss-service";
@@ -74,6 +75,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     res.sendFile(adminFilePath);
+  });
+
+  // Public: attach slip URL to an existing pending donation by reference
+  app.post('/api/donations/attach-slip', async (req, res) => {
+    try {
+      const { reference, slipUrl } = req.body || {};
+      if (!reference || typeof reference !== 'string' || !slipUrl || typeof slipUrl !== 'string') {
+        return res.status(400).json({ error: 'reference and slipUrl are required' });
+      }
+
+      const ref = (reference as string).trim();
+      const now = new Date();
+
+      const result = await db
+        .update(donations)
+        .set({ slipUrl, slipUploadedAt: now })
+        .where(sql`lower(${donations.reference}) = ${ref.toLowerCase()} and ${donations.status} = 'pending'`)
+        .returning();
+
+      if (!result?.length) {
+        return res.status(404).json({ error: 'Donation not found or not pending' });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error attaching slip:', error);
+      res.status(500).json({ error: 'Failed to attach slip' });
+    }
+  });
+
+  // Admin: reject donation with reason
+  app.post('/api/donations/reject/:id', authMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { reason } = req.body || {};
+      if (isNaN(id)) return res.status(400).json({ error: 'Invalid id' });
+      const now = new Date();
+
+      const updated = await db
+        .update(donations)
+        .set({ status: 'rejected', rejectedReason: reason || 'rejected by admin', approvedAt: null })
+        .where(sql`${donations.id} = ${id} and ${donations.status} = 'pending'`)
+        .returning();
+
+      if (!updated?.length) {
+        return res.status(404).json({ error: 'Donation not found or not pending' });
+      }
+
+      // notify via SSE too (optional)
+      const payload = `data: ${JSON.stringify({ type: 'donation_rejected', id })}\n\n`;
+      donationSseClients.forEach(({ res }) => { try { res.write(payload); } catch {} });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error rejecting donation:', error);
+      res.status(500).json({ error: 'Failed to reject donation' });
+    }
   });
 
   // Reconcile donations from bank transactions (admin only)
