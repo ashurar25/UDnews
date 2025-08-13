@@ -203,11 +203,52 @@ export default function UserManager() {
     if (!editingUser) return;
     
     try {
-      // Mock API call
-      const updatedUsers = users.map(user =>
-        user.id === editingUser.id ? { ...user, ...formData } : user
-      );
-      setUsers(updatedUsers);
+      // Update user details
+      const updateRes = await fetch(`/api/users/${editingUser.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        },
+        body: JSON.stringify({
+          username: formData.username,
+          email: formData.email,
+          role: formData.role,
+          status: formData.status,
+        })
+      });
+
+      if (!updateRes.ok) {
+        if (updateRes.status === 401 || updateRes.status === 403) {
+          try { localStorage.removeItem('adminToken'); } catch {}
+          window.location.href = '/admin';
+          return;
+        }
+        throw new Error('Failed to update user');
+      }
+
+      // Change password if provided
+      if (formData.password && formData.password.trim().length > 0) {
+        const pwdRes = await fetch(`/api/users/${editingUser.id}/password`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          },
+          body: JSON.stringify({ currentPassword: '', newPassword: formData.password })
+        });
+        if (!pwdRes.ok) {
+          if (pwdRes.status === 401 || pwdRes.status === 403) {
+            try { localStorage.removeItem('adminToken'); } catch {}
+            window.location.href = '/admin';
+            return;
+          }
+          throw new Error('Failed to change password');
+        }
+      }
+
+      // Refresh list
+      await loadUsers();
       setIsEditDialogOpen(false);
       setEditingUser(null);
       setFormData({ username: '', email: '', password: '', role: 'user', status: 'active' });
@@ -227,10 +268,25 @@ export default function UserManager() {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      // Mock API call
+      const res = await fetch(`/api/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        }
+      });
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          try { localStorage.removeItem('adminToken'); } catch {}
+          window.location.href = '/admin';
+          return;
+        }
+        let msg = 'ไม่สามารถลบผู้ใช้ได้';
+        try { const data = await res.json(); msg = data.error || data.message || msg; } catch {}
+        throw new Error(msg);
+      }
+
       const userToDelete = users.find(u => u.id === userId);
       setUsers(users.filter(u => u.id !== userId));
-      
       toast({
         title: "ลบผู้ใช้สำเร็จ",
         description: `ผู้ใช้ ${userToDelete?.username} ถูกลบเรียบร้อยแล้ว`,

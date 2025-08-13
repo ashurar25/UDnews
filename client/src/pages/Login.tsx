@@ -19,9 +19,9 @@ const Login = () => {
 
   // Check if already logged in
   useEffect(() => {
-    const token = localStorage.getItem('admin-token');
+    const token = localStorage.getItem('adminToken');
     if (token) {
-      setLocation('/admin.html');
+      setLocation('/admin');
     }
   }, [setLocation]);
 
@@ -42,7 +42,7 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('admin-token', data.token);
+        localStorage.setItem('adminToken', data.token);
         toast({
           title: "เข้าสู่ระบบสำเร็จ",
           description: "ยินดีต้อนรับสู่แผงควบคุมแอดมิน",
