@@ -229,15 +229,25 @@ const Index = () => {
             <h2 className="text-2xl font-bold font-kanit">ข่าวเด่นวันนี้</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredNews.map((news, index) => (
-              <NewsCard
-                key={index}
-                {...news}
-                size={index === 0 ? 'large' : 'medium'}
-                variant="overlay"
-              />
-            ))}
+          {/* Desktop: Hero + Stacked layout, Mobile: simple list */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Lead story */}
+            <div className="lg:col-span-7">
+              {featuredNews[0] && (
+                <div className="group rounded-xl overflow-hidden shadow-news border border-orange-100 hover:shadow-xl transition-shadow">
+                  <NewsCard {...featuredNews[0]} size="large" variant="overlay" />
+                </div>
+              )}
+            </div>
+
+            {/* Secondary stories */}
+            <div className="lg:col-span-5 space-y-6">
+              {featuredNews.slice(1, 3).map((news, idx) => (
+                <div key={idx} className="group rounded-xl overflow-hidden shadow-news border border-orange-100 hover:shadow-lg transition-shadow">
+                  <NewsCard {...news} size="medium" variant="overlay" />
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Between News Sponsor Banner Bar */}
