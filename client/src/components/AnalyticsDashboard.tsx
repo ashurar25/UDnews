@@ -6,7 +6,7 @@ import { Eye, TrendingUp, Newspaper, Users } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const AnalyticsDashboard = () => {
-  const { data: analytics, isLoading } = useQuery({
+  const { data: analytics, isLoading, error } = useQuery({
     queryKey: ["analytics-summary"],
     queryFn: async () => {
       const response = await fetch("/api/analytics/summary");
@@ -16,6 +16,8 @@ const AnalyticsDashboard = () => {
       return response.json();
     },
     refetchInterval: 30000, // Refresh every 30 seconds
+    retry: 1,
+    retryDelay: 1000,
   });
 
   if (isLoading) {
@@ -29,6 +31,15 @@ const AnalyticsDashboard = () => {
             </CardHeader>
           </Card>
         ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-500 mb-2">เกิดข้อผิดพลาดในการโหลดข้อมูลสถิติ</p>
+        <p className="text-muted-foreground text-sm">กรุณาลองใหม่อีกครั้ง</p>
       </div>
     );
   }
@@ -54,7 +65,7 @@ const AnalyticsDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              {analytics.totalViews.toLocaleString()}
+              {analytics.totalViews ? analytics.totalViews.toLocaleString() : '0'}
             </div>
             <p className="text-xs text-muted-foreground">
               ครั้ง
@@ -71,7 +82,7 @@ const AnalyticsDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {analytics.todayViews.toLocaleString()}
+              {analytics.todayViews ? analytics.todayViews.toLocaleString() : '0'}
             </div>
             <p className="text-xs text-muted-foreground">
               ครั้ง
@@ -88,7 +99,7 @@ const AnalyticsDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">
-              {analytics.totalNews.toLocaleString()}
+              {analytics.totalNews ? analytics.totalNews.toLocaleString() : '0'}
             </div>
             <p className="text-xs text-muted-foreground">
               บทความ
@@ -105,7 +116,7 @@ const AnalyticsDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-600">
-              {analytics.totalNews > 0 ? (analytics.totalViews / analytics.totalNews).toFixed(1) : '0'}
+              {analytics.totalNews && analytics.totalViews && analytics.totalNews > 0 ? (analytics.totalViews / analytics.totalNews).toFixed(1) : '0'}
             </div>
             <p className="text-xs text-muted-foreground">
               ครั้ง/บทความ
@@ -136,31 +147,37 @@ const AnalyticsDashboard = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {analytics.popularNews.map((article: any, index: number) => (
-                <TableRow key={article.id}>
+              {analytics.popularNews && analytics.popularNews.length > 0 ? analytics.popularNews.map((article: any, index: number) => (
+                <TableRow key={article.id || index}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary" className="w-6 h-6 rounded-full p-0 flex items-center justify-center text-xs">
                         {index + 1}
                       </Badge>
-                      <span className="truncate max-w-md" title={article.title}>
-                        {article.title}
+                      <span className="truncate max-w-md" title={article.title || 'ไม่มีหัวข้อ'}>
+                        {article.title || 'ไม่มีหัวข้อ'}
                       </span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">
-                      {article.category}
+                      {article.category || 'ทั่วไป'}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right font-mono">
-                    {article.viewCount.toLocaleString()}
+                    {article.viewCount ? article.viewCount.toLocaleString() : '0'}
                   </TableCell>
                   <TableCell className="text-right text-muted-foreground">
-                    {new Date(article.publishedAt).toLocaleDateString('th-TH')}
+                    {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString('th-TH') : '-'}
                   </TableCell>
                 </TableRow>
-              ))}
+              )) : (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                    ยังไม่มีข้อมูลสถิติการเข้าชม
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
           

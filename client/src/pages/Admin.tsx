@@ -23,7 +23,9 @@ import {
   Mail,
   LogOut,
   MessageSquare,
-  FolderOpen
+  FolderOpen,
+  Menu,
+  X
 } from "lucide-react"
 import { Link } from "wouter"
 // Components will be lazy loaded
@@ -80,6 +82,7 @@ function AdminContent() {
   const [, setLocation] = useLocation()
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview")
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [systemStats, setSystemStats] = useState({
     totalNews: 0,
     totalMessages: 0,
@@ -180,15 +183,23 @@ function AdminContent() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="lg:hidden"
+              >
+                {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
               <Link to="/" className="flex items-center space-x-2 text-orange-600 hover:text-orange-700 transition-colors">
                 <Home className="h-5 w-5" />
-                <span className="text-sm font-sarabun font-medium">กลับหน้าหลัก</span>
+                <span className="text-sm font-sarabun font-medium hidden sm:inline">กลับหน้าหลัก</span>
               </Link>
-              <Separator orientation="vertical" className="h-6" />
-              <h1 className="text-3xl font-bold text-orange-800 font-kanit">แอดมิน UD News</h1>
+              <Separator orientation="vertical" className="h-6 hidden sm:block" />
+              <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-orange-800 font-kanit">แอดมิน UD News</h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <Badge variant="secondary" className="font-sarabun bg-orange-100 text-orange-700 hover:bg-orange-200">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <Badge variant="secondary" className="font-sarabun bg-orange-100 text-orange-700 hover:bg-orange-200 hidden sm:inline-flex">
                 ผู้ดูแลระบบ
               </Badge>
               <Button
@@ -197,7 +208,8 @@ function AdminContent() {
                 onClick={handleLogout}
                 className="font-sarabun border-red-300 text-red-600 hover:bg-red-50"
               >
-                ออกจากระบบ
+                <LogOut className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">ออกจากระบบ</span>
               </Button>
               <ThemeToggle />
             </div>
@@ -205,37 +217,151 @@ function AdminContent() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <Separator className="mb-8" />
-
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 gap-2">
+      <div className="flex">
+        {/* Sidebar */}
+        <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-orange-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}>
+          <div className="flex flex-col h-full">
+            <div className="p-4 border-b border-orange-200">
+              <h2 className="text-lg font-bold text-orange-800 font-kanit">เมนูจัดการ</h2>
+            </div>
+            <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
             {/* กลุ่ม 1: ภาพรวมและสถิติ */}
-            <TabsTrigger value="overview" className="col-span-2">ภาพรวม</TabsTrigger>
-            <TabsTrigger value="analytics">สถิติ</TabsTrigger>
+            <div className="mb-4">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">ภาพรวม</h3>
+              <button
+                onClick={() => { setActiveTab('overview'); setSidebarOpen(false); }}
+                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === 'overview' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <BarChart3 className="mr-3 h-4 w-4" />
+                ภาพรวมระบบ
+              </button>
+              <button
+                onClick={() => { setActiveTab('analytics'); setSidebarOpen(false); }}
+                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === 'analytics' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <BarChart3 className="mr-3 h-4 w-4" />
+                สถิติและการวิเคราะห์
+              </button>
+            </div>
 
             {/* กลุ่ม 2: จัดการเนื้อหา */}
-            <TabsTrigger value="news">จัดการข่าว</TabsTrigger>
-            <TabsTrigger value="rss">RSS Feeds</TabsTrigger>
-            <TabsTrigger value="sponsors">แบนเนอร์</TabsTrigger>
+            <div className="mb-4">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">จัดการเนื้อหา</h3>
+              <button
+                onClick={() => { setActiveTab('news'); setSidebarOpen(false); }}
+                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === 'news' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Newspaper className="mr-3 h-4 w-4" />
+                จัดการข่าว
+              </button>
+              <button
+                onClick={() => { setActiveTab('rss'); setSidebarOpen(false); }}
+                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === 'rss' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Rss className="mr-3 h-4 w-4" />
+                RSS Feeds
+              </button>
+              <button
+                onClick={() => { setActiveTab('sponsors'); setSidebarOpen(false); }}
+                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === 'sponsors' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Image className="mr-3 h-4 w-4" />
+                แบนเนอร์สปอนเซอร์
+              </button>
+            </div>
 
             {/* กลุ่ม 3: จัดการผู้ใช้และการสื่อสาร */}
-            <TabsTrigger value="messages">ข้อความ</TabsTrigger>
-            <TabsTrigger value="users">ผู้ใช้</TabsTrigger>
-            <TabsTrigger value="comments">ความคิดเห็น</TabsTrigger>
-            <TabsTrigger value="newsletter">จดหมายข่าว</TabsTrigger>
-            <TabsTrigger value="notifications">แจ้งเตือน</TabsTrigger>
+            <div className="mb-4">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">ผู้ใช้และการสื่อสาร</h3>
+              <button
+                onClick={() => { setActiveTab('users'); setSidebarOpen(false); }}
+                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === 'users' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Users className="mr-3 h-4 w-4" />
+                จัดการผู้ใช้
+              </button>
+              <button
+                onClick={() => { setActiveTab('messages'); setSidebarOpen(false); }}
+                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === 'messages' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Mail className="mr-3 h-4 w-4" />
+                ข้อความติดต่อ
+              </button>
+              <button
+                onClick={() => { setActiveTab('comments'); setSidebarOpen(false); }}
+                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === 'comments' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <MessageSquare className="mr-3 h-4 w-4" />
+                ความคิดเห็น
+              </button>
+              <button
+                onClick={() => { setActiveTab('newsletter'); setSidebarOpen(false); }}
+                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === 'newsletter' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Mail className="mr-3 h-4 w-4" />
+                จดหมายข่าว
+              </button>
+              <button
+                onClick={() => { setActiveTab('notifications'); setSidebarOpen(false); }}
+                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === 'notifications' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Clock className="mr-3 h-4 w-4" />
+                การแจ้งเตือน
+              </button>
+            </div>
 
             {/* กลุ่ม 4: การตั้งค่า */}
-            <TabsTrigger value="themes">ธีม</TabsTrigger>
-            <TabsTrigger value="settings">การตั้งค่า</TabsTrigger>
-            <TabsTrigger value="database">ฐานข้อมูล</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
-            <div className="flex items-center gap-2 mb-6">
-              <BarChart3 className="h-6 w-6 text-primary" />
-              <h2 className="text-2xl font-bold">ภาพรวมระบบ</h2>
+            <div className="mb-4">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">การตั้งค่า</h3>
+              <button
+                onClick={() => { setActiveTab('themes'); setSidebarOpen(false); }}
+                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === 'themes' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Palette className="mr-3 h-4 w-4" />
+                ธีมและการแสดงผล
+              </button>
+              <button
+                onClick={() => { setActiveTab('settings'); setSidebarOpen(false); }}
+                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === 'settings' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Settings className="mr-3 h-4 w-4" />
+                การตั้งค่าระบบ
+              </button>
+              <button
+                onClick={() => { setActiveTab('database'); setSidebarOpen(false); }}
+                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === 'database' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Database className="mr-3 h-4 w-4" />
+                จัดการฐานข้อมูล
+              </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* ข่าวและเนื้อหา */}
