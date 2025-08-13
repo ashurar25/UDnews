@@ -71,6 +71,20 @@ export default function DatabaseManager() {
   const [isRestoreDialogOpen, setIsRestoreDialogOpen] = useState(false);
   const [backupName, setBackupName] = useState('');
 
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('adminToken');
+    return { 'Authorization': token ? `Bearer ${token}` : '' } as Record<string, string>;
+  };
+
+  const handleUnauthorized = (res: Response) => {
+    if (res.status === 401 || res.status === 403) {
+      localStorage.removeItem('adminToken');
+      window.location.href = '/admin';
+      return true;
+    }
+    return false;
+  };
+
   // Load database information
   useEffect(() => {
     loadDatabaseInfo();
@@ -81,22 +95,26 @@ export default function DatabaseManager() {
       setIsLoading(true);
       
       // Fetch database stats
-      const statsResponse = await fetch('/api/database/stats');
+      const statsResponse = await fetch('/api/database/stats', { headers: { ...getAuthHeaders() } });
       if (statsResponse.ok) {
         const stats = await statsResponse.json();
         setDatabaseStats(stats);
       } else {
-        const errorData = await statsResponse.json();
+        if (handleUnauthorized(statsResponse)) return;
+        let errorData: any = {};
+        try { errorData = await statsResponse.json(); } catch {}
         throw new Error(errorData.error || `HTTP ${statsResponse.status}: ${statsResponse.statusText}`);
       }
 
       // Fetch tables info
-      const tablesResponse = await fetch('/api/database/tables');
+      const tablesResponse = await fetch('/api/database/tables', { headers: { ...getAuthHeaders() } });
       if (tablesResponse.ok) {
         const tablesData = await tablesResponse.json();
         setTables(tablesData);
       } else {
-        const errorData = await tablesResponse.json();
+        if (handleUnauthorized(tablesResponse)) return;
+        let errorData: any = {};
+        try { errorData = await tablesResponse.json(); } catch {}
         throw new Error(errorData.error || `HTTP ${tablesResponse.status}: ${tablesResponse.statusText}`);
       }
     } catch (error) {
@@ -125,11 +143,16 @@ export default function DatabaseManager() {
 
   const loadTableData = async (tableName: string) => {
     try {
-      const response = await fetch(`/api/database/tables/${tableName}/data?limit=100`);
+      const response = await fetch(`/api/database/tables/${tableName}/data?limit=100`, {
+        headers: { ...getAuthHeaders() }
+      });
       if (response.ok) {
         const data = await response.json();
         setTableData(data);
         setSelectedTable(tableName);
+      } else {
+        if (handleUnauthorized(response)) return;
+        throw new Error(`HTTP ${response.status}`);
       }
     } catch (error) {
       toast({
@@ -144,7 +167,7 @@ export default function DatabaseManager() {
     try {
       const response = await fetch('/api/database/backup', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ name: backupName })
       });
 
@@ -157,6 +180,7 @@ export default function DatabaseManager() {
         setBackupName('');
         loadDatabaseInfo(); // Refresh stats
       } else {
+        if (handleUnauthorized(response)) return;
         throw new Error('Backup failed');
       }
     } catch (error) {
@@ -175,6 +199,7 @@ export default function DatabaseManager() {
 
       const response = await fetch('/api/database/restore', {
         method: 'POST',
+        headers: { ...getAuthHeaders() },
         body: formData
       });
 
@@ -186,6 +211,7 @@ export default function DatabaseManager() {
         setIsRestoreDialogOpen(false);
         loadDatabaseInfo(); // Refresh stats
       } else {
+        if (handleUnauthorized(response)) return;
         throw new Error('Restore failed');
       }
     } catch (error) {
@@ -199,13 +225,16 @@ export default function DatabaseManager() {
 
   const clearCache = async () => {
     try {
-      const response = await fetch('/api/database/clear-cache', { method: 'POST' });
+      const response = await fetch('/api/database/clear-cache', { method: 'POST', headers: { ...getAuthHeaders() } });
       if (response.ok) {
         toast({
           title: "ล้างแคชสำเร็จ",
           description: "แคชฐานข้อมูลถูกล้างเรียบร้อยแล้ว",
         });
         loadDatabaseInfo(); // Refresh stats
+      } else {
+        if (handleUnauthorized(response)) return;
+        throw new Error('Clear cache failed');
       }
     } catch (error) {
       toast({
