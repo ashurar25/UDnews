@@ -9,7 +9,13 @@ const AnalyticsDashboard = () => {
   const { data: analytics, isLoading, error } = useQuery({
     queryKey: ["analytics-summary"],
     queryFn: async () => {
-      const response = await fetch("/api/analytics/summary");
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch("/api/analytics/summary", {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch analytics");
       }

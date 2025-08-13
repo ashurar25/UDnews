@@ -61,11 +61,17 @@ export default function NewsManager() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fixed: เพิ่ม queryFn ที่ขาดหาย
+  // Fixed: เพิ่ม queryFn ที่ขาดหาย และ authentication token
   const { data: news = [], isLoading, error } = useQuery({
     queryKey: ["/api/news"],
     queryFn: async (): Promise<News[]> => {
-      const response = await fetch("/api/news");
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch("/api/news", {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -77,9 +83,13 @@ export default function NewsManager() {
 
   const createNewsMutation = useMutation({
     mutationFn: async (data: NewsFormData): Promise<News> => {
+      const token = localStorage.getItem('adminToken');
       const response = await fetch("/api/news", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
         body: JSON.stringify(data),
       });
       if (!response.ok) throw new Error("Failed to create news");
@@ -101,9 +111,13 @@ export default function NewsManager() {
 
   const updateNewsMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<NewsFormData> }): Promise<News> => {
+      const token = localStorage.getItem('adminToken');
       const response = await fetch(`/api/news/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
         body: JSON.stringify(data),
       });
       if (!response.ok) throw new Error("Failed to update news");
@@ -125,7 +139,13 @@ export default function NewsManager() {
 
   const deleteNewsMutation = useMutation({
     mutationFn: async (id: number): Promise<void> => {
-      const response = await fetch(`/api/news/${id}`, { method: "DELETE" });
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`/api/news/${id}`, { 
+        method: "DELETE",
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : ''
+        }
+      });
       if (!response.ok) throw new Error("Failed to delete news");
     },
     onSuccess: () => {

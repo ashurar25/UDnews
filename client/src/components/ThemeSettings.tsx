@@ -72,7 +72,13 @@ export default function ThemeSettings() {
   // Load settings from API
   const loadSettings = async () => {
     try {
-      const response = await fetch("/api/site-settings");
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch("/api/site-settings", {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setSettings(data);
@@ -121,16 +127,24 @@ export default function ThemeSettings() {
         
         if (existingSetting) {
           // Update existing
+          const token = localStorage.getItem('adminToken');
           await fetch(`/api/site-settings/${setting.key}`, {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+              "Content-Type": "application/json",
+              'Authorization': token ? `Bearer ${token}` : ''
+            },
             body: JSON.stringify({ settingValue: setting.value }),
           });
         } else {
           // Create new
+          const token = localStorage.getItem('adminToken');
           await fetch("/api/site-settings", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+              "Content-Type": "application/json",
+              'Authorization': token ? `Bearer ${token}` : ''
+            },
             body: JSON.stringify({
               settingKey: setting.key,
               settingValue: setting.value,

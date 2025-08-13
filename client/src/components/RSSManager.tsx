@@ -62,7 +62,13 @@ export default function RSSManager() {
   const { data: feeds = [], isLoading, error } = useQuery({
     queryKey: ["/api/rss-feeds"],
     queryFn: async (): Promise<RSSFeed[]> => {
-      const response = await fetch("/api/rss-feeds");
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch("/api/rss-feeds", {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -75,7 +81,13 @@ export default function RSSManager() {
   const { data: processingStatus } = useQuery({
     queryKey: ["/api/rss/status"],
     queryFn: async (): Promise<ProcessingStatus> => {
-      const response = await fetch("/api/rss/status");
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch("/api/rss/status", {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -90,7 +102,7 @@ export default function RSSManager() {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem('admin-token')}`
+          'Authorization': localStorage.getItem('adminToken') ? `Bearer ${localStorage.getItem('adminToken')}` : ''
         },
         body: JSON.stringify(data),
       });
@@ -117,7 +129,7 @@ export default function RSSManager() {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem('admin-token')}`
+          'Authorization': localStorage.getItem('adminToken') ? `Bearer ${localStorage.getItem('adminToken')}` : ''
         },
         body: JSON.stringify(data),
       });
@@ -143,7 +155,7 @@ export default function RSSManager() {
       const response = await fetch(`/api/rss-feeds/${id}`, { 
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem('admin-token')}`
+          'Authorization': localStorage.getItem('adminToken') ? `Bearer ${localStorage.getItem('adminToken')}` : ''
         }
       });
       if (!response.ok) throw new Error("Failed to delete RSS feed");
@@ -166,7 +178,7 @@ export default function RSSManager() {
       const response = await fetch("/api/rss/process", { 
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem('admin-token')}`
+          'Authorization': localStorage.getItem('adminToken') ? `Bearer ${localStorage.getItem('adminToken')}` : ''
         }
       });
       if (!response.ok) throw new Error("Failed to process feeds");
@@ -189,7 +201,7 @@ export default function RSSManager() {
       const response = await fetch(`/api/rss/process/${id}`, { 
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem('admin-token')}`
+          'Authorization': localStorage.getItem('adminToken') ? `Bearer ${localStorage.getItem('adminToken')}` : ''
         }
       });
       if (!response.ok) throw new Error("Failed to process feed");

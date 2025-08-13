@@ -45,7 +45,13 @@ const ContactMessagesManager = () => {
   const fetchMessages = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/contact-messages");
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch("/api/contact-messages", {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setMessages(data);
@@ -65,8 +71,13 @@ const ContactMessagesManager = () => {
 
   const markAsRead = async (id: number) => {
     try {
+      const token = localStorage.getItem('adminToken');
       const response = await fetch(`/api/contact-messages/${id}/read`, {
         method: "PUT",
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
       });
 
       if (response.ok) {
@@ -93,8 +104,12 @@ const ContactMessagesManager = () => {
 
   const deleteMessage = async (id: number) => {
     try {
+      const token = localStorage.getItem('adminToken');
       const response = await fetch(`/api/contact-messages/${id}`, {
         method: "DELETE",
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : ''
+        }
       });
 
       if (response.ok) {
