@@ -86,13 +86,15 @@ const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simple demo authentication - accept any username/password for now
+    // Check credentials
     setTimeout(() => {
-      if (username && password) {
-        localStorage.setItem('adminToken', 'demo-token-' + Date.now());
+      if (username === 'admin' && password === 'udnews2025secure') {
+        localStorage.setItem('adminToken', 'admin-token-' + Date.now());
         onLogin();
-      } else {
+      } else if (!username || !password) {
         alert('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
+      } else {
+        alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
       }
       setIsLoading(false);
     }, 1000);
