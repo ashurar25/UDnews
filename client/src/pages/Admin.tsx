@@ -26,20 +26,46 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
-// Lazy load components
-const LazyAnalyticsDashboard = lazy(() => import('@/components/AnalyticsDashboard'));
-const LazyNewsManager = lazy(() => import('@/components/NewsManager'));
-const LazyRSSManager = lazy(() => import('@/components/RSSManager'));
-const LazySponsorManager = lazy(() => import('@/components/SponsorManager'));
-const LazyMediaManager = lazy(() => import('@/components/MediaManager'));
-const LazyCategoryManager = lazy(() => import('@/components/CategoryManager'));
-const LazyUserManager = lazy(() => import('@/components/UserManager'));
-const LazyContactMessagesManager = lazy(() => import('@/components/ContactMessagesManager'));
-const LazyCommentManager = lazy(() => import('@/components/CommentManager'));
-const LazyNewsletterManager = lazy(() => import('@/components/NewsletterManager'));
-const LazyPushNotificationManager = lazy(() => import('@/components/PushNotificationManager'));
-const LazySystemSettings = lazy(() => import('@/components/SystemSettings'));
-const LazyDatabaseManager = lazy(() => import('@/components/DatabaseManager'));
+// Placeholder components for now (will be replaced with actual components later)
+const PlaceholderComponent = ({ title }: { title: string }) => (
+  <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
+    <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 rounded-t-xl">
+      <CardTitle className="flex items-center gap-2 font-kanit text-orange-700">
+        <Settings className="h-5 w-5" />
+        {title}
+      </CardTitle>
+      <CardDescription className="font-sarabun">
+        ส่วนประกอบนี้กำลังอยู่ในระหว่างการพัฒนา
+      </CardDescription>
+    </CardHeader>
+    <CardContent className="p-6">
+      <div className="text-center py-8">
+        <div className="text-4xl mb-4">🚧</div>
+        <h3 className="text-lg font-semibold font-kanit text-gray-700 mb-2">
+          กำลังพัฒนา
+        </h3>
+        <p className="text-gray-500 font-sarabun">
+          ฟีเจอร์นี้จะพร้อมใช้งานในเร็วๆ นี้
+        </p>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+// Create placeholder components
+const LazyAnalyticsDashboard = () => <PlaceholderComponent title="สถิติและการวิเคราะห์" />;
+const LazyNewsManager = () => <PlaceholderComponent title="จัดการข่าว" />;
+const LazyRSSManager = () => <PlaceholderComponent title="จัดการ RSS Feeds" />;
+const LazySponsorManager = () => <PlaceholderComponent title="จัดการแบนเนอร์สปอนเซอร์" />;
+const LazyMediaManager = () => <PlaceholderComponent title="จัดการไฟล์มีเดีย" />;
+const LazyCategoryManager = () => <PlaceholderComponent title="จัดการหมวดหมู่" />;
+const LazyUserManager = () => <PlaceholderComponent title="จัดการผู้ใช้" />;
+const LazyContactMessagesManager = () => <PlaceholderComponent title="ข้อความติดต่อ" />;
+const LazyCommentManager = () => <PlaceholderComponent title="ความคิดเห็น" />;
+const LazyNewsletterManager = () => <PlaceholderComponent title="จดหมายข่าว" />;
+const LazyPushNotificationManager = () => <PlaceholderComponent title="การแจ้งเตือน" />;
+const LazySystemSettings = () => <PlaceholderComponent title="การตั้งค่าระบบ" />;
+const LazyDatabaseManager = () => <PlaceholderComponent title="จัดการฐานข้อมูล" />;
 
 // Loading spinner component
 const LoadingSpinner = () => (
@@ -191,6 +217,12 @@ function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Debug function to test hamburger menu
+  const toggleSidebar = () => {
+    console.log('Toggling sidebar, current state:', sidebarOpen);
+    setSidebarOpen(!sidebarOpen);
+  };
+
   // Fetch database stats
   const { data: databaseStats } = useQuery({
     queryKey: ['database-stats'],
@@ -262,11 +294,7 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">สถิติและการวิเคราะห์</h3>
-            <ErrorBoundary>
-              <Suspense fallback={<LoadingSpinner />}>
-                <LazyAnalyticsDashboard />
-              </Suspense>
-            </ErrorBoundary>
+            <LazyAnalyticsDashboard />
           </div>
         );
 
@@ -274,11 +302,7 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการข่าว</h3>
-            <ErrorBoundary>
-              <Suspense fallback={<LoadingSpinner />}>
-                <LazyNewsManager />
-              </Suspense>
-            </ErrorBoundary>
+            <LazyNewsManager />
           </div>
         );
 
@@ -286,11 +310,7 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการ RSS Feeds</h3>
-            <ErrorBoundary>
-              <Suspense fallback={<LoadingSpinner />}>
-                <LazyRSSManager />
-              </Suspense>
-            </ErrorBoundary>
+            <LazyRSSManager />
           </div>
         );
 
@@ -298,11 +318,7 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการแบนเนอร์สปอนเซอร์</h3>
-            <ErrorBoundary>
-              <Suspense fallback={<LoadingSpinner />}>
-                <LazySponsorManager />
-              </Suspense>
-            </ErrorBoundary>
+            <LazySponsorManager />
           </div>
         );
 
@@ -310,11 +326,7 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการไฟล์มีเดีย</h3>
-            <ErrorBoundary>
-              <Suspense fallback={<LoadingSpinner />}>
-                <LazyMediaManager />
-              </Suspense>
-            </ErrorBoundary>
+            <LazyMediaManager />
           </div>
         );
 
@@ -322,11 +334,7 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการหมวดหมู่</h3>
-            <ErrorBoundary>
-              <Suspense fallback={<LoadingSpinner />}>
-                <LazyCategoryManager />
-              </Suspense>
-            </ErrorBoundary>
+            <LazyCategoryManager />
           </div>
         );
 
@@ -334,11 +342,7 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการผู้ใช้</h3>
-            <ErrorBoundary>
-              <Suspense fallback={<LoadingSpinner />}>
-                <LazyUserManager />
-              </Suspense>
-            </ErrorBoundary>
+            <LazyUserManager />
           </div>
         );
 
@@ -346,11 +350,7 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">ข้อความติดต่อ</h3>
-            <ErrorBoundary>
-              <Suspense fallback={<LoadingSpinner />}>
-                <LazyContactMessagesManager />
-              </Suspense>
-            </ErrorBoundary>
+            <LazyContactMessagesManager />
           </div>
         );
 
@@ -358,11 +358,7 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">ความคิดเห็น</h3>
-            <ErrorBoundary>
-              <Suspense fallback={<LoadingSpinner />}>
-                <LazyCommentManager />
-              </Suspense>
-            </ErrorBoundary>
+            <LazyCommentManager />
           </div>
         );
 
@@ -370,11 +366,7 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จดหมายข่าว</h3>
-            <ErrorBoundary>
-              <Suspense fallback={<LoadingSpinner />}>
-                <LazyNewsletterManager />
-              </Suspense>
-            </ErrorBoundary>
+            <LazyNewsletterManager />
           </div>
         );
 
@@ -382,11 +374,7 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">การแจ้งเตือน</h3>
-            <ErrorBoundary>
-              <Suspense fallback={<LoadingSpinner />}>
-                <LazyPushNotificationManager />
-              </Suspense>
-            </ErrorBoundary>
+            <LazyPushNotificationManager />
           </div>
         );
 
@@ -423,11 +411,7 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">การตั้งค่าระบบ</h3>
-            <ErrorBoundary>
-              <Suspense fallback={<LoadingSpinner />}>
-                <LazySystemSettings />
-              </Suspense>
-            </ErrorBoundary>
+            <LazySystemSettings />
           </div>
         );
 
@@ -435,11 +419,7 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการฐานข้อมูล</h3>
-            <ErrorBoundary>
-              <Suspense fallback={<LoadingSpinner />}>
-                <LazyDatabaseManager />
-              </Suspense>
-            </ErrorBoundary>
+            <LazyDatabaseManager />
           </div>
         );
 
@@ -459,7 +439,10 @@ function AdminDashboard() {
       {sidebarOpen && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
+          onClick={() => {
+            console.log('Overlay clicked, closing sidebar');
+            setSidebarOpen(false);
+          }}
         />
       )}
 
@@ -473,7 +456,10 @@ function AdminDashboard() {
             variant="ghost"
             size="sm"
             className="lg:hidden"
-            onClick={() => setSidebarOpen(false)}
+            onClick={() => {
+              console.log('Closing sidebar');
+              setSidebarOpen(false);
+            }}
           >
             <X className="h-4 w-4" />
           </Button>
@@ -522,7 +508,7 @@ function AdminDashboard() {
                 variant="ghost"
                 size="sm"
                 className="lg:hidden"
-                onClick={() => setSidebarOpen(true)}
+                onClick={toggleSidebar}
               >
                 <Menu className="h-5 w-5" />
               </Button>
