@@ -26,7 +26,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
-// Placeholder components for now (will be replaced with actual components later)
+// Import actual components with error handling
+const NewsManager = lazy(() => import('@/components/NewsManager').catch(() => ({ default: () => <PlaceholderComponent title="จัดการข่าว" /> })));
+const AnalyticsDashboard = lazy(() => import('@/components/AnalyticsDashboard').catch(() => ({ default: () => <PlaceholderComponent title="สถิติและการวิเคราะห์" /> })));
+const RSSManager = lazy(() => import('@/components/RSSManager').catch(() => ({ default: () => <PlaceholderComponent title="จัดการ RSS Feeds" /> })));
+const SponsorManager = lazy(() => import('@/components/SponsorManager').catch(() => ({ default: () => <PlaceholderComponent title="จัดการแบนเนอร์สปอนเซอร์" /> })));
+const MediaManager = lazy(() => import('@/components/MediaManager').catch(() => ({ default: () => <PlaceholderComponent title="จัดการไฟล์มีเดีย" /> })));
+const CategoryManager = lazy(() => import('@/components/CategoryManager').catch(() => ({ default: () => <PlaceholderComponent title="จัดการหมวดหมู่" /> })));
+const UserManager = lazy(() => import('@/components/UserManager').catch(() => ({ default: () => <PlaceholderComponent title="จัดการผู้ใช้" /> })));
+const ContactMessagesManager = lazy(() => import('@/components/ContactMessagesManager').catch(() => ({ default: () => <PlaceholderComponent title="ข้อความติดต่อ" /> })));
+const CommentManager = lazy(() => import('@/components/CommentManager').catch(() => ({ default: () => <PlaceholderComponent title="ความคิดเห็น" /> })));
+const NewsletterManager = lazy(() => import('@/components/NewsletterManager').catch(() => ({ default: () => <PlaceholderComponent title="จดหมายข่าว" /> })));
+const PushNotificationManager = lazy(() => import('@/components/PushNotificationManager').catch(() => ({ default: () => <PlaceholderComponent title="การแจ้งเตือน" /> })));
+const SystemSettings = lazy(() => import('@/components/SystemSettings').catch(() => ({ default: () => <PlaceholderComponent title="การตั้งค่าระบบ" /> })));
+const DatabaseManager = lazy(() => import('@/components/DatabaseManager').catch(() => ({ default: () => <PlaceholderComponent title="จัดการฐานข้อมูล" /> })));
+
+// Placeholder component for components that don't exist yet
 const PlaceholderComponent = ({ title }: { title: string }) => (
   <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
     <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 rounded-t-xl">
@@ -51,21 +66,6 @@ const PlaceholderComponent = ({ title }: { title: string }) => (
     </CardContent>
   </Card>
 );
-
-// Create placeholder components
-const LazyAnalyticsDashboard = () => <PlaceholderComponent title="สถิติและการวิเคราะห์" />;
-const LazyNewsManager = () => <PlaceholderComponent title="จัดการข่าว" />;
-const LazyRSSManager = () => <PlaceholderComponent title="จัดการ RSS Feeds" />;
-const LazySponsorManager = () => <PlaceholderComponent title="จัดการแบนเนอร์สปอนเซอร์" />;
-const LazyMediaManager = () => <PlaceholderComponent title="จัดการไฟล์มีเดีย" />;
-const LazyCategoryManager = () => <PlaceholderComponent title="จัดการหมวดหมู่" />;
-const LazyUserManager = () => <PlaceholderComponent title="จัดการผู้ใช้" />;
-const LazyContactMessagesManager = () => <PlaceholderComponent title="ข้อความติดต่อ" />;
-const LazyCommentManager = () => <PlaceholderComponent title="ความคิดเห็น" />;
-const LazyNewsletterManager = () => <PlaceholderComponent title="จดหมายข่าว" />;
-const LazyPushNotificationManager = () => <PlaceholderComponent title="การแจ้งเตือน" />;
-const LazySystemSettings = () => <PlaceholderComponent title="การตั้งค่าระบบ" />;
-const LazyDatabaseManager = () => <PlaceholderComponent title="จัดการฐานข้อมูล" />;
 
 // Loading spinner component
 const LoadingSpinner = () => (
@@ -294,7 +294,9 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">สถิติและการวิเคราะห์</h3>
-            <LazyAnalyticsDashboard />
+            <Suspense fallback={<LoadingSpinner />}>
+              <AnalyticsDashboard />
+            </Suspense>
           </div>
         );
 
@@ -302,7 +304,9 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการข่าว</h3>
-            <LazyNewsManager />
+            <Suspense fallback={<LoadingSpinner />}>
+              <NewsManager />
+            </Suspense>
           </div>
         );
 
@@ -310,7 +314,9 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการ RSS Feeds</h3>
-            <LazyRSSManager />
+            <Suspense fallback={<LoadingSpinner />}>
+              <RSSManager />
+            </Suspense>
           </div>
         );
 
@@ -318,7 +324,9 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการแบนเนอร์สปอนเซอร์</h3>
-            <LazySponsorManager />
+            <Suspense fallback={<LoadingSpinner />}>
+              <SponsorManager />
+            </Suspense>
           </div>
         );
 
@@ -326,7 +334,9 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการไฟล์มีเดีย</h3>
-            <LazyMediaManager />
+            <Suspense fallback={<LoadingSpinner />}>
+              <MediaManager />
+            </Suspense>
           </div>
         );
 
@@ -334,7 +344,9 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการหมวดหมู่</h3>
-            <LazyCategoryManager />
+            <Suspense fallback={<LoadingSpinner />}>
+              <CategoryManager />
+            </Suspense>
           </div>
         );
 
@@ -342,7 +354,9 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการผู้ใช้</h3>
-            <LazyUserManager />
+            <Suspense fallback={<LoadingSpinner />}>
+              <UserManager />
+            </Suspense>
           </div>
         );
 
@@ -350,7 +364,9 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">ข้อความติดต่อ</h3>
-            <LazyContactMessagesManager />
+            <Suspense fallback={<LoadingSpinner />}>
+              <ContactMessagesManager />
+            </Suspense>
           </div>
         );
 
@@ -358,7 +374,9 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">ความคิดเห็น</h3>
-            <LazyCommentManager />
+            <Suspense fallback={<LoadingSpinner />}>
+              <CommentManager />
+            </Suspense>
           </div>
         );
 
@@ -366,7 +384,9 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จดหมายข่าว</h3>
-            <LazyNewsletterManager />
+            <Suspense fallback={<LoadingSpinner />}>
+              <NewsletterManager />
+            </Suspense>
           </div>
         );
 
@@ -374,7 +394,9 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">การแจ้งเตือน</h3>
-            <LazyPushNotificationManager />
+            <Suspense fallback={<LoadingSpinner />}>
+              <PushNotificationManager />
+            </Suspense>
           </div>
         );
 
@@ -411,7 +433,9 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">การตั้งค่าระบบ</h3>
-            <LazySystemSettings />
+            <Suspense fallback={<LoadingSpinner />}>
+              <SystemSettings />
+            </Suspense>
           </div>
         );
 
@@ -419,7 +443,9 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการฐานข้อมูล</h3>
-            <LazyDatabaseManager />
+            <Suspense fallback={<LoadingSpinner />}>
+              <DatabaseManager />
+            </Suspense>
           </div>
         );
 
