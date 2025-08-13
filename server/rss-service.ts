@@ -50,6 +50,41 @@ export class RSSService {
   private feedStatus: Record<number, FeedStatus> = {}; // Store status for each feed
   private storage = storage; // Alias storage for easier access
 
+  // Generic fetch with retry and backoff for transient network errors
+  private async fetchWithRetry(url: string, init: RequestInit, attempts = 3, baseTimeoutMs = 20000): Promise<Response> {
+    let lastError: unknown = null;
+    for (let i = 1; i <= attempts; i++) {
+      const controller = new AbortController();
+      const timeout = baseTimeoutMs + (i - 1) * 15000; // 20s, 35s, 50s
+      const timer = setTimeout(() => controller.abort(), timeout);
+      try {
+        const res = await fetch(url, { ...init, signal: controller.signal });
+        clearTimeout(timer);
+        // Retry on 5xx
+        if (res.status >= 500) {
+          lastError = new Error(`HTTP ${res.status}`);
+          throw lastError;
+        }
+        return res;
+      } catch (err: any) {
+        clearTimeout(timer);
+        lastError = err;
+        const code = err?.code || err?.cause?.code;
+        const isAbort = err?.name === 'AbortError';
+        const retriable = isAbort || code === 'ETIMEDOUT' || code === 'ECONNRESET' || code === 'ENOTFOUND' || code === 'EAI_AGAIN';
+        const isLast = i === attempts;
+        console.warn(`Fetch attempt ${i}/${attempts} failed for ${url}${code ? ` [${code}]` : ''}${isAbort ? ' [AbortError]' : ''}:`, err?.message || err);
+        if (isLast || !retriable) {
+          break;
+        }
+        // Exponential backoff before next attempt
+        const backoff = 500 * Math.pow(2, i - 1); // 500ms, 1s, 2s
+        await new Promise(r => setTimeout(r, backoff));
+      }
+    }
+    throw lastError instanceof Error ? lastError : new Error('Fetch failed');
+  }
+
   // Extract image URL from content
   private extractImageUrl(content: string | undefined, mediaContent?: any, mediaThumbnail?: any): string | undefined {
     // Try media content first
@@ -150,7 +185,7 @@ export class RSSService {
     }
 
     // Split by sentences (Thai and English)
-    const sentences = content.split(/[.!?।]/).filter(s => s.trim().length > 10);
+    const sentences = content.split(/[.!?。]/).filter(s => s.trim().length > 10);
 
     if (sentences.length === 0) {
       return content.substring(0, 200) + '...';
@@ -208,22 +243,18 @@ export class RSSService {
 
     try {
       console.log(`Processing RSS feed: ${feedUrl}`);
-
-      // Set a more generous timeout for fetch operations (45 seconds)
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 45000);
+      // Mark feed as processing
+      this.feedStatus[feedId] = { isProcessing: true, lastError: null };
 
       console.log(`🔄 Fetching RSS from: ${feedUrl}`);
 
-      const response = await fetch(feedUrl, {
+      const response = await this.fetchWithRetry(feedUrl, {
         headers: {
           'User-Agent': 'UD-News-RSS-Reader/1.0 (+https://udnews.com)',
           'Accept': 'application/rss+xml, application/xml, text/xml, application/atom+xml',
           'Cache-Control': 'no-cache'
-        },
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
+        }
+      }, 3, 20000);
 
       if (!response.ok) {
         console.error(`❌ RSS fetch failed for ${feedUrl}: HTTP ${response.status}`);
@@ -269,6 +300,7 @@ export class RSSService {
       await this.recordProcessingHistory(feedId, articlesProcessed, articlesAdded, true, null);
 
       this.lastProcessed.set(feedId, new Date());
+      this.feedStatus[feedId] = { isProcessing: false, lastError: null, lastProcessed: new Date(), itemsProcessed: articlesAdded };
       console.log(`Successfully processed ${articlesAdded}/${articlesProcessed} items from ${feedUrl}`);
       return articlesAdded;
 
@@ -282,6 +314,7 @@ export class RSSService {
 
       // Update last processed time even on error
       this.lastProcessed.set(feedId, new Date());
+      this.feedStatus[feedId] = { isProcessing: false, lastError: errorMessage, lastProcessed: new Date(), itemsProcessed: articlesAdded };
 
       // Check if it's a parsing error and try alternative approach (consider if this is still needed or if timeout is sufficient)
       if (error instanceof Error && error.message && error.message.includes('Non-whitespace before first tag')) {
