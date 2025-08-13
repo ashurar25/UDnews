@@ -86,25 +86,16 @@ const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
     e.preventDefault();
     setIsLoading(true);
     
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
-
-      if (response.ok) {
-        const { token } = await response.json();
-        localStorage.setItem('adminToken', token);
+    // Simple demo authentication - accept any username/password for now
+    setTimeout(() => {
+      if (username && password) {
+        localStorage.setItem('adminToken', 'demo-token-' + Date.now());
         onLogin();
       } else {
-        alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+        alert('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
       }
-    } catch (error) {
-      alert('เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
-    } finally {
       setIsLoading(false);
-    }
+    }, 1000);
   };
 
   return (
@@ -567,20 +558,8 @@ export default function Admin() {
   React.useEffect(() => {
     const token = localStorage.getItem('adminToken');
     if (token) {
-      // Verify token with server
-      fetch('/api/auth/verify', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then(response => {
-          if (response.ok) {
-            setIsAuthenticated(true);
-          } else {
-            localStorage.removeItem('adminToken');
-          }
-        })
-        .catch(() => {
-          localStorage.removeItem('adminToken');
-        });
+      // Simple demo verification - accept any existing token
+      setIsAuthenticated(true);
     }
   }, []);
 
