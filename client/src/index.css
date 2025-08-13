@@ -373,3 +373,10 @@ All colors MUST be HSL.
     animation: scroll 30s linear infinite;
   }
 }
+
+@layer utilities {
+  .container {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+}
