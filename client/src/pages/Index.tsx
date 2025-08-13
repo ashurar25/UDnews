@@ -186,6 +186,9 @@ const Index = () => {
         </div>
       )}
 
+      {/* Special Day Banner (shows only when theme is thai-special) */}
+      <ThaiSpecialDayBanner />
+
       {/* Disaster Alert Widget - แสดงเมื่อมีการเตือนเท่านั้น */}
       <ConditionalDisasterAlertWidget />
 
@@ -228,7 +231,12 @@ const Index = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {featuredNews.map((news, index) => (
-              <NewsCard key={index} {...news} />
+              <NewsCard
+                key={index}
+                {...news}
+                size={index === 0 ? 'large' : 'medium'}
+                variant="overlay"
+              />
             ))}
           </div>
 
@@ -286,6 +294,9 @@ const Index = () => {
                 ))}
               </div>
             </div>
+
+            {/* Newsletter Signup */}
+            <NewsletterSignup className="shadow-news" />
 
             {/* Weather Widget */}
             <div className="relative rounded-lg p-6 shadow-news overflow-hidden bg-gradient-to-br from-orange-200/40 via-yellow-100/30 to-blue-200/40 backdrop-blur-sm border border-white/20">
