@@ -62,8 +62,9 @@ export default function UserManager() {
             description: "กรุณาเข้าสู่ระบบใหม่",
             variant: "destructive"
           });
-          // Redirect to login
-          window.location.href = '/login';
+          // Clear token and redirect to admin login page
+          try { localStorage.removeItem('adminToken'); } catch {}
+          window.location.href = '/admin';
           return;
         }
         

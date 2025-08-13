@@ -48,7 +48,7 @@ export default function NewsManager() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [formData, setFormData] = useState<NewsFormData>({
     title: "",
     content: "",
@@ -215,7 +215,7 @@ export default function NewsManager() {
       newsItem.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (newsItem.author && newsItem.author.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesCategory = !selectedCategory || newsItem.category === selectedCategory;
+    const matchesCategory = selectedCategory === 'all' || newsItem.category === selectedCategory;
     
     return matchesSearch && matchesCategory;
   });
@@ -242,7 +242,7 @@ export default function NewsManager() {
 
   const resetFilters = () => {
     setSearchTerm("");
-    setSelectedCategory("");
+    setSelectedCategory("all");
     setCurrentPage(1);
   };
 
@@ -381,10 +381,10 @@ export default function NewsManager() {
               <Label htmlFor="category-filter" className="text-sm font-medium">หมวดหมู่</Label>
               <Select value={selectedCategory} onValueChange={handleCategoryChange}>
                 <SelectTrigger>
-                  <SelectValue placeholder="ทุกหมวดหมู่" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">ทุกหมวดหมู่</SelectItem>
+                  <SelectItem value="all">ทุกหมวดหมู่</SelectItem>
                   {CATEGORIES.map((category) => (
                     <SelectItem key={category.value} value={category.value}>
                       {category.label}
@@ -403,7 +403,7 @@ export default function NewsManager() {
           {/* Results Summary */}
           <div className="mt-4 text-sm text-gray-600">
             พบ {filteredNews.length.toLocaleString()} ข่าว
-            {selectedCategory && (
+            {selectedCategory !== 'all' && (
               <span> ในหมวดหมู่ {getCategoryLabel(selectedCategory)}</span>
             )}
             {searchTerm && (

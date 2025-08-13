@@ -19,7 +19,9 @@ import {
   UserCog,
   Monitor,
   Clock,
-  Bell
+  Bell,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,6 +40,7 @@ const ContactMessagesManager = lazy(() => import('@/components/ContactMessagesMa
 const CommentManager = lazy(() => import('@/components/CommentManager').catch(() => ({ default: () => <PlaceholderComponent title="ความคิดเห็น" /> })));
 const NewsletterManager = lazy(() => import('@/components/NewsletterManager').catch(() => ({ default: () => <PlaceholderComponent title="จดหมายข่าว" /> })));
 const PushNotificationManager = lazy(() => import('@/components/PushNotificationManager').catch(() => ({ default: () => <PlaceholderComponent title="การแจ้งเตือน" /> })));
+const ThemeSettings = lazy(() => import('@/components/ThemeSettings').catch(() => ({ default: () => <PlaceholderComponent title="ธีมและการแสดงผล" /> })));
 const SystemSettings = lazy(() => import('@/components/SystemSettings').catch(() => ({ default: () => <PlaceholderComponent title="การตั้งค่าระบบ" /> })));
 const DatabaseManager = lazy(() => import('@/components/DatabaseManager').catch(() => ({ default: () => <PlaceholderComponent title="จัดการฐานข้อมูล" /> })));
 
@@ -216,6 +219,7 @@ const menuItems = [
 function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Debug function to test hamburger menu
   const toggleSidebar = () => {
@@ -404,28 +408,9 @@ function AdminDashboard() {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">ธีมและการแสดงผล</h3>
-            <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-kanit text-orange-700">
-                  <Palette className="h-5 w-5" />
-                  การตั้งค่าธีม
-                </CardTitle>
-                <CardDescription className="font-sarabun">
-                  เปลี่ยนธีมสีของเว็บไซต์
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold">ธีมปัจจุบัน</h3>
-                    <p className="text-sm text-muted-foreground">
-                      เปลี่ยนธีมของเว็บไซต์
-                    </p>
-                  </div>
-                  <ThemeToggle />
-                </div>
-              </CardContent>
-            </Card>
+            <Suspense fallback={<LoadingSpinner />}>
+              <ThemeSettings />
+            </Suspense>
           </div>
         );
 
@@ -473,28 +458,43 @@ function AdminDashboard() {
       )}
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-56'} ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h2 className="text-lg font-bold font-kanit text-orange-800">ระบบจัดการ</h2>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="lg:hidden"
-            onClick={() => {
-              console.log('Closing sidebar');
-              setSidebarOpen(false);
-            }}
-          >
-            <X className="h-4 w-4" />
-          </Button>
+        <div className="flex items-center justify-between p-3 border-b border-gray-200">
+          {!sidebarCollapsed && (
+            <h2 className="text-base font-bold font-kanit text-orange-800">ระบบจัดการ</h2>
+          )}
+          <div className="flex items-center gap-1">
+            {/* Collapse toggle for desktop */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hidden lg:inline-flex"
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              title={sidebarCollapsed ? 'ขยายเมนู' : 'ย่อเมนู'}
+            >
+              {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            </Button>
+            {/* Close button for mobile */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="lg:hidden"
+              onClick={() => {
+                console.log('Closing sidebar');
+                setSidebarOpen(false);
+              }}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
-        <nav className="p-4 space-y-6">
+        <nav className="p-3 space-y-5">
           {menuItems.map((group) => (
             <div key={group.group}>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 font-sarabun">
+              <h3 className={`text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 font-sarabun ${sidebarCollapsed ? 'hidden' : ''}`}>
                 {group.group}
               </h3>
               <div className="space-y-1">
@@ -507,14 +507,14 @@ function AdminDashboard() {
                         setActiveTab(item.id);
                         setSidebarOpen(false);
                       }}
-                      className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors font-sarabun ${
+                      className={`w-full flex ${sidebarCollapsed ? 'justify-center' : 'items-center'} ${sidebarCollapsed ? 'gap-0 px-0' : 'gap-2 px-2'} py-2 text-sm font-medium rounded-lg transition-colors font-sarabun ${
                         activeTab === item.id
                           ? 'bg-orange-100 text-orange-700 border-r-2 border-orange-500'
                           : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                       }`}
                     >
                       <Icon className="h-4 w-4" />
-                      {item.label}
+                      <span className={`${sidebarCollapsed ? 'hidden' : 'inline'}`}>{item.label}</span>
                     </button>
                   );
                 })}
@@ -525,7 +525,7 @@ function AdminDashboard() {
       </div>
 
       {/* Main content */}
-      <div className="lg:ml-64">
+      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-56'}`}>
         {/* Header */}
         <header className="bg-white shadow-sm border-b border-gray-200">
           <div className="flex items-center justify-between px-4 py-3">
@@ -558,7 +558,7 @@ function AdminDashboard() {
         </header>
 
         {/* Main content area */}
-        <main className="p-6">
+        <main className="px-4 pt-2 pb-4 md:pt-2 md:pb-6">
           {renderContent()}
         </main>
       </div>
