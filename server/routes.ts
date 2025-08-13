@@ -77,6 +77,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.sendFile(adminFilePath);
   });
 
+  // Public: donation rankings
+  app.get('/api/donations/rank', async (req, res) => {
+    try {
+      const raw = (req.query.range as string) || 'all';
+      const allowed = ['today','week','all'] as const;
+      const range = (allowed.includes(raw as any) ? raw : 'all') as 'today'|'week'|'all';
+      const ranks = await storage.getDonationRanking(range);
+      res.json(Array.isArray(ranks) ? ranks : []);
+    } catch (error) {
+      console.error('Error fetching donation ranking:', error);
+      res.status(500).json([]);
+    }
+  });
+
+  // Public: recent approved donations
+  app.get('/api/donations/recent', async (req, res) => {
+    try {
+      const limit = parseInt((req.query.limit as string) || '10');
+      const items = await storage.getRecentDonations(isNaN(limit) ? undefined : limit);
+      res.json(Array.isArray(items) ? items : []);
+    } catch (error) {
+      console.error('Error fetching recent donations:', error);
+      res.status(500).json([]);
+    }
+  });
+
   // Public: attach slip URL to an existing pending donation by reference
   app.post('/api/donations/attach-slip', async (req, res) => {
     try {
@@ -321,7 +347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid status" });
       }
 
-      const donations = await storage.getDonations(status as any, isNaN(limit) ? undefined : limit);
+      const donations = await storage.getDonations({ status: status as any, limit: isNaN(limit) ? undefined : limit });
       res.json(donations);
     } catch (error) {
       console.error('Error fetching donations:', error);
