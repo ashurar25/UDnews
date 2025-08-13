@@ -127,6 +127,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Donations Management API
+  // SSE clients for donation updates
+  const donationSseClients: Array<{ id: number; res: any }> = [];
+
+  // List donations (admin only)
+  app.get("/api/donations", authMiddleware, async (req, res) => {
+    try {
+      const status = (req.query.status as string | undefined);
+      const limit = parseInt((req.query.limit as string) || '50');
+
+      const allowed = [undefined, 'pending', 'approved', 'rejected'] as const;
+      if (!allowed.includes(status as any)) {
+        return res.status(400).json({ error: "Invalid status" });
+      }
+
+      const donations = await storage.getDonations(status as any, isNaN(limit) ? undefined : limit);
+      res.json(donations);
+    } catch (error) {
+      console.error('Error fetching donations:', error);
+      res.status(500).json({ error: "Failed to fetch donations" });
+    }
+  });
+
+  // Approve donation (admin only)
+  app.post("/api/donations/approve/:id", authMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: 'Invalid id' });
+
+      const ok = await storage.approveDonation(id);
+      if (!ok) {
+        return res.status(404).json({ error: 'Donation not found' });
+      }
+
+      // Broadcast SSE event to listeners
+      const payload = `data: ${JSON.stringify({ type: 'donation_approved', id })}\n\n`;
+      donationSseClients.forEach(({ res }) => {
+        try { res.write(payload); } catch {}
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error approving donation:', error);
+      res.status(500).json({ error: "Failed to approve donation" });
+    }
+  });
+
+  // SSE stream for donation updates
+  app.get('/api/donations/stream', (req, res) => {
+    // Set headers for SSE
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders?.();
+
+    const clientId = Date.now();
+    donationSseClients.push({ id: clientId, res });
+
+    req.on('close', () => {
+      const idx = donationSseClients.findIndex(c => c.id === clientId);
+      if (idx !== -1) donationSseClients.splice(idx, 1);
+    });
+  });
+
   // Public RSS Feeds routes (read-only)
   app.get("/api/rss-feeds", async (req, res) => {
     try {
