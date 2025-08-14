@@ -1,19 +1,6 @@
 // Load environment variables from .env as early as possible
 import 'dotenv/config';
 
-// Apply Replit environment configuration
-if (process.env.NODE_ENV === 'development') {
-  // Set environment variables for Replit compatibility
-  process.env.DANGEROUSLY_DISABLE_HOST_CHECK = 'true';
-  process.env.WDS_SOCKET_HOST = process.env.REPL_SLUG ? `${process.env.REPL_SLUG}--${process.env.REPL_OWNER}.replit.dev` : '0.0.0.0';
-  process.env.WDS_SOCKET_PORT = '443';
-  process.env.CHOKIDAR_USEPOLLING = 'true';
-  process.env.FAST_REFRESH = 'false';
-  
-  console.log('✓ Replit development environment configured');
-  console.log(`HMR Host: ${process.env.WDS_SOCKET_HOST}`);
-}
-
 import express, { type Request, Response, NextFunction } from "express";
 import path from "path";
 import { registerRoutes } from "./routes";
@@ -22,30 +9,31 @@ import { rssService } from "./rss-service";
 
 const app = express();
 
-// Trust proxy for Replit environment (fixes rate limit error)
+// Trust proxy if behind a reverse proxy/CDN
 app.set('trust proxy', 1);
 
-// CORS configuration for Replit domains
+// Robust CORS (configure with FRONTEND_ORIGINS="https://udnewsupdate.sbs,http://localhost:5173")
 app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  const host = req.headers.host;
-  
-  // Allow all Replit domains and localhost
-  if (origin && (origin.includes('.replit.dev') || origin.includes('.replit.app') || origin.includes('localhost'))) {
-    res.header('Access-Control-Allow-Origin', origin);
-  } else {
-    res.header('Access-Control-Allow-Origin', '*');
+  const requestOrigin = req.headers.origin as string | undefined;
+  const originsEnv = process.env.FRONTEND_ORIGINS || process.env.FRONTEND_ORIGIN || 'https://udnewsupdate.sbs,http://localhost:5173';
+  const allowed = originsEnv.split(',').map(s => s.trim()).filter(Boolean);
+  const allowWildcard = allowed.includes('*');
+  const allowCredentials = (process.env.CORS_CREDENTIALS ?? 'true') !== 'false';
+
+  if (requestOrigin && (allowWildcard || allowed.includes(requestOrigin))) {
+    res.header('Access-Control-Allow-Origin', allowWildcard ? '*' : requestOrigin);
+    // Credentials cannot be used with wildcard origin
+    if (!allowWildcard && allowCredentials) {
+      res.header('Access-Control-Allow-Credentials', 'true');
+    }
   }
-  
+
+  res.header('Vary', 'Origin');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-  } else {
-    next();
-  }
+
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
 });
 
 app.use(express.json());
@@ -141,13 +129,13 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // Use static serving to avoid Vite host issues in Replit
+  // Serve built client
   serveStatic(app);
 
   // Use environment port or default to 5000
   // this serves both the API and the client.
   const port = parseInt(process.env.PORT || "5000", 10);
-  const host = "0.0.0.0"; // Explicitly bind to all interfaces for Replit
+  const host = "0.0.0.0"; // Bind to all interfaces
   
   server.listen(port, host, (err?: Error) => {
     if (err) {

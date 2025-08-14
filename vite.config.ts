@@ -1,22 +1,9 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
-// Replit-specific Vite configuration that allows all hosts
 export default defineConfig({
-  plugins: [
-    react(),
-    runtimeErrorOverlay(),
-    ...(process.env.NODE_ENV !== "production" &&
-    process.env.REPL_ID !== undefined
-      ? [
-          await import("@replit/vite-plugin-cartographer").then((m) =>
-            m.cartographer(),
-          ),
-        ]
-      : []),
-  ],
+  plugins: [react()],
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),
@@ -31,14 +18,8 @@ export default defineConfig({
   },
   server: {
     host: "0.0.0.0",
-    allowedHosts: true, // Allow all hosts including Replit domains
-    hmr: {
-      clientPort: 443,
-      host: "0.0.0.0",
-    },
   },
   preview: {
     host: "0.0.0.0",
-    allowedHosts: true, // Also for preview mode
   },
 });

@@ -3,7 +3,7 @@ import { storage } from "./storage";
 
 export class SitemapGenerator {
   static async generateSitemap(): Promise<string> {
-    const baseUrl = process.env.BASE_URL || "https://ud-news.replit.app"; // Prefer env BASE_URL when available
+    const baseUrl = process.env.BASE_URL || "https://udnewsupdate.sbs"; // Prefer env BASE_URL when available
     
     let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
@@ -81,31 +81,7 @@ export class SitemapGenerator {
   }
 
   static async generateRobotsTxt(): Promise<string> {
-    const baseUrl = process.env.BASE_URL || "https://ud-news.replit.app"; // Prefer env BASE_URL when available
-    
-    return `User-agent: *
-Allow: /
-
-Sitemap: ${baseUrl}/sitemap.xml
-
-# Specific rules for search engines
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
-# Disallow admin pages
-Disallow: /admin
-
-# Crawl-delay for polite crawling
-Crawl-delay: 1
-`;
+    const baseUrl = process.env.BASE_URL || "https://udnewsupdate.sbs"; // Prefer env BASE_URL when available
+    return `User-agent: *\nDisallow:\n\nSitemap: ${baseUrl}/sitemap.xml\n`;
   }
 }
