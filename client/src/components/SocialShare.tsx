@@ -209,6 +209,8 @@ const SocialShare: React.FC<SocialShareProps> = ({
             size="sm"
             onClick={() => handleShare('native')}
             className="gap-2"
+            aria-label="แชร์ข่าวนี้"
+            title="แชร์ข่าวนี้"
           >
             <Share2 className="h-4 w-4" />
             แชร์
@@ -220,6 +222,8 @@ const SocialShare: React.FC<SocialShareProps> = ({
           size="sm"
           onClick={() => handleShare('copy')}
           className="gap-2"
+          aria-label="คัดลอกลิงก์ข่าว"
+          title="คัดลอกลิงก์ข่าว"
         >
           <Copy className="h-4 w-4" />
           คัดลอก
@@ -227,7 +231,7 @@ const SocialShare: React.FC<SocialShareProps> = ({
 
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" aria-label="ตัวเลือกการแชร์เพิ่มเติม" title="ตัวเลือกการแชร์เพิ่มเติม">
               <Share2 className="h-4 w-4" />
             </Button>
           </DialogTrigger>
@@ -244,6 +248,8 @@ const SocialShare: React.FC<SocialShareProps> = ({
                     variant="outline"
                     className={`${social.color} text-white border-0 gap-2`}
                     onClick={() => handleShare(social.platform)}
+                    aria-label={`แชร์ไปยัง ${social.name}`}
+                    title={`แชร์ไปยัง ${social.name}`}
                   >
                     <IconComponent className="h-4 w-4" />
                     {social.name}
@@ -272,6 +278,8 @@ const SocialShare: React.FC<SocialShareProps> = ({
             <Button
               onClick={() => handleShare('native')}
               className="gap-2 bg-primary hover:bg-primary/90"
+              aria-label="แชร์ข่าวนี้"
+              title="แชร์ข่าวนี้"
             >
               <Share2 className="h-4 w-4" />
               แชร์
@@ -282,6 +290,8 @@ const SocialShare: React.FC<SocialShareProps> = ({
             variant="outline"
             onClick={() => handleShare('copy')}
             className="gap-2"
+            aria-label="คัดลอกลิงก์ข่าว"
+            title="คัดลอกลิงก์ข่าว"
           >
             <Copy className="h-4 w-4" />
             คัดลอกลิงก์
@@ -302,6 +312,8 @@ const SocialShare: React.FC<SocialShareProps> = ({
                   variant="outline"
                   className={`${social.color} text-white border-0 gap-2 h-auto py-3 flex-col`}
                   onClick={() => handleShare(social.platform)}
+                  aria-label={`แชร์ไปยัง ${social.name}`}
+                  title={`แชร์ไปยัง ${social.name}`}
                 >
                   <IconComponent className="h-5 w-5" />
                   <span className="font-sarabun text-sm">{social.name}</span>
@@ -331,6 +343,8 @@ const SocialShare: React.FC<SocialShareProps> = ({
                 size="sm"
                 onClick={downloadQRCode}
                 className="gap-2 font-sarabun"
+                aria-label="ดาวน์โหลด QR Code ของข่าวนี้"
+                title="ดาวน์โหลด QR Code ของข่าวนี้"
               >
                 <Download className="h-4 w-4" />
                 ดาวน์โหลด QR Code
@@ -392,6 +406,8 @@ const SocialShare: React.FC<SocialShareProps> = ({
               size="sm"
               onClick={() => handleShare('copy')}
               className="gap-1 whitespace-nowrap"
+              aria-label="คัดลอกลิงก์ข่าว"
+              title="คัดลอกลิงก์ข่าว"
             >
               <Copy className="h-4 w-4" />
               คัดลอก

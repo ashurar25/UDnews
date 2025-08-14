@@ -2,7 +2,6 @@ import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import SponsorBanner from "@/components/SponsorBanner";
 import SponsorBannerBar from "@/components/SponsorBannerBar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Clock, Eye, ExternalLink } from "lucide-react";
 import { useState, useEffect } from "react";
 import MetaHead from "@/components/MetaHead";
-import ShareButtons from "@/components/ShareButtons";
+import { toAbsoluteUrl } from "@/lib/url";
+ 
 import CommentSection from "@/components/CommentSection";
 import SocialShare from "@/components/SocialShare";
 import NewsRating from "@/components/NewsRating";
@@ -76,22 +76,28 @@ const NewsDetail = () => {
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
-  // Update view count and record view analytics
+  // Update view count and record view analytics (unique per 24h per newsId)
   useEffect(() => {
-    if (news) {
-      setViewCount(prevCount => prevCount + 1); // Increment view count locally
-
-      // Record view analytics
-      fetch(`/api/analytics/view/${news.id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }).catch(error => {
-        console.error('Failed to record view:', error);
-      });
+    if (news?.id) {
+      const key = `viewed:${news.id}`;
+      const now = Date.now();
+      const last = localStorage.getItem(key);
+      const dayMs = 24 * 60 * 60 * 1000;
+      const shouldRecord = !last || (now - Number(last)) > dayMs;
+      if (shouldRecord) {
+        setViewCount(prevCount => prevCount + 1);
+        fetch(`/api/analytics/view/${news.id}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }).catch(error => {
+          console.error('Failed to record view:', error);
+        });
+        localStorage.setItem(key, String(now));
+      }
     }
-  }, [news]); // Depend on `news` object to trigger fetch
+  }, [news?.id]);
 
   const getTimeAgo = (dateString: string) => {
     const now = new Date();
@@ -123,7 +129,7 @@ const NewsDetail = () => {
     }
   };
 
-  // sharing handled by ShareButtons component
+  
 
   if (isLoading) {
     return (
@@ -170,8 +176,8 @@ const NewsDetail = () => {
         <MetaHead
           title={news.title}
           description={news.description || (news.content ? news.content.substring(0, 160) + '...' : '')}
-          image={news.imageUrl}
-          url={`/news/${news.id}`}
+          image={toAbsoluteUrl(news.imageUrl)}
+          url={toAbsoluteUrl(`/news/${news.id}`) || `/news/${news.id}`}
           type="article"
           siteName="UD News Update"
           jsonLd={{
@@ -179,15 +185,15 @@ const NewsDetail = () => {
             '@type': 'NewsArticle',
             headline: news.title,
             description: news.description || news.summary,
-            image: news.imageUrl ? [news.imageUrl] : undefined,
+            image: news.imageUrl ? [toAbsoluteUrl(news.imageUrl)!] : undefined,
             datePublished: news.createdAt,
             dateModified: news.updatedAt || news.createdAt,
-            mainEntityOfPage: `${typeof window !== 'undefined' ? window.location.origin : ''}/news/${news.id}`,
+            mainEntityOfPage: toAbsoluteUrl(`/news/${news.id}`),
             author: { '@type': 'Organization', name: 'UD News Update' },
             publisher: {
               '@type': 'Organization',
               name: 'UD News Update',
-              logo: { '@type': 'ImageObject', url: `${typeof window !== 'undefined' ? window.location.origin : ''}/logo.jpg` },
+              logo: { '@type': 'ImageObject', url: toAbsoluteUrl('/logo.jpg')! },
             },
           }}
         />
@@ -243,11 +249,17 @@ const NewsDetail = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <ShareButtons title={news.title} summary={news.summary} url={`/share/${news.id}`} />
+                <div className="flex items-center gap-3 sm:gap-2 flex-wrap sm:flex-nowrap">
+                  <SocialShare
+                    newsId={String(news.id)}
+                    title={news.title}
+                    description={news.summary || news.description || ''}
+                    imageUrl={news.imageUrl}
+                    compact
+                  />
                   {news.sourceUrl && (
                     <Button variant="outline" size="sm" asChild className="gap-2">
-                      <a href={news.sourceUrl} target="_blank" rel="noopener noreferrer">
+                      <a href={news.sourceUrl} target="_blank" rel="noopener noreferrer nofollow" aria-label="เปิดข่าวต้นฉบับในแท็บใหม่" title="เปิดข่าวต้นฉบับในแท็บใหม่">
                         <ExternalLink className="h-4 w-4" />
                         อ่านต้นฉบับ
                       </a>
