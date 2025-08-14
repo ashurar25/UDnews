@@ -86,40 +86,64 @@ export class RSSService {
     throw lastError instanceof Error ? lastError : new Error('Fetch failed');
   }
 
-  // Extract image URL from content
-  private extractImageUrl(content: string | undefined, mediaContent?: any, mediaThumbnail?: any): string | undefined {
-    // Try media content first
-    if (mediaContent && mediaContent.$ && mediaContent.$.url) {
-      return mediaContent.$.url;
-    }
+  // Extract up to 5 image URLs from various RSS fields and HTML content
+  private extractImageUrls(content: string | undefined, mediaContent?: any, mediaThumbnail?: any): string[] {
+    const results: string[] = [];
 
-    // Try media thumbnail
-    if (mediaThumbnail && mediaThumbnail.$ && mediaThumbnail.$.url) {
-      return mediaThumbnail.$.url;
-    }
+    // Helper to push normalized http(s) URLs
+    const pushUrl = (u?: string) => {
+      if (!u) return;
+      const url = u.startsWith('//') ? `https:${u}` : u;
+      if (/^https?:\/\//i.test(url) && !results.includes(url)) results.push(url);
+    };
 
-    // Try enclosure URL
-    try {
-      const anyItem: any = arguments?.[3]; // not used here; kept for clarity
-    } catch {}
-
-    if (!content) return undefined;
-
-    // Parse HTML content to find images
-    try {
-      const root = parse(content);
-      const img = root.querySelector('img');
-      if (img) {
-        const src = img.getAttribute('src');
-        if (src && (src.startsWith('http') || src.startsWith('//'))) {
-          return src.startsWith('//') ? `https:${src}` : src;
-        }
+    // media:content can be array or single
+    if (mediaContent) {
+      const items = Array.isArray(mediaContent) ? mediaContent : [mediaContent];
+      for (const it of items) {
+        if (it?.$?.url) pushUrl(it.$.url);
       }
-    } catch (error) {
-      console.error('Error parsing HTML content:', error);
     }
 
-    return undefined;
+    // media:thumbnail
+    if (mediaThumbnail) {
+      const items = Array.isArray(mediaThumbnail) ? mediaThumbnail : [mediaThumbnail];
+      for (const it of items) {
+        if (it?.$?.url) pushUrl(it.$.url);
+      }
+    }
+
+    // Parse HTML content for up to 5 <img>
+    if (content) {
+      try {
+        const root = parse(content);
+        const imgs = root.querySelectorAll('img');
+        for (const img of imgs) {
+          const src = img.getAttribute('src');
+          pushUrl(src || undefined);
+          if (results.length >= 5) break;
+        }
+      } catch (error) {
+        console.error('Error parsing HTML content for images:', error);
+      }
+    }
+
+    // Cap to 5
+    return results.slice(0, 5);
+  }
+
+  // Lightweight availability check for hotlink URLs (HEAD preferred, fallback GET)
+  private async checkUrlOk(url: string): Promise<boolean> {
+    try {
+      const head = await this.fetchWithRetry(url, { method: 'HEAD', headers: { 'User-Agent': 'UD-News-Image-Checker/1.0' } }, 2, 8000);
+      if (head.ok) return true;
+    } catch {}
+    try {
+      const get = await this.fetchWithRetry(url, { method: 'GET', headers: { 'User-Agent': 'UD-News-Image-Checker/1.0' } }, 1, 8000);
+      return get.ok;
+    } catch {
+      return false;
+    }
   }
 
   // Download image and store optimized copy to /uploads, returning local URL
@@ -422,18 +446,24 @@ export class RSSService {
       return false; // Skip duplicate articles
     }
 
-    // Prefer enclosure first
+    // Gather up to 5 image hotlinks (prefer enclosure first)
     const enclosureUrl = item.enclosure?.url;
-    let imageUrl = enclosureUrl || this.extractImageUrl(
-      item.content || item.contentSnippet,
-      item.mediaContent,
-      item.mediaThumbnail
-    );
+    const extracted = this.extractImageUrls(item.contentEncoded || item.content || item.contentSnippet, item.mediaContent, item.mediaThumbnail);
+    const candidateUrls: string[] = [];
+    if (enclosureUrl) candidateUrls.push(enclosureUrl);
+    for (const u of extracted) if (!candidateUrls.includes(u)) candidateUrls.push(u);
 
-    // Try downloading and storing image locally for reliability and performance
-    let localImageUrl: string | null = null;
-    if (imageUrl) {
-      localImageUrl = await this.downloadAndStoreImage(imageUrl);
+    // Pick first working hotlink; if none works, fallback to local download of the first candidate
+    let chosenImageUrl: string | null = null;
+    for (const url of candidateUrls) {
+      if (await this.checkUrlOk(url)) {
+        chosenImageUrl = url; // hotlink-first
+        break;
+      }
+    }
+    if (!chosenImageUrl && candidateUrls.length) {
+      const local = await this.downloadAndStoreImage(candidateUrls[0]);
+      if (local) chosenImageUrl = local;
     }
 
     const cleanedContent = this.cleanContent(item.content || item.contentSnippet, item.contentEncoded);
@@ -444,7 +474,7 @@ export class RSSService {
       summary: summary,
       content: cleanedContent || 'เนื้อหาจาก RSS Feed',
       category: this.determineCategory(feedCategory, item.categories),
-      imageUrl: localImageUrl || imageUrl || null,
+      imageUrl: chosenImageUrl,
       sourceUrl: item.link || null,
       rssFeedId: feedId,
       isBreaking: this.isBreakingNews(item.title)
