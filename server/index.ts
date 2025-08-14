@@ -57,6 +57,42 @@ app.use(
   express.static(path.resolve(import.meta.dirname, "./public/uploads"))
 );
 
+// Dynamic sitemap.xml
+app.get('/sitemap.xml', async (req: Request, res: Response) => {
+  try {
+    const origin = `${req.protocol}://${req.get('host')}`;
+    const apiUrl = `${origin}/api/news`;
+    const r = await fetch(apiUrl, { headers: { Accept: 'application/json' } });
+    if (!r.ok) throw new Error(`Fetch failed ${r.status}`);
+    const items: any[] = await r.json();
+
+    const entries: string[] = [];
+    // Home
+    entries.push(urlEntry(`${origin}/`, undefined, 'daily', '1.0'));
+    // News items
+    if (Array.isArray(items)) {
+      for (const it of items) {
+        const id = it?.id ?? it?.newsId;
+        if (!id) continue;
+        const lastmod = it?.updatedAt || it?.createdAt;
+        entries.push(urlEntry(`${origin}/news/${id}`, lastmod));
+      }
+    }
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.join('\n')}\n</urlset>`;
+    res.setHeader('Content-Type', 'application/xml');
+    res.setHeader('Cache-Control', 'public, max-age=3600'); // 1 hour
+    res.send(xml);
+  } catch (err) {
+    res.status(500).send('Failed to generate sitemap');
+  }
+});
+
+function urlEntry(loc: string, lastmod?: string, changefreq = 'daily', priority = '0.8') {
+  const last = lastmod ? `\n  <lastmod>${new Date(lastmod).toISOString()}</lastmod>` : '';
+  return `  <url>\n  <loc>${loc}</loc>${last}\n  <changefreq>${changefreq}</changefreq>\n  <priority>${priority}</priority>\n  </url>`;
+}
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;

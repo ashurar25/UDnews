@@ -3,11 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Pause, Play, Square, Volume2 } from 'lucide-react';
+import { useTrackEvent } from '@/lib/useTrackEvent';
 
 interface TTSReaderProps {
   title?: string;
   summary?: string;
   htmlContent?: string; // HTML string
+  newsId?: number;
 }
 
 function stripHtml(html?: string): string {
@@ -20,7 +22,8 @@ function stripHtml(html?: string): string {
     .trim();
 }
 
-const TTSReader: React.FC<TTSReaderProps> = ({ title, summary, htmlContent }) => {
+const TTSReader: React.FC<TTSReaderProps> = ({ title, summary, htmlContent, newsId }) => {
+  const { track } = useTrackEvent();
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<string>('');
   const [rate, setRate] = useState<number>(1);
@@ -94,6 +97,7 @@ const TTSReader: React.FC<TTSReaderProps> = ({ title, summary, htmlContent }) =>
     setSpeaking(false);
     setPaused(false);
     utteranceRef.current = null;
+    track('tts.stop', { newsId, scope: readScope, rate, voice: selectedVoice });
   };
 
   const startSpeaking = () => {
@@ -109,16 +113,19 @@ const TTSReader: React.FC<TTSReaderProps> = ({ title, summary, htmlContent }) =>
       setSpeaking(false);
       setPaused(false);
       utteranceRef.current = null;
+      track('tts.end', { newsId, scope: readScope, rate, voice: selectedVoice });
     };
     utterance.onerror = () => {
       setSpeaking(false);
       setPaused(false);
       utteranceRef.current = null;
+      track('tts.error', { newsId });
     };
 
     utteranceRef.current = utterance;
     window.speechSynthesis.speak(utterance);
     setSpeaking(true);
+    track('tts.play', { newsId, scope: readScope, rate, voice: selectedVoice }, { cooldownMs: 10_000 });
   };
 
   const togglePause = () => {
@@ -126,9 +133,11 @@ const TTSReader: React.FC<TTSReaderProps> = ({ title, summary, htmlContent }) =>
     if (paused) {
       window.speechSynthesis.resume();
       setPaused(false);
+      track('tts.resume', { newsId });
     } else {
       window.speechSynthesis.pause();
       setPaused(true);
+      track('tts.pause', { newsId });
     }
   };
 

@@ -15,6 +15,7 @@ import CommentSection from "@/components/CommentSection";
 import SocialShare from "@/components/SocialShare";
 import NewsRating from "@/components/NewsRating";
 import TTSReader from "@/components/TTSReader";
+import AppErrorBoundary from "@/components/AppErrorBoundary";
 
 interface NewsItem {
   id: number;
@@ -172,6 +173,7 @@ const NewsDetail = () => {
   }
 
   return (
+    <AppErrorBoundary>
     <div className="min-h-screen bg-background">
       {news && (
         <MetaHead
@@ -297,6 +299,7 @@ const NewsDetail = () => {
                   title={news.title}
                   summary={news.summary}
                   htmlContent={news.content.replace(/\n/g, '<br>')}
+                  newsId={news.id}
                 />
               )}
 
@@ -435,7 +438,7 @@ const NewsDetail = () => {
 
       <Footer />
     </div>
-  );
-};
+  </AppErrorBoundary>
+);
 
 export default NewsDetail;
