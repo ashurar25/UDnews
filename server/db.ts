@@ -9,7 +9,7 @@ const PRIMARY_DATABASE_URL = "postgresql://udnews_user:qRNlOyrnlVbrRH16AQJ5itOkj
 const BACKUP_DATABASE_URL = "postgresql://neondb_owner:npg_pq2xNLg1BCJS@ep-soft-tooth-a1ppjto0-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
 
 // ใช้ environment variable หรือ primary database เป็นค่าเริ่มต้น
-const DATABASE_URL = process.env.DATABASE_URL || PRIMARY_DATABASE_URL;
+export const DATABASE_URL = process.env.DATABASE_URL || PRIMARY_DATABASE_URL;
 
 export const pool = new Pool({ 
   connectionString: DATABASE_URL,

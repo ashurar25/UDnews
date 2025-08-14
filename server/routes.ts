@@ -1,4 +1,5 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
+import { Readable } from 'stream';
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
@@ -38,6 +39,16 @@ import QRCode from 'qrcode';
 import type { InsertDonation } from "@shared/schema";
 import { SitemapGenerator } from './sitemap-generator';
 
+// Simple HTML escape for meta tag content
+function escapeHtml(input: string): string {
+  return String(input)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // Cache configuration for faster news loading
 const newsCache = new NodeCache({ stdTTL: 300, checkperiod: 60 }); // 5 minutes
 const individualNewsCache = new NodeCache({ stdTTL: 1800, checkperiod: 120 }); // 30 minutes
@@ -67,6 +78,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Apply rate limiting
   app.use('/api/', apiLimiter);
   app.use('/admin', adminLimiter);
+  // Mount database management API routes
+  app.use('/api/database', databaseRoutes);
 
   // Admin routes - serve static HTML (ensure correct file)
   app.get('/admin.html', (req, res) => {
@@ -92,6 +105,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching donation ranking:', error);
       res.status(500).json([]);
+    }
+  });
+
+  // Same-origin image endpoint for sharing crawlers
+  app.get('/share-image/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).send('Invalid id');
+      const news = await storage.getNewsById(id);
+      if (!news || !news.imageUrl) return res.status(404).send('Not found');
+
+      const imgUrl = news.imageUrl;
+      // If already a local path, redirect to it (static server should serve it)
+      if (imgUrl.startsWith('/')) {
+        return res.redirect(imgUrl);
+      }
+
+      // Otherwise proxy the external image
+      const response = await fetch(imgUrl, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; UDNewsBot/1.0)' } });
+      if (!response.ok || !response.body) {
+        return res.status(502).send('Bad gateway');
+      }
+      const contentType = response.headers.get('content-type') || 'image/jpeg';
+      res.setHeader('Content-Type', contentType);
+      const contentLength = response.headers.get('content-length');
+      if (contentLength) res.setHeader('Content-Length', contentLength);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      // Stream the body (convert Web ReadableStream to Node stream)
+      const nodeStream = Readable.fromWeb(response.body as any);
+      nodeStream.on('error', () => res.end());
+      nodeStream.pipe(res);
+    } catch (err) {
+      console.error('share-image error', err);
+      res.status(500).send('');
     }
   });
 
@@ -312,6 +359,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.send(txt);
     } catch (err) {
       console.error('robots.txt error', err);
+      res.status(500).send('');
+    }
+  });
+
+  // SEO: Server-rendered share page for social crawlers
+  app.get('/share/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).send('Invalid id');
+
+      const news = await storage.getNewsById(id);
+      if (!news) return res.status(404).send('Not found');
+
+      const proto = (req.headers['x-forwarded-proto'] as string) || req.protocol;
+      const host = req.get('host');
+      const origin = `${proto}://${host}`;
+      const pageUrl = `${origin}/news/${news.id}`;
+      const shareUrl = `${origin}/share/${news.id}`;
+      const title = news.title || 'UD News Update';
+      const description = (news.summary || news.content || '').toString().slice(0, 200);
+      // Use same-origin image URL so Facebook can fetch reliably
+      const image = news.imageUrl ? `${origin}/share-image/${news.id}` : `${origin}/logo.jpg`;
+      const secureImage = proto === 'https' ? image : image.replace('http://', 'https://');
+
+      const html = `<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${escapeHtml(title)}</title>
+  <link rel="canonical" href="${pageUrl}" />
+  <meta name="description" content="${escapeHtml(description)}" />
+  <!-- Open Graph -->
+  <meta property="og:title" content="${escapeHtml(title)}" />
+  <meta property="og:description" content="${escapeHtml(description)}" />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="${pageUrl}" />
+  <meta property="og:image" content="${image}" />
+  <meta property="og:image:secure_url" content="${secureImage}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="${escapeHtml(title)}" />
+  <meta property="og:site_name" content="UD News Update" />
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${escapeHtml(title)}" />
+  <meta name="twitter:description" content="${escapeHtml(description)}" />
+  <meta name="twitter:image" content="${image}" />
+  <!-- Fallback redirect for users -->
+  <meta http-equiv="refresh" content="1;url=${pageUrl}" />
+  <script>window.location.replace(${JSON.stringify(pageUrl)});</script>
+</head>
+<body>
+  <p>กำลังเปลี่ยนเส้นทางไปยังข่าว: <a href="${pageUrl}">${escapeHtml(title)}</a></p>
+</body>
+</html>`;
+
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(html);
+    } catch (err) {
+      console.error('share page error', err);
       res.status(500).send('');
     }
   });

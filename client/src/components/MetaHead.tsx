@@ -35,6 +35,7 @@ export default function MetaHead({
   useEffect(() => {
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const absUrl = url?.startsWith('http') ? url : url ? `${origin}${url.startsWith('/') ? '' : '/'}${url}` : window.location.href;
+    const absImage = image ? (image.startsWith('http') ? image : `${origin}${image.startsWith('/') ? '' : '/'}${image}`) : undefined;
 
     if (title) document.title = title;
 
@@ -66,7 +67,7 @@ export default function MetaHead({
     const og: Record<string, string | undefined> = {
       'og:title': title,
       'og:description': description,
-      'og:image': image,
+      'og:image': absImage,
       'og:url': absUrl,
       'og:type': type,
       'og:site_name': siteName,
@@ -85,7 +86,7 @@ export default function MetaHead({
       'twitter:card': image ? 'summary_large_image' : 'summary',
       'twitter:title': title,
       'twitter:description': description,
-      'twitter:image': image,
+      'twitter:image': absImage,
     };
     Object.entries(tw).forEach(([name, content]) => {
       if (!content) return;
@@ -106,7 +107,26 @@ export default function MetaHead({
         script.id = id;
         document.head.appendChild(script);
       }
-      script.text = JSON.stringify(jsonLd);
+      // If schema includes image as relative, normalize to absolute
+      let schemaObj: any = jsonLd;
+      try {
+        schemaObj = JSON.parse(JSON.stringify(jsonLd));
+        if (schemaObj && typeof schemaObj === 'object') {
+          if (schemaObj.image && typeof schemaObj.image === 'string') {
+            schemaObj.image = absImage || schemaObj.image;
+          }
+          if (Array.isArray(schemaObj.image)) {
+            schemaObj.image = (schemaObj.image as string[]).map((im) => im.startsWith('http') ? im : `${origin}${im.startsWith('/') ? '' : '/'}${im}`);
+          }
+          if (schemaObj.mainEntityOfPage && typeof schemaObj.mainEntityOfPage === 'string') {
+            schemaObj.mainEntityOfPage = schemaObj.mainEntityOfPage.startsWith('http') ? schemaObj.mainEntityOfPage : `${origin}${schemaObj.mainEntityOfPage.startsWith('/') ? '' : '/'}${schemaObj.mainEntityOfPage}`;
+          }
+          if (schemaObj.url && typeof schemaObj.url === 'string') {
+            schemaObj.url = schemaObj.url.startsWith('http') ? schemaObj.url : `${origin}${schemaObj.url.startsWith('/') ? '' : '/'}${schemaObj.url}`;
+          }
+        }
+      } catch {}
+      script.text = JSON.stringify(schemaObj);
     }
   }, [title, description, image, url, type, siteName, canonical, noindex, jsonLd]);
 

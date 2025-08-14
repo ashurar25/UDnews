@@ -241,7 +241,7 @@ const NewsDetail = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <ShareButtons title={news.title} summary={news.summary} />
+                  <ShareButtons title={news.title} summary={news.summary} url={`/share/${news.id}`} />
                   {news.sourceUrl && (
                     <Button variant="outline" size="sm" asChild className="gap-2">
                       <a href={news.sourceUrl} target="_blank" rel="noopener noreferrer">

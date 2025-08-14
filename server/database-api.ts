@@ -1,9 +1,60 @@
-import { Router } from 'express';
-import { db } from './db';
+import { Router, type Request, type Response } from 'express';
+import { db, DATABASE_URL } from './db';
 import { sql } from 'drizzle-orm';
 import { authenticateToken } from './middleware/auth';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
+import { exec } from 'child_process';
+import multer from 'multer';
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req: Request, file: any, cb: (error: any, destination: string) => void) => cb(null, path.join(os.tmpdir(), 'udnews-restore')),
+    filename: (req: Request, file: any, cb: (error: any, filename: string) => void) => cb(null, `${Date.now()}-${file.originalname}`)
+  }),
+  limits: { fileSize: 1024 * 1024 * 500 } // 500MB
+});
+
+// Ensure temp directory exists
+try { fs.mkdirSync(path.join(os.tmpdir(), 'udnews-restore'), { recursive: true }); } catch {}
+
+function parsePgEnv(connStr: string) {
+  try {
+    const u = new URL(connStr);
+    const isPostgres = u.protocol.startsWith('postgres');
+    if (!isPostgres) return null;
+    const sslmode = u.searchParams.get('sslmode');
+    return {
+      PGHOST: u.hostname,
+      PGPORT: u.port || '5432',
+      PGUSER: decodeURIComponent(u.username),
+      PGPASSWORD: decodeURIComponent(u.password),
+      PGDATABASE: decodeURIComponent(u.pathname.replace(/^\//, '')),
+      PGSSLMODE: sslmode || undefined,
+    } as Record<string, string | undefined>;
+  } catch {
+    return null;
+  }
+}
+
+function commandExists(cmd: string): Promise<boolean> {
+  const check = process.platform === 'win32' ? `where ${cmd}` : `which ${cmd}`;
+  return new Promise((resolve) => {
+    exec(check, (err) => resolve(!err));
+  });
+}
+
+function run(cmd: string, envExtra?: Record<string, string | undefined>): Promise<{ stdout: string; stderr: string }>{
+  return new Promise((resolve, reject) => {
+    const child = exec(cmd, { env: { ...process.env, ...envExtra } }, (err, stdout, stderr) => {
+      if (err) return reject(Object.assign(err, { stdout, stderr }));
+      resolve({ stdout, stderr });
+    });
+    // Safety: kill after 15 minutes
+    setTimeout(() => { try { child.kill(); } catch {} }, 15 * 60 * 1000);
+  });
+}
 
 const router = Router();
 
@@ -11,7 +62,7 @@ const router = Router();
 router.use(authenticateToken);
 
 // Get database statistics
-router.get('/stats', async (req, res) => {
+router.get('/stats', async (req: Request, res: Response) => {
   try {
     // Get total tables count
     const tablesResult = await db.execute(sql`
@@ -80,7 +131,7 @@ router.get('/stats', async (req, res) => {
 });
 
 // Get all tables information
-router.get('/tables', async (req, res) => {
+router.get('/tables', async (req: Request, res: Response) => {
   try {
     const tables = await db.execute(sql`
       SELECT 
@@ -211,7 +262,7 @@ router.get('/tables', async (req, res) => {
 });
 
 // Get table data
-router.get('/tables/:tableName/data', async (req, res) => {
+router.get('/tables/:tableName/data', async (req: Request, res: Response) => {
   try {
     const { tableName } = req.params;
     const { limit = 100, offset = 0 } = req.query;
@@ -236,55 +287,80 @@ router.get('/tables/:tableName/data', async (req, res) => {
 });
 
 // Create database backup
-router.post('/backup', async (req, res) => {
+router.post('/backup', async (req: Request, res: Response) => {
   try {
-    const { name } = req.body;
-    
-    if (!name) {
-      return res.status(400).json({ error: 'Backup name is required' });
-    }
+    const { name, format } = req.body || {};
+    if (!name) return res.status(400).json({ error: 'Backup name is required' });
 
-    // Create backup directory if it doesn't exist
     const backupDir = path.join(process.cwd(), 'backups');
-    if (!fs.existsSync(backupDir)) {
-      fs.mkdirSync(backupDir, { recursive: true });
+    if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const ext = (format === 'custom' ? 'dump' : 'sql');
+    const backupFile = `${name}-${timestamp}.${ext}`;
+    const backupPath = path.join(backupDir, backupFile);
+
+    const envPg = parsePgEnv(DATABASE_URL);
+    if (!envPg) return res.status(500).json({ error: 'Invalid DATABASE_URL format' });
+
+    const hasPgDump = await commandExists('pg_dump');
+    if (!hasPgDump) {
+      return res.status(500).json({ 
+        error: 'pg_dump not found in PATH',
+        instructions: 'Install PostgreSQL client tools and ensure pg_dump is in PATH.'
+      });
     }
 
-    const backupPath = path.join(backupDir, `${name}.sql`);
-    
-    // For now, create a simple backup file
-    // In production, you'd use pg_dump or similar tool
-    const backupContent = `-- Database backup: ${name}
--- Created: ${new Date().toISOString()}
--- This is a placeholder backup file
--- Implement actual backup logic using pg_dump or similar
-`;
+    const args = [
+      'pg_dump',
+      format === 'custom' ? '-Fc' : '-Fp',
+      '--no-owner',
+      '--no-privileges',
+      `-f "${backupPath.replace(/"/g, '\\"')}"`
+    ].join(' ');
 
-    fs.writeFileSync(backupPath, backupContent);
+    await run(args, envPg);
 
-    res.json({ 
-      success: true, 
-      message: 'Backup created successfully',
-      backupPath: backupPath
-    });
-  } catch (error) {
-    console.error('Error creating backup:', error);
-    res.status(500).json({ error: 'Failed to create backup' });
+    res.json({ success: true, message: 'Backup created successfully', backupPath, file: backupFile });
+  } catch (error: any) {
+    console.error('Error creating backup:', error?.stderr || error);
+    res.status(500).json({ error: 'Failed to create backup', details: error?.stderr || String(error) });
   }
 });
 
 // Restore database from backup
-router.post('/restore', async (req, res) => {
+router.post('/restore', upload.single('backup'), async (req: Request, res: Response) => {
+  const uploaded = (req as any).file as any;
+  if (!uploaded) return res.status(400).json({ error: 'Backup file is required' });
   try {
-    // This would require multipart form handling
-    // For now, return success message
-    res.json({ 
-      success: true, 
-      message: 'Restore functionality requires file upload implementation'
-    });
-  } catch (error) {
-    console.error('Error restoring backup:', error);
-    res.status(500).json({ error: 'Failed to restore backup' });
+    const envPg = parsePgEnv(DATABASE_URL);
+    if (!envPg) return res.status(500).json({ error: 'Invalid DATABASE_URL format' });
+
+    const ext = path.extname(uploaded.originalname).toLowerCase();
+    const isSql = ext === '.sql';
+
+    if (isSql) {
+      const hasPsql = await commandExists('psql');
+      if (!hasPsql) {
+        return res.status(500).json({ error: 'psql not found in PATH', instructions: 'Install PostgreSQL client tools and ensure psql is in PATH.' });
+      }
+      const cmd = `psql -v ON_ERROR_STOP=1 -f "${uploaded.path.replace(/"/g, '\\"')}"`;
+      await run(cmd, envPg);
+    } else {
+      const hasPgRestore = await commandExists('pg_restore');
+      if (!hasPgRestore) {
+        return res.status(500).json({ error: 'pg_restore not found in PATH', instructions: 'Install PostgreSQL client tools and ensure pg_restore is in PATH.' });
+      }
+      const cmd = `pg_restore --clean --if-exists --no-owner --no-privileges -d "${envPg.PGDATABASE}" "${uploaded.path.replace(/"/g, '\\"')}"`;
+      await run(cmd, envPg);
+    }
+
+    res.json({ success: true, message: 'Restore completed successfully' });
+  } catch (error: any) {
+    console.error('Error restoring backup:', error?.stderr || error);
+    res.status(500).json({ error: 'Failed to restore backup', details: error?.stderr || String(error) });
+  } finally {
+    try { fs.unlinkSync(uploaded.path); } catch {}
   }
 });
 
