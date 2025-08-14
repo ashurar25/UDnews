@@ -11,6 +11,9 @@ import { ArrowLeft, Clock, Eye, ExternalLink } from "lucide-react";
 import { useState, useEffect } from "react";
 import MetaHead from "@/components/MetaHead";
 import ShareButtons from "@/components/ShareButtons";
+import CommentSection from "@/components/CommentSection";
+import SocialShare from "@/components/SocialShare";
+import NewsRating from "@/components/NewsRating";
 
 interface NewsItem {
   id: number;
