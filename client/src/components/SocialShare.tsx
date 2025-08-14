@@ -12,6 +12,7 @@ import { Copy, Share2, Facebook, Twitter, MessageCircle, Mail, Link, QrCode, Dow
 import { useToast } from '@/hooks/use-toast';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { useTrackEvent } from '@/lib/useTrackEvent';
 
 interface SocialShareProps {
   newsId: string;
@@ -33,6 +34,7 @@ const SocialShare: React.FC<SocialShareProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [customMessage, setCustomMessage] = useState('');
   const { toast } = useToast();
+  const { track } = useTrackEvent();
 
   const currentUrl = url || `${window.location.origin}/news/${newsId}`;
   const encodedUrl = encodeURIComponent(currentUrl);
@@ -69,6 +71,8 @@ const SocialShare: React.FC<SocialShareProps> = ({
   };
 
   const handleShare = async (platform: string) => {
+    // fire standardized analytics event
+    track('social.share', { platform, newsId, url: currentUrl });
     trackShareMutation.mutate(platform);
 
     if (platform === 'copy') {
@@ -78,6 +82,7 @@ const SocialShare: React.FC<SocialShareProps> = ({
           title: "คัดลอกลิงก์แล้ว",
           description: "ลิงก์ข่าวได้รับการคัดลอกไปยังคลิปบอร์ดแล้ว",
         });
+        track('social.copy_link', { newsId, url: currentUrl });
       } catch (error) {
         // Fallback for older browsers
         const textArea = document.createElement('textarea');
@@ -91,6 +96,7 @@ const SocialShare: React.FC<SocialShareProps> = ({
           title: "คัดลอกลิงก์แล้ว",
           description: "ลิงก์ข่าวได้รับการคัดลอกแล้ว",
         });
+        track('social.copy_link', { newsId, url: currentUrl, fallback: true });
       }
       return;
     }
@@ -106,6 +112,7 @@ const SocialShare: React.FC<SocialShareProps> = ({
           title: "แชร์สำเร็จ",
           description: "ข่าวได้รับการแชร์แล้ว",
         });
+        track('social.share_native', { newsId, url: currentUrl });
       } catch (err) {
         const e = err as { name?: string };
         if (e.name !== 'AbortError') {
@@ -149,6 +156,7 @@ const SocialShare: React.FC<SocialShareProps> = ({
     document.body.removeChild(link);
     
     trackShareMutation.mutate('qr-download');
+    track('social.qr_download', { newsId, url: currentUrl });
     toast({
       title: "ดาวน์โหลด QR Code แล้ว",
       description: "QR Code ได้รับการบันทึกแล้ว",

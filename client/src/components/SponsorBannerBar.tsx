@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import axios from "axios";
 import type { SponsorBanner } from "@shared/schema";
 import { useState, useEffect } from "react";
+import { useTrackEvent } from "@/lib/useTrackEvent";
 
 interface SponsorBannerBarProps {
   position?: "header" | "sidebar" | "footer" | "between_news";
@@ -23,6 +24,7 @@ const SponsorBannerBar = ({
   bannerCount = 3
 }: SponsorBannerBarProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const { track } = useTrackEvent();
 
   const { data: allBanners = [], isLoading, isError } = useQuery({
     queryKey: ["/api/sponsor-banners", position],
@@ -38,6 +40,8 @@ const SponsorBannerBar = ({
 
   const handleBannerClick = async (banner: SponsorBanner) => {
     try {
+      // track sponsor banner click
+      track('sponsor.click', { bannerId: banner.id, position, linkUrl: banner.linkUrl, title: banner.title }, { cooldownMs: 2000 });
       await axios.post(`/api/sponsor-banners/${banner.id}/click`);
       window.open(banner.linkUrl, '_blank', 'noopener,noreferrer');
     } catch (error) {
@@ -48,6 +52,7 @@ const SponsorBannerBar = ({
 
   const handleContactSponsor = (e: React.MouseEvent) => {
     e.stopPropagation();
+    track('sponsor.contact_click', { position }, { cooldownMs: 3000 });
     window.location.assign('/contact?reason=sponsor');
   };
 
