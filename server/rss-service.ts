@@ -101,7 +101,10 @@ export class RSSService {
     if (mediaContent) {
       const items = Array.isArray(mediaContent) ? mediaContent : [mediaContent];
       for (const it of items) {
+        // rss-parser shapes vary: it.url or it.$.url
+        if (it?.url) pushUrl(it.url);
         if (it?.$?.url) pushUrl(it.$.url);
+        if (typeof it === 'string') pushUrl(it);
       }
     }
 
@@ -109,7 +112,9 @@ export class RSSService {
     if (mediaThumbnail) {
       const items = Array.isArray(mediaThumbnail) ? mediaThumbnail : [mediaThumbnail];
       for (const it of items) {
+        if (it?.url) pushUrl(it.url);
         if (it?.$?.url) pushUrl(it.$.url);
+        if (typeof it === 'string') pushUrl(it);
       }
     }
 
@@ -120,7 +125,13 @@ export class RSSService {
         const imgs = root.querySelectorAll('img');
         for (const img of imgs) {
           const src = img.getAttribute('src');
-          pushUrl(src || undefined);
+          const dataSrc = img.getAttribute('data-src') || img.getAttribute('data-original');
+          const srcset = img.getAttribute('srcset');
+          if (srcset) {
+            const first = srcset.split(',')[0]?.trim().split(' ')[0];
+            pushUrl(first);
+          }
+          pushUrl(src || dataSrc || undefined);
           if (results.length >= 5) break;
         }
       } catch (error) {
@@ -130,6 +141,27 @@ export class RSSService {
 
     // Cap to 5
     return results.slice(0, 5);
+  }
+
+  // Fallback: fetch article page and scrape og:image
+  private async fetchOgImageUrl(pageUrl?: string): Promise<string | null> {
+    if (!pageUrl) return null;
+    try {
+      const res = await this.fetchWithRetry(pageUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; UD News Crawler/1.0)'
+        }
+      }, 2, 12000);
+      if (!res.ok) return null;
+      const html = await res.text();
+      const root = parse(html);
+      const og = root.querySelector('meta[property="og:image"], meta[name="og:image"]');
+      const twitter = root.querySelector('meta[name="twitter:image"], meta[property="twitter:image"]');
+      const href = og?.getAttribute('content') || twitter?.getAttribute('content');
+      return href ? (href.startsWith('//') ? `https:${href}` : href) : null;
+    } catch {
+      return null;
+    }
   }
 
   // Lightweight availability check for hotlink URLs (HEAD preferred, fallback GET)
@@ -453,14 +485,16 @@ export class RSSService {
     if (enclosureUrl) candidateUrls.push(enclosureUrl);
     for (const u of extracted) if (!candidateUrls.includes(u)) candidateUrls.push(u);
 
-    // Pick first working hotlink; if none works, fallback to local download of the first candidate
-    let chosenImageUrl: string | null = null;
-    for (const url of candidateUrls) {
-      if (await this.checkUrlOk(url)) {
-        chosenImageUrl = url; // hotlink-first
-        break;
-      }
+    // Hotlink-first: choose first candidate without strict network checks
+    let chosenImageUrl: string | null = candidateUrls[0] || null;
+
+    // If no candidates, try scraping og:image from article page
+    if (!chosenImageUrl) {
+      const og = await this.fetchOgImageUrl(item.link);
+      if (og) chosenImageUrl = og;
     }
+
+    // Final fallback: download first candidate if present but broken, otherwise try downloading og image
     if (!chosenImageUrl && candidateUrls.length) {
       const local = await this.downloadAndStoreImage(candidateUrls[0]);
       if (local) chosenImageUrl = local;

@@ -30,6 +30,26 @@ export default function PWAInstallButton({ className = '' }: { className?: strin
     window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt);
     window.addEventListener('appinstalled', onAppInstalled);
 
+    // If the event fired before React mounted, pick it up from window
+    const w = window as any;
+    if (w.__ud_bip) {
+      setDeferredPrompt(w.__ud_bip as BeforeInstallPromptEvent);
+      setCanInstall(true);
+    }
+    // Subscribe to future early captures
+    if (Array.isArray(w.__ud_bip_listeners)) {
+      const listener = (e: Event) => onBeforeInstallPrompt(e);
+      w.__ud_bip_listeners.push(listener);
+      return () => {
+        window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
+        window.removeEventListener('appinstalled', onAppInstalled);
+        // remove our listener from the array
+        const arr: any[] = w.__ud_bip_listeners;
+        const idx = arr.indexOf(listener);
+        if (idx >= 0) arr.splice(idx, 1);
+      };
+    }
+
     return () => {
       window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
       window.removeEventListener('appinstalled', onAppInstalled);

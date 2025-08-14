@@ -18,6 +18,21 @@
     <link rel="apple-touch-icon" href="/logo.jpg" />
     <link rel="alternate" type="application/rss+xml" title="UD News Update RSS" href="/rss.xml" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📰</text></svg>" />
+    <script>
+      // Capture beforeinstallprompt as early as possible
+      (function(){
+        window.__ud_bip = window.__ud_bip || null;
+        window.__ud_bip_listeners = window.__ud_bip_listeners || [];
+        window.addEventListener('beforeinstallprompt', function(e){
+          try { e.preventDefault(); } catch(_){}
+          window.__ud_bip = e;
+          (window.__ud_bip_listeners || []).forEach(function(fn){ try { fn(e); } catch(_){} });
+        });
+        window.addEventListener('appinstalled', function(){
+          window.__ud_bip = null;
+        });
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
