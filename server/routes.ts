@@ -96,6 +96,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Comments moderation
+  app.get('/api/admin/comments', authMiddleware, async (req, res) => {
+    try {
+      const filter = typeof req.query.filter === 'string' ? req.query.filter : undefined;
+      const limit = req.query.limit ? parseInt(String(req.query.limit)) : undefined;
+      const items = await storage.getComments(filter, isNaN(Number(limit)) ? undefined : (limit as number));
+      res.json(Array.isArray(items) ? items : []);
+    } catch (error) {
+      console.error('Error fetching admin comments:', error);
+      res.status(500).json({ error: 'Failed to fetch comments' });
+    }
+  });
+
+  app.post('/api/admin/comments/:id/approve', authMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: 'Invalid id' });
+      const ok = await storage.approveComment(id);
+      if (!ok) return res.status(404).json({ error: 'Comment not found' });
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error approving comment:', error);
+      res.status(500).json({ error: 'Failed to approve comment' });
+    }
+  });
+
+  app.delete('/api/admin/comments/:id', authMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: 'Invalid id' });
+      const ok = await storage.deleteComment(id);
+      if (!ok) return res.status(404).json({ error: 'Comment not found' });
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      res.status(500).json({ error: 'Failed to delete comment' });
+    }
+  });
+
   // Same-origin image endpoint for sharing crawlers
   app.get('/share-image/:id', async (req: Request, res: Response) => {
     try {
@@ -1278,6 +1317,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Health Check Endpoint
   app.get("/api/health", async (req, res) => {
+
     try {
       // ตรวจสอบการเชื่อมต่อฐานข้อมูล
       const dbCheck = await storage.getDatabaseStats();

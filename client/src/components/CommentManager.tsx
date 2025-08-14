@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,112 +9,100 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { MessageSquare, CheckCircle, XCircle, Trash2, Search, Filter, Eye } from "lucide-react";
+import { MessageSquare, CheckCircle, XCircle, Trash2, Search, Filter } from "lucide-react";
 
-interface Comment {
-  id: string;
+interface AdminComment {
+  id: number;
   content: string;
-  author: string;
-  authorEmail: string;
+  authorName: string;
   newsTitle: string;
-  status: 'pending' | 'approved' | 'rejected' | 'spam';
+  isApproved: boolean;
   createdAt: string;
-  ipAddress: string;
 }
 
 export default function CommentManager() {
   const { toast } = useToast();
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [comments, setComments] = useState<AdminComment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [selectedComments, setSelectedComments] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved'>('all');
+  const [selectedComments, setSelectedComments] = useState<number[]>([]);
 
-  // Mock data for demonstration
+  const adminToken = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+
+  const fetchComments = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // Backend supports filter=approved|all; we'll use approved when requested, otherwise all
+      const serverFilter = statusFilter === 'approved' ? 'approved' : 'all';
+      const res = await fetch(`/api/admin/comments?filter=${serverFilter}&limit=100`, {
+        headers: {
+          'Authorization': adminToken ? `Bearer ${adminToken}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!res.ok) throw new Error('Failed to load comments');
+      const data: Array<{ id: number; content: string; authorName: string; createdAt: string; newsTitle: string; isApproved: boolean }>
+        = await res.json();
+      setComments(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'โหลดความคิดเห็นล้มเหลว', description: 'ไม่สามารถดึงข้อมูลจากเซิร์ฟเวอร์ได้', variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [statusFilter, adminToken, toast]);
+
   useEffect(() => {
-    const mockComments: Comment[] = [
-      {
-        id: '1',
-        content: 'ข่าวดีมากครับ ข้อมูลครบถ้วน',
-        author: 'สมชาย ใจดี',
-        authorEmail: 'somchai@example.com',
-        newsTitle: 'ข่าวเศรษฐกิจประจำวัน',
-        status: 'pending',
-        createdAt: '2024-12-19 10:30:00',
-        ipAddress: '192.168.1.100'
-      },
-      {
-        id: '2',
-        content: 'ขอบคุณสำหรับข้อมูลที่เป็นประโยชน์',
-        author: 'สมหญิง รักดี',
-        authorEmail: 'somying@example.com',
-        newsTitle: 'ข่าวกีฬา',
-        status: 'approved',
-        createdAt: '2024-12-18 15:45:00',
-        ipAddress: '192.168.1.101'
-      },
-      {
-        id: '3',
-        content: 'ขายของราคาถูก ดูที่เว็บเรา',
-        author: 'โจรสลัด',
-        authorEmail: 'spam@spam.com',
-        newsTitle: 'ข่าวการเมือง',
-        status: 'spam',
-        createdAt: '2024-12-17 09:15:00',
-        ipAddress: '192.168.1.102'
-      }
-    ];
-    setComments(mockComments);
-    setIsLoading(false);
-  }, []);
+    fetchComments();
+  }, [fetchComments]);
 
-  const filteredComments = comments.filter(comment => {
-    const matchesSearch = comment.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         comment.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         comment.newsTitle.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || comment.status === statusFilter;
+  const filteredComments = comments.filter((comment) => {
+    const matchesSearch = comment.content.toLowerCase().includes(searchTerm.toLowerCase())
+      || comment.authorName.toLowerCase().includes(searchTerm.toLowerCase())
+      || comment.newsTitle.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      statusFilter === 'all'
+        ? true
+        : statusFilter === 'approved'
+        ? comment.isApproved
+        : !comment.isApproved; // pending
     return matchesSearch && matchesStatus;
   });
 
-  const handleStatusChange = async (commentId: string, newStatus: string) => {
+  const handleApprove = async (commentId: number) => {
     try {
-      // Mock API call
-      setComments(comments.map(comment =>
-        comment.id === commentId ? { ...comment, status: newStatus as any } : comment
-      ));
-      
-      toast({
-        title: "อัปเดตสถานะสำเร็จ",
-        description: `ความคิดเห็นถูกอัปเดตเป็น ${newStatus}`,
+      const res = await fetch(`/api/admin/comments/${commentId}/approve`, {
+        method: 'POST',
+        headers: {
+          'Authorization': adminToken ? `Bearer ${adminToken}` : '',
+          'Content-Type': 'application/json',
+        },
       });
+      if (!res.ok) throw new Error('Approve failed');
+      // Optimistic update
+      setComments((prev) => prev.map(c => c.id === commentId ? { ...c, isApproved: true } : c));
+      toast({ title: 'อนุมัติแล้ว', description: 'ความคิดเห็นถูกอนุมัติเรียบร้อย' });
     } catch (error) {
-      toast({
-        title: "เกิดข้อผิดพลาด",
-        description: "ไม่สามารถอัปเดตสถานะได้",
-        variant: "destructive"
-      });
+      toast({ title: 'เกิดข้อผิดพลาด', description: 'ไม่สามารถอนุมัติความคิดเห็นได้', variant: 'destructive' });
     }
   };
 
-  const handleDeleteComment = async (commentId: string) => {
+  const handleDeleteComment = async (commentId: number) => {
     try {
-      // Mock API call
-      setComments(comments.filter(comment => comment.id !== commentId));
-      
-      toast({
-        title: "ลบความคิดเห็นสำเร็จ",
-        description: "ความคิดเห็นถูกลบเรียบร้อยแล้ว",
+      const res = await fetch(`/api/admin/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': adminToken ? `Bearer ${adminToken}` : '' },
       });
+      if (!res.ok && res.status !== 204) throw new Error('Delete failed');
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+      toast({ title: 'ลบความคิดเห็นสำเร็จ', description: 'ความคิดเห็นถูกลบเรียบร้อยแล้ว' });
     } catch (error) {
-      toast({
-        title: "เกิดข้อผิดพลาด",
-        description: "ไม่สามารถลบความคิดเห็นได้",
-        variant: "destructive"
-      });
+      toast({ title: 'เกิดข้อผิดพลาด', description: 'ไม่สามารถลบความคิดเห็นได้', variant: 'destructive' });
     }
   };
 
-  const handleBulkAction = async (action: string) => {
+  const handleBulkApprove = async () => {
     if (selectedComments.length === 0) {
       toast({
         title: "ไม่มีการเลือก",
@@ -124,56 +113,24 @@ export default function CommentManager() {
     }
 
     try {
-      // Mock API call
-      setComments(comments.map(comment =>
-        selectedComments.includes(comment.id) 
-          ? { ...comment, status: action as any }
-          : comment
-      ));
+      await Promise.all(selectedComments.map(id => fetch(`/api/admin/comments/${id}/approve`, {
+        method: 'POST',
+        headers: { 'Authorization': adminToken ? `Bearer ${adminToken}` : '' },
+      })));
+      setComments(prev => prev.map(c => selectedComments.includes(c.id) ? { ...c, isApproved: true } : c));
       setSelectedComments([]);
-      
-      toast({
-        title: "ดำเนินการสำเร็จ",
-        description: `ดำเนินการกับความคิดเห็น ${selectedComments.length} รายการ`,
-      });
+      toast({ title: 'อนุมัติทั้งหมดสำเร็จ', description: `จำนวน ${selectedComments.length} รายการ` });
     } catch (error) {
-      toast({
-        title: "เกิดข้อผิดพลาด",
-        description: "ไม่สามารถดำเนินการได้",
-        variant: "destructive"
-      });
+      toast({ title: 'เกิดข้อผิดพลาด', description: 'ไม่สามารถอนุมัติแบบกลุ่มได้', variant: 'destructive' });
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="secondary">รออนุมัติ</Badge>;
-      case 'approved':
-        return <Badge variant="default" className="bg-green-600">อนุมัติแล้ว</Badge>;
-      case 'rejected':
-        return <Badge variant="destructive">ถูกปฏิเสธ</Badge>;
-      case 'spam':
-        return <Badge variant="outline" className="border-red-500 text-red-600">สแปม</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
+  const getStatusBadge = (isApproved: boolean) => {
+    if (isApproved) return <Badge variant="default" className="bg-green-600">อนุมัติแล้ว</Badge>;
+    return <Badge variant="secondary">รออนุมัติ</Badge>;
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'text-yellow-600';
-      case 'approved':
-        return 'text-green-600';
-      case 'rejected':
-        return 'text-red-600';
-      case 'spam':
-        return 'text-red-600';
-      default:
-        return 'text-gray-600';
-    }
-  };
+  const getStatusColor = (isApproved: boolean) => (isApproved ? 'text-green-600' : 'text-yellow-600');
 
   if (isLoading) {
     return (
@@ -195,7 +152,7 @@ export default function CommentManager() {
             ทั้งหมด: {comments.length}
           </Badge>
           <Badge variant="secondary" className="text-sm">
-            รออนุมัติ: {comments.filter(c => c.status === 'pending').length}
+            รออนุมัติ: {comments.filter(c => !c.isApproved).length}
           </Badge>
         </div>
       </div>
@@ -214,7 +171,7 @@ export default function CommentManager() {
             </div>
             <div className="flex items-center gap-2">
               <Filter className="h-5 w-5 text-gray-500" />
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as 'all' | 'pending' | 'approved')}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="สถานะ" />
                 </SelectTrigger>
@@ -222,8 +179,6 @@ export default function CommentManager() {
                   <SelectItem value="all">ทั้งหมด</SelectItem>
                   <SelectItem value="pending">รออนุมัติ</SelectItem>
                   <SelectItem value="approved">อนุมัติแล้ว</SelectItem>
-                  <SelectItem value="rejected">ถูกปฏิเสธ</SelectItem>
-                  <SelectItem value="spam">สแปม</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -240,26 +195,10 @@ export default function CommentManager() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleBulkAction('approved')}
+                    onClick={handleBulkApprove}
                   >
                     <CheckCircle className="h-4 w-4 mr-1" />
                     อนุมัติทั้งหมด
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleBulkAction('rejected')}
-                  >
-                    <XCircle className="h-4 w-4 mr-1" />
-                    ปฏิเสธทั้งหมด
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleBulkAction('spam')}
-                  >
-                    <XCircle className="h-4 w-4 mr-1" />
-                    มาร์คเป็นสแปม
                   </Button>
                 </div>
               </div>
@@ -272,7 +211,7 @@ export default function CommentManager() {
                 <TableHead className="w-12">
                   <input
                     type="checkbox"
-                    checked={selectedComments.length === filteredComments.length}
+                    checked={filteredComments.length > 0 && selectedComments.length === filteredComments.length}
                     onChange={(e) => {
                       if (e.target.checked) {
                         setSelectedComments(filteredComments.map(c => c.id));
@@ -287,7 +226,6 @@ export default function CommentManager() {
                 <TableHead>ข่าว</TableHead>
                 <TableHead>สถานะ</TableHead>
                 <TableHead>วันที่</TableHead>
-                <TableHead>IP Address</TableHead>
                 <TableHead>การจัดการ</TableHead>
               </TableRow>
             </TableHeader>
@@ -314,39 +252,27 @@ export default function CommentManager() {
                   </TableCell>
                   <TableCell>
                     <div>
-                      <p className="font-medium text-sm">{comment.author}</p>
-                      <p className="text-xs text-gray-500">{comment.authorEmail}</p>
+                      <p className="font-medium text-sm">{comment.authorName}</p>
                     </div>
                   </TableCell>
                   <TableCell>
                     <p className="text-sm text-gray-600">{comment.newsTitle}</p>
                   </TableCell>
-                  <TableCell>{getStatusBadge(comment.status)}</TableCell>
+                  <TableCell>{getStatusBadge(comment.isApproved)}</TableCell>
                   <TableCell>
                     <p className="text-sm text-gray-600">{comment.createdAt}</p>
                   </TableCell>
                   <TableCell>
-                    <p className="text-xs text-gray-500 font-mono">{comment.ipAddress}</p>
-                  </TableCell>
-                  <TableCell>
                     <div className="flex items-center gap-2">
-                      {comment.status === 'pending' && (
+                      {!comment.isApproved && (
                         <>
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleStatusChange(comment.id, 'approved')}
+                            onClick={() => handleApprove(comment.id)}
                             className="text-green-600 border-green-600 hover:bg-green-50"
                           >
                             <CheckCircle className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleStatusChange(comment.id, 'rejected')}
-                            className="text-red-600 border-red-600 hover:bg-red-50"
-                          >
-                            <XCircle className="h-4 w-4" />
                           </Button>
                         </>
                       )}
@@ -381,4 +307,4 @@ export default function CommentManager() {
       </Card>
     </div>
   );
-} 
+}
