@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import Header from "@/components/Header";
@@ -17,6 +17,7 @@ const SearchPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [sortBy, setSortBy] = useState("relevance");
+  const [recentQueries, setRecentQueries] = useState<string[]>([]);
   
   // Extract search query from URL
   useEffect(() => {
@@ -25,6 +26,11 @@ const SearchPage = () => {
     if (query) {
       setSearchQuery(query);
     }
+    // load recent queries
+    try {
+      const raw = localStorage.getItem('ud_search_history');
+      if (raw) setRecentQueries(JSON.parse(raw));
+    } catch {}
   }, [location]);
 
   // Fetch all news for searching
@@ -73,6 +79,17 @@ const SearchPage = () => {
     size: "medium" as const
   }));
 
+  // Suggestions derived from titles
+  const suggestions = useMemo(() => {
+    if (!searchQuery || searchQuery.trim().length < 2) return [] as string[];
+    const q = searchQuery.toLowerCase();
+    const titles = (allNews || []).map(n => n.title).filter(Boolean);
+    const unique = Array.from(new Set(
+      titles.filter(t => t.toLowerCase().includes(q))
+    ));
+    return unique.slice(0, 8);
+  }, [allNews, searchQuery]);
+
   function getTimeAgo(createdAt: string): string {
     const now = new Date();
     const created = new Date(createdAt);
@@ -90,6 +107,15 @@ const SearchPage = () => {
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     window.history.pushState({}, '', `/search?q=${encodeURIComponent(query)}`);
+    // persist recent queries
+    try {
+      const trimmed = query.trim();
+      if (trimmed) {
+        const next = [trimmed, ...recentQueries.filter(q => q !== trimmed)].slice(0, 8);
+        setRecentQueries(next);
+        localStorage.setItem('ud_search_history', JSON.stringify(next));
+      }
+    } catch {}
   };
 
   return (
@@ -109,6 +135,37 @@ const SearchPage = () => {
             placeholder="ค้นหาข่าวสาร..."
             className="max-w-2xl"
           />
+
+          {/* Recent searches */}
+          {recentQueries.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <span className="text-sm text-muted-foreground font-sarabun">ค้นหาล่าสุด:</span>
+              {recentQueries.map((q) => (
+                <button
+                  key={q}
+                  onClick={() => handleSearch(q)}
+                  className="text-sm px-2 py-1 rounded-full bg-muted hover:bg-muted/80 transition font-sarabun"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Suggestions */}
+          {suggestions.length > 0 && (
+            <div className="mt-2 max-w-2xl bg-background border rounded-md shadow-sm overflow-hidden">
+              {suggestions.map((s, idx) => (
+                <button
+                  key={s + idx}
+                  onClick={() => handleSearch(s)}
+                  className="w-full text-left px-4 py-2 hover:bg-accent font-sarabun"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Search Info & Filters */}

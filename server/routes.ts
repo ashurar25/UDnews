@@ -38,6 +38,7 @@ import { nanoid } from 'nanoid';
 import QRCode from 'qrcode';
 import type { InsertDonation } from "@shared/schema";
 import { SitemapGenerator } from './sitemap-generator';
+import { notificationService } from './notification-service';
 
 // Simple HTML escape for meta tag content
 function escapeHtml(input: string): string {
@@ -99,6 +100,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/comments', async (req, res) => {
     try {
       const body = req.body || {};
+      // Simple honeypot anti-spam: reject if hidden field is filled
+      if (typeof body.honeypot === 'string' && body.honeypot.trim().length > 0) {
+        return res.status(200).json({ success: true });
+      }
       if (!body.newsId || !body.authorName || !body.content) {
         return res.status(400).json({ error: 'newsId, authorName, and content are required' });
       }
@@ -110,6 +115,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: String(body.content),
         isApproved: false,
       } as any);
+      // Notify admin (best-effort)
+      try {
+        const [article] = await db.select({ id: newsArticles.id, title: newsArticles.title })
+          .from(newsArticles)
+          .where(eq(newsArticles.id, Number(body.newsId)))
+          .limit(1);
+        if (article) {
+          await notificationService.notifyAdminNewComment(
+            article.title,
+            String(body.authorName),
+            String(body.content)
+          );
+        }
+      } catch (notifyErr) {
+        console.warn('Notify admin failed:', notifyErr);
+      }
       res.status(201).json(created);
     } catch (error) {
       console.error('Error creating comment:', error);
@@ -152,12 +173,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // -----------------------------
   app.post('/api/push/subscribe', async (req, res) => {
     try {
-      const sub = req.body?.subscription;
-      if (!sub || !sub.endpoint) return res.status(400).json({ error: 'subscription is required' });
+      const body = req.body || {};
+      // Accept both nested and flat payloads
+      const endpoint = body?.subscription?.endpoint || body.endpoint;
+      const p256dh = body?.subscription?.keys?.p256dh || body.p256dh || body.keysP256dh;
+      const auth = body?.subscription?.keys?.auth || body.auth || body.keysAuth;
+      if (!endpoint) return res.status(400).json({ error: 'endpoint is required' });
       const created = await storage.createPushSubscription({
-        endpoint: sub.endpoint,
-        keysP256dh: sub.keys?.p256dh || null,
-        keysAuth: sub.keys?.auth || null,
+        endpoint: String(endpoint),
+        keysP256dh: p256dh ? String(p256dh) : null,
+        keysAuth: auth ? String(auth) : null,
         isActive: true,
       } as any);
       res.status(201).json(created);

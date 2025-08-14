@@ -38,6 +38,33 @@ if (container) {
     </ErrorBoundary>
   );
 
+  // Initialize Google Analytics (gtag) in production if VITE_GA_ID is set
+  (function initAnalytics(){
+    try {
+      // @ts-ignore
+      const GA_ID = (import.meta as any)?.env?.VITE_GA_ID as string | undefined;
+      if (!import.meta.env.PROD || !GA_ID) return;
+      // Load gtag.js
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_ID)}`;
+      script.onerror = () => console.warn('Failed to load gtag.js');
+      document.head.appendChild(script);
+
+      // Init gtag
+      const inline = document.createElement('script');
+      inline.innerHTML = `
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '${GA_ID}', { anonymize_ip: true });
+      `;
+      document.head.appendChild(inline);
+    } catch (e) {
+      console.warn('Analytics init failed:', e);
+    }
+  })();
+
   // Register Service Worker for PWA (only in production and if supported)
   if ('serviceWorker' in navigator && import.meta.env.PROD) {
     window.addEventListener('load', () => {
