@@ -10,10 +10,11 @@ import { ArrowLeft, Clock, Eye, ExternalLink } from "lucide-react";
 import { useState, useEffect } from "react";
 import MetaHead from "@/components/MetaHead";
 import { toAbsoluteUrl } from "@/lib/url";
- 
+
 import CommentSection from "@/components/CommentSection";
 import SocialShare from "@/components/SocialShare";
 import NewsRating from "@/components/NewsRating";
+import TTSReader from "@/components/TTSReader";
 
 interface NewsItem {
   id: number;
@@ -289,6 +290,15 @@ const NewsDetail = () => {
                   {news.summary}
                 </p>
               </div>
+
+              {/* Text-to-Speech */}
+              {typeof window !== 'undefined' && 'speechSynthesis' in window && (
+                <TTSReader
+                  title={news.title}
+                  summary={news.summary}
+                  htmlContent={news.content.replace(/\n/g, '<br>')}
+                />
+              )}
 
               {/* Article Content */}
               <div className="prose prose-lg max-w-none">
