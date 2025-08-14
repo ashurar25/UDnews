@@ -176,16 +176,23 @@ router.get('/tables', async (req: Request, res: Response) => {
         // Get columns info
         const columnsResult = await db.execute(sql.raw(`
           SELECT 
-            column_name,
-            data_type,
-            is_nullable,
-            column_default,
-            CASE WHEN constraint_type = 'PRIMARY KEY' THEN true ELSE false END as is_primary,
-            CASE WHEN constraint_type = 'UNIQUE' THEN true ELSE false END as is_unique
+            c.column_name,
+            c.data_type,
+            c.is_nullable,
+            c.column_default,
+            CASE WHEN tc.constraint_type = 'PRIMARY KEY' THEN true ELSE false END as is_primary,
+            CASE WHEN tc.constraint_type = 'UNIQUE' THEN true ELSE false END as is_unique
           FROM information_schema.columns c
-          LEFT JOIN information_schema.key_column_usage kcu ON c.column_name = kcu.column_name
-          LEFT JOIN information_schema.table_constraints tc ON kcu.constraint_name = tc.constraint_name
-          WHERE c.table_name = '${table.table_name}'
+          LEFT JOIN information_schema.key_column_usage kcu 
+            ON kcu.table_schema = c.table_schema
+           AND kcu.table_name = c.table_name
+           AND kcu.column_name = c.column_name
+          LEFT JOIN information_schema.table_constraints tc 
+            ON tc.constraint_schema = kcu.constraint_schema
+           AND tc.constraint_name = kcu.constraint_name
+           AND tc.table_schema = kcu.table_schema
+           AND tc.table_name = kcu.table_name
+          WHERE c.table_schema = 'public' AND c.table_name = '${table.table_name}'
           ORDER BY c.ordinal_position
         `));
         const columnRows = rowsOf(columnsResult);
@@ -226,13 +233,17 @@ router.get('/tables', async (req: Request, res: Response) => {
           SELECT 
             tc.constraint_name,
             tc.constraint_type,
-            array_agg(kcu.column_name) as columns,
+            array_agg(kcu.column_name ORDER BY kcu.ordinal_position) as columns,
             ccu.table_name as reference_table,
             array_agg(ccu.column_name) as reference_columns
           FROM information_schema.table_constraints tc
-          LEFT JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name
-          LEFT JOIN information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name
-          WHERE tc.table_name = '${table.table_name}'
+          LEFT JOIN information_schema.key_column_usage kcu 
+            ON kcu.constraint_name = tc.constraint_name
+           AND kcu.constraint_schema = tc.constraint_schema
+          LEFT JOIN information_schema.constraint_column_usage ccu 
+            ON ccu.constraint_name = tc.constraint_name
+           AND ccu.constraint_schema = tc.constraint_schema
+          WHERE tc.table_schema = 'public' AND tc.table_name = '${table.table_name}'
           GROUP BY tc.constraint_name, tc.constraint_type, ccu.table_name
         `));
         const constraintRows = rowsOf(constraintsResult);
