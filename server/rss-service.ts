@@ -2,6 +2,7 @@ import Parser from 'rss-parser';
 import { parse } from 'node-html-parser';
 import { storage } from './storage';
 import { type InsertNews } from '@shared/schema';
+import { ImageOptimizer } from './image-optimizer';
 
 const parser = new Parser({
   timeout: 8000,
@@ -97,6 +98,11 @@ export class RSSService {
       return mediaThumbnail.$.url;
     }
 
+    // Try enclosure URL
+    try {
+      const anyItem: any = arguments?.[3]; // not used here; kept for clarity
+    } catch {}
+
     if (!content) return undefined;
 
     // Parse HTML content to find images
@@ -114,6 +120,35 @@ export class RSSService {
     }
 
     return undefined;
+  }
+
+  // Download image and store optimized copy to /uploads, returning local URL
+  private async downloadAndStoreImage(imageUrl: string): Promise<string | null> {
+    try {
+      const res = await this.fetchWithRetry(imageUrl, { headers: { 'User-Agent': 'UD-News-Image-Fetcher/1.0' } }, 3, 20000);
+      if (!res.ok) return null;
+      const contentType = res.headers.get('content-type') || '';
+      const buffer = Buffer.from(await res.arrayBuffer());
+
+      // Determine a filename and extension
+      const urlObj = new URL(imageUrl, 'http://dummy');
+      const pathname = urlObj.pathname;
+      const base = pathname.split('/').pop() || 'image';
+      const hasExt = /\.[a-zA-Z0-9]+$/.test(base);
+      let filename = base;
+      if (!hasExt) {
+        if (contentType.includes('png')) filename = `${base}.png`;
+        else if (contentType.includes('webp')) filename = `${base}.webp`;
+        else filename = `${base}.jpg`;
+      }
+
+      // Optimize to webp by default
+      const localPath = await ImageOptimizer.optimizeImage(buffer, filename, { format: 'webp' });
+      return localPath; // e.g., /uploads/...
+    } catch (e) {
+      console.warn('Failed to download/store image:', imageUrl, e);
+      return null;
+    }
   }
 
   // Calculate string similarity using Levenshtein distance
@@ -387,11 +422,19 @@ export class RSSService {
       return false; // Skip duplicate articles
     }
 
-    const imageUrl = this.extractImageUrl(
-      item.content || item.contentSnippet, 
-      item.mediaContent, 
+    // Prefer enclosure first
+    const enclosureUrl = item.enclosure?.url;
+    let imageUrl = enclosureUrl || this.extractImageUrl(
+      item.content || item.contentSnippet,
+      item.mediaContent,
       item.mediaThumbnail
     );
+
+    // Try downloading and storing image locally for reliability and performance
+    let localImageUrl: string | null = null;
+    if (imageUrl) {
+      localImageUrl = await this.downloadAndStoreImage(imageUrl);
+    }
 
     const cleanedContent = this.cleanContent(item.content || item.contentSnippet, item.contentEncoded);
     const summary = this.generateSummary(cleanedContent);
@@ -401,7 +444,7 @@ export class RSSService {
       summary: summary,
       content: cleanedContent || 'เนื้อหาจาก RSS Feed',
       category: this.determineCategory(feedCategory, item.categories),
-      imageUrl: imageUrl || null,
+      imageUrl: localImageUrl || imageUrl || null,
       sourceUrl: item.link || null,
       rssFeedId: feedId,
       isBreaking: this.isBreakingNews(item.title)

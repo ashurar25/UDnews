@@ -3,7 +3,7 @@ import { storage } from "./storage";
 
 export class SitemapGenerator {
   static async generateSitemap(): Promise<string> {
-    const baseUrl = "https://ud-news.replit.app"; // Update with your actual domain
+    const baseUrl = process.env.BASE_URL || "https://ud-news.replit.app"; // Prefer env BASE_URL when available
     
     let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
@@ -81,7 +81,7 @@ export class SitemapGenerator {
   }
 
   static async generateRobotsTxt(): Promise<string> {
-    const baseUrl = "https://ud-news.replit.app"; // Update with your actual domain
+    const baseUrl = process.env.BASE_URL || "https://ud-news.replit.app"; // Prefer env BASE_URL when available
     
     return `User-agent: *
 Allow: /

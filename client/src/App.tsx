@@ -24,6 +24,7 @@ import DisasterAlert from "@/pages/DisasterAlert";
 import SystemStatus from "@/pages/SystemStatus";
 import "./App.css";
 import { ErrorBoundary } from "react-error-boundary";
+import GAListener from "@/components/GAListener";
 
 function ErrorFallback({error, resetErrorBoundary}: {error: Error, resetErrorBoundary: () => void}) {
   return (
@@ -65,6 +66,7 @@ const App = () => (
             console.error('Application Error:', error);
           }}
         >
+          <GAListener />
           <Switch>
             {navItems.map(({ to, page }) => (
               <Route key={to} path={to} component={page} />

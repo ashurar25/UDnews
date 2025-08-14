@@ -7,57 +7,10 @@ import SponsorBannerBar from "@/components/SponsorBannerBar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Clock, Eye, Share2, ExternalLink } from "lucide-react";
+import { ArrowLeft, Clock, Eye, ExternalLink } from "lucide-react";
 import { useState, useEffect } from "react";
-
-// Assuming MetaTags component exists and is imported
-// import MetaTags from '@/components/MetaTags';
-
-// Placeholder for MetaTags component if it's not provided or needs definition
-const MetaTags = ({ title, description, image, url, type }: any) => {
-  useEffect(() => {
-    document.title = title;
-    const metaDescription = document.querySelector('meta[name="description"]');
-    if (metaDescription) {
-      metaDescription.setAttribute('content', description);
-    } else {
-      const newMeta = document.createElement('meta');
-      newMeta.name = 'description';
-      newMeta.content = description;
-      document.head.appendChild(newMeta);
-    }
-
-    // Add Open Graph meta tags
-    const addOrUpdateMeta = (property: string, content: string) => {
-      let element = document.querySelector(`meta[property="${property}"]`);
-      if (element) {
-        element.setAttribute('content', content);
-      } else {
-        element = document.createElement('meta');
-        element.setAttribute('property', property);
-        element.setAttribute('content', content);
-        document.head.appendChild(element);
-      }
-    };
-
-    addOrUpdateMeta('og:title', title);
-    addOrUpdateMeta('og:description', description);
-    addOrUpdateMeta('og:image', image || '');
-    addOrUpdateMeta('og:url', url);
-    addOrUpdateMeta('og:type', type);
-    addOrUpdateMeta('og:site_name', 'Your News Site'); // Replace with your site name
-
-    // Add Twitter card meta tags
-    addOrUpdateMeta('twitter:card', 'summary_large_image');
-    addOrUpdateMeta('twitter:title', title);
-    addOrUpdateMeta('twitter:description', description);
-    addOrUpdateMeta('twitter:image', image || '');
-
-  }, [title, description, image, url, type]);
-
-  return null; // This component doesn't render any DOM elements
-};
-
+import MetaHead from "@/components/MetaHead";
+import ShareButtons from "@/components/ShareButtons";
 
 interface NewsItem {
   id: number;
@@ -167,36 +120,7 @@ const NewsDetail = () => {
     }
   };
 
-  const handleShare = async () => {
-    if (navigator.share && news) {
-      try {
-        await navigator.share({
-          title: news.title,
-          text: news.summary,
-          url: window.location.href,
-        });
-      } catch (error) {
-        console.log('Error sharing:', error);
-        // Fallback to copy to clipboard if sharing fails or is not supported
-        try {
-          await navigator.clipboard.writeText(window.location.href);
-          alert('ลิงก์ถูกคัดลอกแล้ว');
-        } catch (clipboardError) {
-          console.error('Failed to copy link:', clipboardError);
-          alert('ไม่สามารถคัดลอกลิงก์ได้');
-        }
-      }
-    } else {
-      // Fallback: copy to clipboard if navigator.share is not available
-      try {
-        await navigator.clipboard.writeText(window.location.href);
-        alert('ลิงก์ถูกคัดลอกแล้ว');
-      } catch (clipboardError) {
-        console.error('Failed to copy link:', clipboardError);
-        alert('ไม่สามารถคัดลอกลิงก์ได้');
-      }
-    }
-  };
+  // sharing handled by ShareButtons component
 
   if (isLoading) {
     return (
@@ -240,41 +164,28 @@ const NewsDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       {news && (
-        <MetaTags
+        <MetaHead
           title={news.title}
-          description={news.description || news.content?.substring(0, 160) + '...' || ''}
+          description={news.description || (news.content ? news.content.substring(0, 160) + '...' : '')}
           image={news.imageUrl}
           url={`/news/${news.id}`}
           type="article"
-        />
-      )}
-      {news && (
-        <script
-          type="application/ld+json"
-          // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'NewsArticle',
-              headline: news.title,
-              description: news.description || news.summary,
-              image: news.imageUrl ? [news.imageUrl] : undefined,
-              datePublished: news.createdAt,
-              dateModified: news.updatedAt || news.createdAt,
-              mainEntityOfPage: `${window.location.origin}/news/${news.id}`,
-              author: {
-                '@type': 'Organization',
-                name: 'UD News Update',
-              },
-              publisher: {
-                '@type': 'Organization',
-                name: 'UD News Update',
-                logo: {
-                  '@type': 'ImageObject',
-                  url: `${window.location.origin}/logo.jpg`,
-                },
-              },
-            }),
+          siteName="UD News Update"
+          jsonLd={{
+            '@context': 'https://schema.org',
+            '@type': 'NewsArticle',
+            headline: news.title,
+            description: news.description || news.summary,
+            image: news.imageUrl ? [news.imageUrl] : undefined,
+            datePublished: news.createdAt,
+            dateModified: news.updatedAt || news.createdAt,
+            mainEntityOfPage: `${typeof window !== 'undefined' ? window.location.origin : ''}/news/${news.id}`,
+            author: { '@type': 'Organization', name: 'UD News Update' },
+            publisher: {
+              '@type': 'Organization',
+              name: 'UD News Update',
+              logo: { '@type': 'ImageObject', url: `${typeof window !== 'undefined' ? window.location.origin : ''}/logo.jpg` },
+            },
           }}
         />
       )}
@@ -330,10 +241,7 @@ const NewsDetail = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={handleShare} className="gap-2">
-                    <Share2 className="h-4 w-4" />
-                    แชร์
-                  </Button>
+                  <ShareButtons title={news.title} summary={news.summary} />
                   {news.sourceUrl && (
                     <Button variant="outline" size="sm" asChild className="gap-2">
                       <a href={news.sourceUrl} target="_blank" rel="noopener noreferrer">
