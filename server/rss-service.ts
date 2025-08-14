@@ -298,27 +298,46 @@ export class RSSService {
 
   // Determine category from RSS feed category and item categories
   private determineCategory(feedCategory: string, itemCategories?: string[]): string {
-    // If item has specific categories, use the first one
+    // Build a normalized haystack from item categories and feed category
+    const haystack = (
+      (Array.isArray(itemCategories) ? itemCategories.join(' ') : '') + ' ' + (feedCategory || '')
+    ).toLowerCase();
+
+    // Source-specific and extended mappings (helps map TNN labels to Thai)
+    const mapping: Array<{ keys: string[]; to: string }> = [
+      { keys: ['politics', 'government', 'การเมือง', 'รัฐบาล'], to: 'การเมือง' },
+      { keys: ['sport', 'sports', 'football', 'soccer', 'กีฬา', 'ฟุตบอล'], to: 'กีฬา' },
+      { keys: ['business', 'economy', 'เศรษฐกิจ', 'ธุรกิจ', 'investment', 'การลงทุน', 'stock', 'หุ้น'], to: 'เศรษฐกิจ' },
+      { keys: ['technology', 'tech', 'เทคโนโลยี', 'ไอที', 'digital', 'ดิจิทัล'], to: 'เทคโนโลยี' },
+      { keys: ['health', 'medical', 'สุขภาพ', 'การแพทย์', 'covid', 'โควิด', 'coronavirus'], to: 'สุขภาพ' },
+      { keys: ['education', 'school', 'การศึกษา', 'โรงเรียน'], to: 'การศึกษา' },
+      { keys: ['entertainment', 'celebrity', 'บันเทิง', 'ดารา'], to: 'บันเทิง' },
+      { keys: ['world', 'international', 'ต่างประเทศ'], to: 'ต่างประเทศ' },
+      { keys: ['crime', 'อาชญากรรม'], to: 'อาชญากรรม' },
+      { keys: ['environment', 'สิ่งแวดล้อม'], to: 'สิ่งแวดล้อม' },
+      { keys: ['science', 'sci', 'วิทยาศาสตร์'], to: 'วิทยาศาสตร์' },
+      { keys: ['life', 'lifestyle', 'ไลฟ์สไตล์'], to: 'ไลฟ์สไตล์' },
+      { keys: ['regional', 'region', 'ภูมิภาค', 'ภาค'], to: 'ภูมิภาค' },
+      { keys: ['bangkok', 'กรุงเทพ'], to: 'กรุงเทพฯ' },
+      { keys: ['traffic', 'จราจร'], to: 'จราจร' },
+      { keys: ['weather', 'พยากรณ์', 'อากาศ'], to: 'สภาพอากาศ' },
+      { keys: ['auto', 'motor', 'car', 'ยานยนต์'], to: 'ยานยนต์' },
+      { keys: ['energy', 'พลังงาน'], to: 'พลังงาน' },
+      { keys: ['tourism', 'travel', 'ท่องเที่ยว'], to: 'ท่องเที่ยว' },
+      { keys: ['social', 'สังคม'], to: 'สังคม' },
+      { keys: ['local', 'ท้องถิ่น', 'จังหวัด', 'อุดรธานี'], to: 'ข่าวท้องถิ่น' },
+    ];
+
+    for (const m of mapping) {
+      if (m.keys.some(k => haystack.includes(k))) {
+        return m.to;
+      }
+    }
+
+    // Backward-compatible generic rule (use first item category if exists)
     if (itemCategories && itemCategories.length > 0) {
       const category = itemCategories[0].toLowerCase();
-
-      // Map common categories to Thai categories
-      if (category.includes('politics') || category.includes('government') || 
-          category.includes('การเมือง') || category.includes('รัฐบาล')) return 'การเมือง';
-      if (category.includes('sport') || category.includes('football') || category.includes('soccer') ||
-          category.includes('กีฬา') || category.includes('ฟุตบอล')) return 'กีฬา';
-      if (category.includes('business') || category.includes('economy') ||
-          category.includes('ธุรกิจ') || category.includes('เศรษฐกิจ')) return 'เศรษฐกิจ';
-      if (category.includes('technology') || category.includes('tech') ||
-          category.includes('เทคโนโลยี') || category.includes('ไอที')) return 'เทคโนโลยี';
-      if (category.includes('health') || category.includes('medical') ||
-          category.includes('สุขภาพ') || category.includes('การแพทย์')) return 'สุขภาพ';
-      if (category.includes('education') || category.includes('school') ||
-          category.includes('การศึกษา') || category.includes('โรงเรียน')) return 'การศึกษา';
-      if (category.includes('entertainment') || category.includes('celebrity') ||
-          category.includes('บันเทิง') || category.includes('ดารา')) return 'บันเทิง';
-      if (category.includes('local') || category.includes('ท้องถิ่น') ||
-          category.includes('จังหวัด') || category.includes('อุดรธานี')) return 'ข่าวท้องถิ่น';
+      if (category) return category;
     }
 
     // Fall back to feed category

@@ -365,7 +365,7 @@ export default function DatabaseManager() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-2xl font-bold">{databaseStats.totalRecords.toLocaleString()}</p>
+                  <p className="text-2xl font-bold">{(databaseStats.totalRecords ?? 0).toLocaleString()}</p>
                   <p className="text-sm text-gray-600">ข้อมูลทั้งหมด</p>
                 </div>
                 <BarChart3 className="h-8 w-8 text-green-600" />
@@ -409,15 +409,15 @@ export default function DatabaseManager() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center">
-                <p className="text-2xl font-bold text-blue-600">{databaseStats.performance.queryTime}ms</p>
+                <p className="text-2xl font-bold text-blue-600">{(databaseStats.performance?.queryTime ?? 0)}ms</p>
                 <p className="text-sm text-gray-600">เวลาเฉลี่ยในการค้นหา</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-green-600">{databaseStats.performance.activeConnections}</p>
+                <p className="text-2xl font-bold text-green-600">{databaseStats.performance?.activeConnections ?? 0}</p>
                 <p className="text-sm text-gray-600">การเชื่อมต่อที่ใช้งาน</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-purple-600">{databaseStats.performance.cacheHitRate}%</p>
+                <p className="text-2xl font-bold text-purple-600">{databaseStats.performance?.cacheHitRate ?? 0}%</p>
                 <p className="text-sm text-gray-600">อัตราการเข้าถึงแคช</p>
               </div>
             </div>
@@ -463,23 +463,23 @@ export default function DatabaseManager() {
                   {tables
                     .filter(table => table.name.toLowerCase().includes(searchTerm.toLowerCase()))
                     .map((table) => (
-                    <TableRow key={table.name}>
-                      <TableCell className="font-medium">{table.name}</TableCell>
-                      <TableCell>{table.recordCount.toLocaleString()}</TableCell>
-                      <TableCell>{table.size}</TableCell>
-                      <TableCell>{table.lastModified}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => loadTableData(table.name)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                  <TableRow key={table.name}>
+                    <TableCell className="font-medium">{table.name}</TableCell>
+                    <TableCell>{(table.recordCount ?? 0).toLocaleString()}</TableCell>
+                    <TableCell>{table.size}</TableCell>
+                    <TableCell>{table.lastModified}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => loadTableData(table.name)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                   ))}
                 </TableBody>
               </Table>

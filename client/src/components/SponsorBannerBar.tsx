@@ -23,7 +23,7 @@ const SponsorBannerBar = ({
   bannerCount = 3
 }: SponsorBannerBarProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  
+
   const { data: allBanners = [], isLoading, isError } = useQuery({
     queryKey: ["/api/sponsor-banners", position],
     queryFn: async () => {
@@ -48,7 +48,7 @@ const SponsorBannerBar = ({
 
   const handleContactSponsor = (e: React.MouseEvent) => {
     e.stopPropagation();
-    alert("ติดต่อสำหรับการสนับสนุนสปอนเซอร์\nโทร: 042-123-456\nอีเมล: sponsor@udnews.com");
+    window.location.assign('/contact?reason=sponsor');
   };
 
   const nextBanner = () => {
@@ -131,14 +131,17 @@ const SponsorBannerBar = ({
         <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 p-4 text-center transition-all duration-300 hover:shadow-lg cursor-pointer rounded-lg border border-yellow-300" onClick={handleContactSponsor}>
           <div className="flex flex-col items-center justify-center space-y-3">
             <div className="text-gray-800 font-sarabun text-base font-medium">
-              สปอนเซอร์ - ตั้งโฆษณาพื้นที่นี้รับหิ้วไปอันเดอร์ ({getBannerSizeText()})
+              สปอนเซอร์ - โฆษณาพื้นที่นี้ ({getBannerSizeText()})
             </div>
-            <div className="bg-white px-4 py-2 rounded-full shadow-sm hover:shadow-md transition-shadow">
+            <button
+              onClick={handleContactSponsor}
+              className="bg-white px-4 py-2 rounded-full shadow-sm hover:shadow-md transition-shadow"
+            >
               <div className="flex items-center gap-2 text-gray-700 text-sm font-sarabun">
                 <Phone className="h-4 w-4" />
-                <span>ติดต่อสินเล็บสปอนเซอร์</span>
+                <span>ติดต่อสปอนเซอร์</span>
               </div>
-            </div>
+            </button>
           </div>
         </div>
       </div>
@@ -211,12 +214,15 @@ const SponsorBannerBar = ({
                     <div className="text-gray-800 font-sarabun text-base font-medium mb-3">
                       {banner.title}
                     </div>
-                    <div className="bg-white px-4 py-2 rounded-full shadow-sm hover:shadow-md transition-shadow">
+                    <button
+                      onClick={handleContactSponsor}
+                      className="bg-white px-4 py-2 rounded-full shadow-sm hover:shadow-md transition-shadow"
+                    >
                       <div className="flex items-center gap-2 text-gray-700 text-sm font-sarabun">
                         <Phone className="h-4 w-4" />
                         <span>ติดต่อสปอนเซอร์</span>
                       </div>
-                    </div>
+                    </button>
                   </div>
                 </div>
               </div>

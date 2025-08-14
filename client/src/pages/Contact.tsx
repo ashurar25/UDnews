@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Mail, Phone, MapPin, Clock } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 const Contact = () => {
@@ -17,6 +17,27 @@ const Contact = () => {
     email: "",
     message: ""
   });
+
+  // Prefill message if coming from sponsor CTA
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const reason = params.get('reason');
+      if (reason === 'sponsor') {
+        setFormData(prev => (
+          prev.message
+            ? prev
+            : {
+                ...prev,
+                message:
+                  "สนใจลงสปอนเซอร์/โฆษณาบนเว็บไซต์ UD News ครับ\n" +
+                  "ขอทราบรายละเอียดแพ็กเกจ, ราคา และตำแหน่งแสดงโฆษณาที่ว่างอยู่ด้วยครับ\n" +
+                  "ข้อมูลติดต่อกลับ: (กรุณาเติมชื่อ/เบอร์/อีเมลของคุณ)"
+              }
+        ));
+      }
+    } catch {}
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
