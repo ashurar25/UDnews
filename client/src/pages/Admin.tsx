@@ -255,7 +255,12 @@ function AdminDashboard() {
   const { data: databaseStats } = useQuery({
     queryKey: ['database-stats'],
     queryFn: async () => {
-      const response = await fetch('/api/admin/database/stats');
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch('/api/database/stats', {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : ''
+        }
+      });
       if (!response.ok) throw new Error('Failed to fetch database stats');
       return response.json();
     },

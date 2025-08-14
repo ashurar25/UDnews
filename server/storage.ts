@@ -424,7 +424,8 @@ export class DatabaseStorage implements IStorage {
         .from(newsViews)
         .where(sql`DATE(${newsViews.viewedAt}) = ${today}`);
 
-      const popularNews = await db.select().from(newsArticles).orderBy(desc(newsArticles.createdAt)).limit(5);
+      // Use actual popular news by view count (top 5)
+      const popularNews = await this.getPopularNews(5);
 
       return {
         totalViews: totalViewsResult?.count || 0,

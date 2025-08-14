@@ -6,7 +6,9 @@ import { Link, useLocation } from "wouter";
 import { useTheme } from "@/components/ThemeProvider";
 import { getCurrentThaiSpecialDay } from "@/lib/thai-special-days";
 import { ThemeToggle } from "./ThemeToggle";
+import PWAInstallButton from "./PWAInstallButton";
 import WeatherWidget from "./WeatherWidget";
+import IOSInstallBanner from "./IOSInstallBanner";
 import SearchBar from "./SearchBar";
 import DisasterAlertWidget from "./DisasterAlertWidget";
 
@@ -130,8 +132,10 @@ const Header = () => {
             </p>
           </Link>
 
-          {/* Right Side - Hamburger Menu Only */}
-          <div className="flex items-center justify-end">
+          {/* Right Side - Install + Hamburger Menu */}
+          <div className="flex items-center justify-end gap-2">
+            {/* Install PWA Button (shows only when available) */}
+            <PWAInstallButton className="hidden sm:inline-flex" />
             {/* Hamburger Menu Button */}
             <Button
               variant="ghost"
@@ -199,6 +203,11 @@ const Header = () => {
                 </div>
               </div>
 
+              {/* Install PWA - Mobile visible */}
+              <div className="border-t border-orange-200 dark:border-gray-600 pt-4 mt-4">
+                <PWAInstallButton className="w-full sm:hidden" />
+              </div>
+
               {/* Admin Login Button */}
               <div className="pt-2 flex justify-center">
                 <Link to="/admin">
@@ -219,6 +228,8 @@ const Header = () => {
         </div>
 
       </div>
+      {/* iOS Install Banner */}
+      <IOSInstallBanner />
     </header>
   );
 };
