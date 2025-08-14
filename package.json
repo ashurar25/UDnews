@@ -8,6 +8,8 @@
     "prebuild": "cross-env SITE_ORIGIN=https://udnewsupdate.sbs tsx scripts/generate-sitemap.ts || echo sitemap skipped",
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "sitemap": "cross-env SITE_ORIGIN=https://udnewsupdate.sbs tsx scripts/generate-sitemap.ts",
+    "sitemap:ping": "cross-env SITEMAP_URL=https://udnewsupdate.sbs/sitemap.xml tsx scripts/ping-google.ts",
+    "sitemap:all": "npm run sitemap && npm run sitemap:ping",
     "start": "set NODE_ENV=production && node dist/index.js",
     "check": "tsc",
     "db:push": "drizzle-kit push"

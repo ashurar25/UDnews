@@ -84,7 +84,14 @@ app.get('/sitemap.xml', async (req: Request, res: Response) => {
     res.setHeader('Cache-Control', 'public, max-age=3600'); // 1 hour
     res.send(xml);
   } catch (err) {
-    res.status(500).send('Failed to generate sitemap');
+    try {
+      // Fallback to static sitemap file to avoid 5xx for bots
+      const filePath = path.resolve(import.meta.dirname, './public/sitemap.xml');
+      res.setHeader('Content-Type', 'application/xml');
+      return res.sendFile(filePath);
+    } catch {
+      res.status(500).send('Failed to generate sitemap');
+    }
   }
 });
 

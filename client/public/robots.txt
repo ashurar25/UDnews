@@ -1,7 +1,4 @@
 User-agent: *
-Allow: /
+Disallow:
 
-# Crawlers for major platforms are covered by wildcard
-
-# Sitemap location
 Sitemap: https://udnewsupdate.sbs/sitemap.xml
