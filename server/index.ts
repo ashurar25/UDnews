@@ -1,3 +1,6 @@
+// Load environment variables from .env as early as possible
+import 'dotenv/config';
+
 // Apply Replit environment configuration
 if (process.env.NODE_ENV === 'development') {
   // Set environment variables for Replit compatibility

@@ -81,18 +81,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mount database management API routes
   app.use('/api/database', databaseRoutes);
 
-  // Admin routes - serve static HTML (ensure correct file)
-  app.get('/admin.html', (req, res) => {
-    const adminFilePath = path.resolve(import.meta.dirname, '../client/public/admin.html');
-    
-    // Check if file exists
-    if (!fs.existsSync(adminFilePath)) {
-      console.error('Admin file not found at:', adminFilePath);
-      return res.status(404).send('Admin page not found');
-    }
-    
-    res.sendFile(adminFilePath);
-  });
 
   // Public: donation rankings
   app.get('/api/donations/rank', async (req, res) => {
@@ -332,10 +320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Redirect /admin to static HTML
-  app.get('/admin', (req, res) => {
-    res.redirect('/admin.html');
-  });
+  // Note: /admin is handled by the SPA router via index.html fallback
 
   // SEO: Dynamic sitemap.xml
   app.get('/sitemap.xml', async (req, res) => {

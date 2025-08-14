@@ -61,6 +61,15 @@ const router = Router();
 // Apply authentication middleware to all database routes
 router.use(authenticateToken);
 
+// Normalize result from db.execute() across drivers
+function rowsOf(result: any): any[] {
+  if (!result) return [];
+  if (Array.isArray(result)) return result;
+  if (Array.isArray(result.rows)) return result.rows;
+  // Some drivers return iterable objects; fallback to empty array
+  return [];
+}
+
 // Get database statistics
 router.get('/stats', async (req: Request, res: Response) => {
   try {
@@ -70,7 +79,8 @@ router.get('/stats', async (req: Request, res: Response) => {
       FROM information_schema.tables 
       WHERE table_schema = 'public'
     `);
-    const totalTables = parseInt((tablesResult as any)[0]?.count || '0');
+    const tablesCountRows = rowsOf(tablesResult);
+    const totalTables = parseInt((tablesCountRows[0]?.count as string) || '0');
 
     // Get total records count across all tables
     let totalRecords = 0;
@@ -79,11 +89,12 @@ router.get('/stats', async (req: Request, res: Response) => {
       FROM information_schema.tables 
       WHERE table_schema = 'public'
     `);
-    
-    for (const table of (tables as any)) {
+    const tableRows = rowsOf(tables);
+    for (const table of tableRows) {
       try {
         const countResult = await db.execute(sql.raw(`SELECT COUNT(*) as count FROM "${table.table_name}"`));
-        totalRecords += parseInt((countResult as any)[0]?.count || '0');
+        const countRows = rowsOf(countResult);
+        totalRecords += parseInt((countRows[0]?.count as string) || '0');
       } catch (error) {
         console.warn(`Could not count records in table ${table.table_name}:`, error);
       }
@@ -93,7 +104,8 @@ router.get('/stats', async (req: Request, res: Response) => {
     const sizeResult = await db.execute(sql`
       SELECT pg_size_pretty(pg_database_size(current_database())) as size
     `);
-    const databaseSize = (sizeResult as any)[0]?.size || '0 MB';
+    const sizeRows = rowsOf(sizeResult);
+    const databaseSize = (sizeRows[0]?.size as string) || '0 MB';
 
     // Get performance metrics (mock data for now)
     const performance = {
@@ -142,19 +154,21 @@ router.get('/tables', async (req: Request, res: Response) => {
       ORDER BY table_name
     `);
 
-    const tablesInfo = [];
-    
-    for (const table of (tables as any)) {
+    const tablesInfo = [] as any[];
+    const tableRows = rowsOf(tables);
+    for (const table of tableRows) {
       try {
         // Get record count
         const countResult = await db.execute(sql.raw(`SELECT COUNT(*) as count FROM "${table.table_name}"`));
-        const recordCount = parseInt((countResult as any)[0]?.count || '0');
+        const countRows = rowsOf(countResult);
+        const recordCount = parseInt((countRows[0]?.count as string) || '0');
 
         // Get table size
         const sizeResult = await db.execute(sql.raw(`
           SELECT pg_size_pretty(pg_total_relation_size('"${table.table_name}"')) as size
         `));
-        const size = (sizeResult as any)[0]?.size || '0 MB';
+        const sizeRows = rowsOf(sizeResult);
+        const size = (sizeRows[0]?.size as string) || '0 MB';
 
         // Get last modified (approximate)
         const lastModified = new Date().toISOString();
@@ -174,8 +188,8 @@ router.get('/tables', async (req: Request, res: Response) => {
           WHERE c.table_name = '${table.table_name}'
           ORDER BY c.ordinal_position
         `));
-
-        const columns = (columnsResult as any).map((col: any) => ({
+        const columnRows = rowsOf(columnsResult);
+        const columns = columnRows.map((col: any) => ({
           name: col.column_name,
           type: col.data_type,
           nullable: col.is_nullable === 'YES',
@@ -199,8 +213,8 @@ router.get('/tables', async (req: Request, res: Response) => {
           WHERE t.relname = '${table.table_name}'
           GROUP BY i.relname, am.amname, ix.indisunique
         `));
-
-        const indexes = (indexesResult as any).map((idx: any) => ({
+        const indexRows = rowsOf(indexesResult);
+        const indexes = indexRows.map((idx: any) => ({
           name: idx.index_name,
           columns: idx.columns,
           type: idx.type,
@@ -221,8 +235,8 @@ router.get('/tables', async (req: Request, res: Response) => {
           WHERE tc.table_name = '${table.table_name}'
           GROUP BY tc.constraint_name, tc.constraint_type, ccu.table_name
         `));
-
-        const constraints = (constraintsResult as any).map((con: any) => ({
+        const constraintRows = rowsOf(constraintsResult);
+        const constraints = constraintRows.map((con: any) => ({
           name: con.constraint_name,
           type: con.constraint_type.toLowerCase(),
           columns: con.columns,

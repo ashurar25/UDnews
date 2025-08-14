@@ -77,6 +77,26 @@ async function createTables() {
     `);
     console.log('✅ Push subscriptions table created');
 
+    // Create donations table (align with shared/schema.ts)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS donations (
+        id SERIAL PRIMARY KEY,
+        amount INTEGER NOT NULL,
+        currency VARCHAR(10) NOT NULL DEFAULT 'THB',
+        status VARCHAR(20) NOT NULL DEFAULT 'pending',
+        donor_name VARCHAR(200),
+        is_anonymous BOOLEAN NOT NULL DEFAULT false,
+        message TEXT,
+        reference VARCHAR(64) NOT NULL UNIQUE,
+        slip_url TEXT,
+        slip_uploaded_at TIMESTAMP,
+        rejected_reason TEXT,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        approved_at TIMESTAMP
+      )
+    `);
+    console.log('✅ Donations table created');
+
     console.log('🎉 All database tables created successfully!');
     
   } catch (error) {
