@@ -1000,7 +1000,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/analytics/popular", async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 10;
-      const popularNews = await storage.getPopularNews(limit);
+      const rangeParam = (req.query.range as string) || 'all';
+      const allowedRanges = ['today', 'week', 'month', 'all'] as const;
+      const range = (allowedRanges as readonly string[]).includes(rangeParam) ? (rangeParam as 'today'|'week'|'month'|'all') : 'all';
+      const popularNews = await storage.getPopularNews(limit, range);
       res.json(popularNews);
     } catch (error) {
       res.status(500).json({ error: "Failed to get popular news" });

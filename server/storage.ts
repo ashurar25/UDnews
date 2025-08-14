@@ -53,7 +53,7 @@ export interface IStorage {
   getUnreadContactMessagesCount(): Promise<number>;
   recordNewsView(newsId: number, ipAddress?: string, userAgent?: string, referrer?: string): Promise<NewsView>;
   getNewsViewCount(newsId: number): Promise<number>;
-  getPopularNews(limit?: number): Promise<(typeof newsArticles.$inferSelect & { viewCount: number })[]>;
+  getPopularNews(limit?: number, range?: 'today'|'week'|'month'|'all'): Promise<(typeof newsArticles.$inferSelect & { viewCount: number })[]>;
   getDailyStats(date: string): Promise<DailyStats | null>;
   updateDailyStats(date: string, totalViews: number, uniqueVisitors: number, popularNewsId?: number): Promise<DailyStats>;
   getAnalyticsSummary(): Promise<{
@@ -340,8 +340,18 @@ export class DatabaseStorage implements IStorage {
     return result[0]?.count || 0;
   }
 
-  async getPopularNews(limit: number = 10): Promise<(NewsArticle & { viewCount: number })[]> {
-    const result = await db
+  async getPopularNews(limit: number = 10, range: 'today'|'week'|'month'|'all' = 'all'): Promise<(NewsArticle & { viewCount: number })[]> {
+    // Build date range filter on newsViews.viewedAt when needed
+    let whereClause = sql``;
+    if (range === 'today') {
+      whereClause = sql`DATE(${newsViews.viewedAt}) = CURRENT_DATE`;
+    } else if (range === 'week') {
+      whereClause = sql`${newsViews.viewedAt} >= NOW() - INTERVAL '7 days'`;
+    } else if (range === 'month') {
+      whereClause = sql`${newsViews.viewedAt} >= NOW() - INTERVAL '30 days'`;
+    }
+
+    const baseSelect = db
       .select({
         id: newsArticles.id,
         title: newsArticles.title,
@@ -357,7 +367,13 @@ export class DatabaseStorage implements IStorage {
         viewCount: sql<number>`count(${newsViews.id})`
       })
       .from(newsArticles)
-      .leftJoin(newsViews, eq(newsArticles.id, newsViews.newsId))
+      .leftJoin(newsViews, eq(newsArticles.id, newsViews.newsId));
+
+    const result = await (
+      range === 'all'
+        ? baseSelect
+        : baseSelect.where(whereClause)
+    )
       .groupBy(newsArticles.id)
       .orderBy(sql`count(${newsViews.id}) desc`)
       .limit(limit);
@@ -406,7 +422,11 @@ export class DatabaseStorage implements IStorage {
     totalViews: number;
     totalNews: number;
     todayViews: number;
-    popularNews: any[];
+    popularNews: any[]; // backward compatibility (same as popularNewsAll)
+    popularNewsToday: any[];
+    popularNewsWeek: any[];
+    popularNewsMonth: any[];
+    popularNewsAll: any[];
   }> {
     try {
       const today = new Date().toISOString().split('T')[0];
@@ -424,14 +444,23 @@ export class DatabaseStorage implements IStorage {
         .from(newsViews)
         .where(sql`DATE(${newsViews.viewedAt}) = ${today}`);
 
-      // Use actual popular news by view count (top 5)
-      const popularNews = await this.getPopularNews(5);
+      // Use actual popular news by view count (top 5) across ranges
+      const [popularNewsToday, popularNewsWeek, popularNewsMonth, popularNewsAll] = await Promise.all([
+        this.getPopularNews(5, 'today'),
+        this.getPopularNews(5, 'week'),
+        this.getPopularNews(5, 'month'),
+        this.getPopularNews(5, 'all'),
+      ]);
 
       return {
         totalViews: totalViewsResult?.count || 0,
         totalNews: totalNewsResult?.count || 0,
         todayViews: todayViewsResult?.count || 0,
-        popularNews
+        popularNews: popularNewsAll,
+        popularNewsToday,
+        popularNewsWeek,
+        popularNewsMonth,
+        popularNewsAll
       };
     } catch (error) {
       console.error('Error getting analytics summary:', error);
@@ -439,7 +468,11 @@ export class DatabaseStorage implements IStorage {
         totalViews: 0,
         totalNews: 0,
         todayViews: 0,
-        popularNews: []
+        popularNews: [],
+        popularNewsToday: [],
+        popularNewsWeek: [],
+        popularNewsMonth: [],
+        popularNewsAll: []
       };
     }
   }
