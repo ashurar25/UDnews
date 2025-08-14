@@ -6,6 +6,20 @@ import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
+// Convert a base64-url VAPID public key string to a Uint8Array as required by PushManager
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding)
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
 const PushNotificationSetup = () => {
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -45,14 +59,24 @@ const PushNotificationSetup = () => {
       const vapidPublicKey = 'BP4d_Lmh8hQ6QTK6r5s8zO70KtOYzaCTvkfrrwBCAThqYal_YqWs8aWmyoqjUpAwWmNI2x47vOFMTBQLB2USsUA';
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: vapidPublicKey
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
       });
 
       // Send subscription to server
       const subscriptionData = {
         endpoint: subscription.endpoint,
-        p256dh: btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh')!))),
-        auth: btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth')!)))
+        p256dh: (() => {
+          const key = subscription.getKey('p256dh');
+          if (!key) return '';
+          const bytes = new Uint8Array(key);
+          return btoa(String.fromCharCode(...Array.from(bytes)));
+        })(),
+        auth: (() => {
+          const key = subscription.getKey('auth');
+          if (!key) return '';
+          const bytes = new Uint8Array(key);
+          return btoa(String.fromCharCode(...Array.from(bytes)));
+        })()
       };
 
       return apiRequest('/api/push/subscribe', {

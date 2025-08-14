@@ -81,6 +81,174 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mount database management API routes
   app.use('/api/database', databaseRoutes);
 
+  // -----------------------------
+  // Public: Comments APIs
+  // -----------------------------
+  app.get('/api/comments/:newsId', async (req, res) => {
+    try {
+      const newsId = parseInt(req.params.newsId);
+      if (isNaN(newsId)) return res.status(400).json({ error: 'Invalid newsId' });
+      const list = await storage.getCommentsByNewsId(newsId);
+      res.json(Array.isArray(list) ? list : []);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      res.status(500).json({ error: 'Failed to fetch comments' });
+    }
+  });
+
+  app.post('/api/comments', async (req, res) => {
+    try {
+      const body = req.body || {};
+      if (!body.newsId || !body.authorName || !body.content) {
+        return res.status(400).json({ error: 'newsId, authorName, and content are required' });
+      }
+      const created = await storage.createComment({
+        newsId: Number(body.newsId),
+        parentId: body.parentId ? Number(body.parentId) : null,
+        authorName: String(body.authorName),
+        authorEmail: body.authorEmail ? String(body.authorEmail) : null,
+        content: String(body.content),
+        isApproved: false,
+      } as any);
+      res.status(201).json(created);
+    } catch (error) {
+      console.error('Error creating comment:', error);
+      res.status(500).json({ error: 'Failed to create comment' });
+    }
+  });
+
+  // -----------------------------
+  // Newsletter APIs
+  // -----------------------------
+  app.post('/api/newsletter/subscribe', async (req, res) => {
+    try {
+      const body = req.body || {};
+      if (!body.email) return res.status(400).json({ error: 'email is required' });
+      const created = await storage.createNewsletterSubscriber({
+        email: String(body.email),
+        name: body.name ? String(body.name) : null,
+        source: 'web',
+        isActive: true,
+      } as any);
+      res.status(201).json(created);
+    } catch (error) {
+      console.error('Error subscribing newsletter:', error);
+      res.status(500).json({ error: 'Failed to subscribe' });
+    }
+  });
+
+  app.get('/api/admin/newsletter/subscribers', authMiddleware, async (_req, res) => {
+    try {
+      const subs = await storage.getAllNewsletterSubscribers();
+      res.json(Array.isArray(subs) ? subs : []);
+    } catch (error) {
+      console.error('Error listing subscribers:', error);
+      res.status(500).json({ error: 'Failed to list subscribers' });
+    }
+  });
+
+  // -----------------------------
+  // Push Notification subscription APIs
+  // -----------------------------
+  app.post('/api/push/subscribe', async (req, res) => {
+    try {
+      const sub = req.body?.subscription;
+      if (!sub || !sub.endpoint) return res.status(400).json({ error: 'subscription is required' });
+      const created = await storage.createPushSubscription({
+        endpoint: sub.endpoint,
+        keysP256dh: sub.keys?.p256dh || null,
+        keysAuth: sub.keys?.auth || null,
+        isActive: true,
+      } as any);
+      res.status(201).json(created);
+    } catch (error) {
+      console.error('Error creating push subscription:', error);
+      res.status(500).json({ error: 'Failed to create subscription' });
+    }
+  });
+
+  app.post('/api/push/unsubscribe', async (req, res) => {
+    try {
+      const endpoint = req.body?.endpoint;
+      if (!endpoint) return res.status(400).json({ error: 'endpoint is required' });
+      await storage.deactivatePushSubscription(String(endpoint));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deactivating push subscription:', error);
+      res.status(500).json({ error: 'Failed to unsubscribe' });
+    }
+  });
+
+  // -----------------------------
+  // Search API (advanced filters supported)
+  // -----------------------------
+  app.get('/api/search', async (req, res) => {
+    try {
+      const { q, category, dateFrom, dateTo, sortBy, limit, offset } = req.query as Record<string, string>;
+      const results = await storage.searchNews({
+        query: q,
+        category,
+        dateFrom,
+        dateTo,
+        sortBy,
+        limit: limit ? parseInt(limit) : undefined,
+        offset: offset ? parseInt(offset) : undefined,
+      });
+      res.json(Array.isArray(results) ? results : []);
+    } catch (error) {
+      console.error('Error searching news:', error);
+      res.status(500).json({ error: 'Failed to search' });
+    }
+  });
+
+  // -----------------------------
+  // Analytics: social share tracking (best-effort)
+  // -----------------------------
+  app.post('/api/analytics/social-share', async (req, res) => {
+    try {
+      // At the moment we just accept the payload for future analytics storage
+      const { platform, newsId } = req.body || {};
+      console.log('Social share:', { platform, newsId, ip: req.ip });
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error tracking social share:', error);
+      res.status(200).json({ success: true });
+    }
+  });
+
+  // -----------------------------
+  // News ratings (like/dislike)
+  // -----------------------------
+  app.get('/api/news/:id/ratings', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: 'Invalid id' });
+      const ratings = await storage.getNewsRatings(id);
+      res.json(ratings || { likes: 0, dislikes: 0 });
+    } catch (error) {
+      console.error('Error getting ratings:', error);
+      res.status(500).json({ error: 'Failed to get ratings' });
+    }
+  });
+
+  app.post('/api/news/:id/rate', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: 'Invalid id' });
+      const { value } = req.body || {};
+      if (value !== 'like' && value !== 'dislike') return res.status(400).json({ error: 'value must be like or dislike' });
+      const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || '0.0.0.0';
+      const existing = await storage.getUserRating(id, ip);
+      if (existing) return res.status(200).json({ success: true });
+      await storage.createNewsRating({ newsId: id, ipAddress: ip, value } as any);
+      const ratings = await storage.getNewsRatings(id);
+      res.json(ratings || { likes: 0, dislikes: 0 });
+    } catch (error) {
+      console.error('Error rating news:', error);
+      res.status(500).json({ error: 'Failed to rate' });
+    }
+  });
+
 
   // Public: donation rankings
   app.get('/api/donations/rank', async (req, res) => {

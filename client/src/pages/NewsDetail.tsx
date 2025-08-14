@@ -290,6 +290,17 @@ const NewsDetail = () => {
               <div className="my-8">
                 <SponsorBannerBar position="between_news" autoPlay={true} showNavigation={false} bannerCount={1} />
               </div>
+
+              {/* Social Share & Rating */}
+              <div className="mt-6 space-y-4">
+                <SocialShare
+                  newsId={String(news.id)}
+                  title={news.title}
+                  description={news.summary || news.description || ''}
+                  imageUrl={news.imageUrl}
+                />
+                <NewsRating newsId={news.id} />
+              </div>
             </article>
           </div>
 
@@ -383,6 +394,16 @@ const NewsDetail = () => {
             </div>
           </div>
         </div>
+
+        {/* Comments Section */}
+        <section className="container mx-auto px-4 mt-10">
+          <Card>
+            <CardContent className="p-6">
+              <h3 className="text-xl font-bold font-kanit mb-4">แสดงความคิดเห็น</h3>
+              <CommentSection newsId={Number(id)} />
+            </CardContent>
+          </Card>
+        </section>
 
         {/* Bottom Content Banner - Mobile Friendly */}
         <div className="mt-8 lg:hidden">

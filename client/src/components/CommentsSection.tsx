@@ -297,7 +297,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ newsId, newsTitle }) 
         ) : (
           <ScrollArea className="max-h-[600px]">
             <div className="space-y-4">
-              {comments.map((comment) => (
+              {comments.map((comment: Comment) => (
                 <Card key={comment.id} className="relative">
                   <CardContent className="p-4">
                     <div className="flex gap-3">
@@ -415,7 +415,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ newsId, newsTitle }) 
                         {/* Replies */}
                         {comment.replies && comment.replies.length > 0 && (
                           <div className="mt-3 ml-4 pl-4 border-l-2 border-muted space-y-3">
-                            {comment.replies.map((reply) => (
+                            {comment.replies.map((reply: Comment) => (
                               <div key={reply.id} className="flex gap-2">
                                 <Avatar className="h-8 w-8">
                                   <AvatarFallback className="font-kanit text-xs">
