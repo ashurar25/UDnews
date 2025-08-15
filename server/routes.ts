@@ -341,8 +341,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // news_views indexes
       await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_news_views_news_id ON news_views (news_id);` as any);
-      await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_news_views_created_at ON news_views (created_at);` as any);
-      await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_news_views_news_id_created_at ON news_views (news_id, created_at);` as any);
+      await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_news_views_viewed_at ON news_views (viewed_at);` as any);
+      await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_news_views_news_id_viewed_at ON news_views (news_id, viewed_at);` as any);
     } catch (e) {
       console.warn('ensureIndexes news_views failed:', e);
     }
