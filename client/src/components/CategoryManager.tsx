@@ -11,6 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { FolderOpen, Plus, Edit, Trash2, Search, Filter, ArrowUp, ArrowDown, Eye, EyeOff } from "lucide-react";
+import { GlassCard, GlassCardHeader } from "@/components/GlassCard";
 
 interface Category {
   id: string;
@@ -479,131 +480,129 @@ export default function CategoryManager() {
       </div>
 
       {/* Categories Table */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Search className="h-5 w-5 text-gray-500" />
-              <Input
-                placeholder="ค้นหาหมวดหมู่..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-80"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Filter className="h-5 w-5 text-gray-500" />
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="สถานะ" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">ทั้งหมด</SelectItem>
-                  <SelectItem value="active">ใช้งาน</SelectItem>
-                  <SelectItem value="inactive">ไม่ใช้งาน</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      <GlassCard
+        header={<GlassCardHeader title="รายการหมวดหมู่" />}
+      >
+        <div className="flex items-center gap-4 pb-4">
+          <div className="flex items-center gap-2">
+            <Search className="h-5 w-5 text-gray-500" />
+            <Input
+              placeholder="ค้นหาหมวดหมู่..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-80"
+            />
           </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ลำดับ</TableHead>
-                <TableHead>ชื่อหมวดหมู่</TableHead>
-                <TableHead>คำอธิบาย</TableHead>
-                <TableHead>จำนวนข่าว</TableHead>
-                <TableHead>สถานะ</TableHead>
-                <TableHead>การแสดงผล</TableHead>
-                <TableHead>วันที่อัปเดต</TableHead>
-                <TableHead>การจัดการ</TableHead>
+          <div className="flex items-center gap-2">
+            <Filter className="h-5 w-5 text-gray-500" />
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="สถานะ" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">ทั้งหมด</SelectItem>
+                <SelectItem value="active">ใช้งาน</SelectItem>
+                <SelectItem value="inactive">ไม่ใช้งาน</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ลำดับ</TableHead>
+              <TableHead>ชื่อหมวดหมู่</TableHead>
+              <TableHead>คำอธิบาย</TableHead>
+              <TableHead>จำนวนข่าว</TableHead>
+              <TableHead>สถานะ</TableHead>
+              <TableHead>การแสดงผล</TableHead>
+              <TableHead>วันที่อัปเดต</TableHead>
+              <TableHead>การจัดการ</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredCategories
+              .sort((a, b) => a.order - b.order)
+              .map((category) => (
+              <TableRow key={category.id}>
+                <TableCell>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOrderChange(category.id, 'up')}
+                      disabled={category.order === 1}
+                    >
+                      <ArrowUp className="h-3 w-3" />
+                    </Button>
+                    <span className="font-medium">{category.order}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOrderChange(category.id, 'down')}
+                      disabled={category.order === categories.length}
+                    >
+                      <ArrowDown className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <span style={{ color: category.color }} className="text-lg">{category.icon}</span>
+                    <div>
+                      <p className="font-medium">{category.name}</p>
+                      <p className="text-xs text-gray-500">/{category.slug}</p>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <p className="text-sm text-gray-600 max-w-xs truncate">{category.description}</p>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline">{category.newsCount}</Badge>
+                </TableCell>
+                <TableCell>{getStatusBadge(category.isActive)}</TableCell>
+                <TableCell>{getVisibilityBadge(category.isVisible)}</TableCell>
+                <TableCell>
+                  <p className="text-sm text-gray-600">{category.updatedAt}</p>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEditDialog(category)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>ยืนยันการลบหมวดหมู่</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            คุณต้องการลบหมวดหมู่ {category.name} หรือไม่? การดำเนินการนี้ไม่สามารถยกเลิกได้
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteCategory(category.id)}>
+                            ลบหมวดหมู่
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCategories
-                .sort((a, b) => a.order - b.order)
-                .map((category) => (
-                <TableRow key={category.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOrderChange(category.id, 'up')}
-                        disabled={category.order === 1}
-                      >
-                        <ArrowUp className="h-3 w-3" />
-                      </Button>
-                      <span className="font-medium">{category.order}</span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOrderChange(category.id, 'down')}
-                        disabled={category.order === categories.length}
-                      >
-                        <ArrowDown className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span style={{ color: category.color }} className="text-lg">{category.icon}</span>
-                      <div>
-                        <p className="font-medium">{category.name}</p>
-                        <p className="text-xs text-gray-500">/{category.slug}</p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <p className="text-sm text-gray-600 max-w-xs truncate">{category.description}</p>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{category.newsCount}</Badge>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(category.isActive)}</TableCell>
-                  <TableCell>{getVisibilityBadge(category.isVisible)}</TableCell>
-                  <TableCell>
-                    <p className="text-sm text-gray-600">{category.updatedAt}</p>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openEditDialog(category)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>ยืนยันการลบหมวดหมู่</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              คุณต้องการลบหมวดหมู่ {category.name} หรือไม่? การดำเนินการนี้ไม่สามารถยกเลิกได้
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDeleteCategory(category.id)}>
-                              ลบหมวดหมู่
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            ))}
+          </TableBody>
+        </Table>
+      </GlassCard>
 
       {/* Edit Category Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

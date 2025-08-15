@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { GlassCard, GlassCardHeader } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -272,78 +273,81 @@ export default function UserManager() {
         </Dialog>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Search className="h-5 w-5 text-gray-500" />
-            <Input
-              placeholder="ค้นหาผู้ใช้..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-sm"
-            />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ชื่อผู้ใช้</TableHead>
-                <TableHead>อีเมล</TableHead>
-                <TableHead>บทบาท</TableHead>
-                <TableHead>สถานะ</TableHead>
-                <TableHead>วันที่สร้าง</TableHead>
-                <TableHead>เข้าสู่ระบบล่าสุด</TableHead>
-                <TableHead>การจัดการ</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.username}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{getRoleBadge(user.role)}</TableCell>
-                  <TableCell>{getStatusBadge(user.status)}</TableCell>
-                  <TableCell>{user.createdAt}</TableCell>
-                  <TableCell>{user.lastLogin || '-'}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                                              <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openEditDialog(user)}
-                        >
-                          <UserCog className="h-4 w-4" />
+      <GlassCard
+        header={
+          <GlassCardHeader
+            title={
+              <div className="flex items-center gap-2">
+                <Search className="h-5 w-5 text-gray-500" />
+                <Input
+                  placeholder="ค้นหาผู้ใช้..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="max-w-sm"
+                />
+              </div>
+            }
+          />
+        }
+      >
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ชื่อผู้ใช้</TableHead>
+              <TableHead>อีเมล</TableHead>
+              <TableHead>บทบาท</TableHead>
+              <TableHead>สถานะ</TableHead>
+              <TableHead>วันที่สร้าง</TableHead>
+              <TableHead>เข้าสู่ระบบล่าสุด</TableHead>
+              <TableHead>การจัดการ</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredUsers.map((user) => (
+              <TableRow key={user.id}>
+                <TableCell className="font-medium">{user.username}</TableCell>
+                <TableCell>{user.email}</TableCell>
+                <TableCell>{getRoleBadge(user.role)}</TableCell>
+                <TableCell>{getStatusBadge(user.status)}</TableCell>
+                <TableCell>{user.createdAt}</TableCell>
+                <TableCell>{user.lastLogin || '-'}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEditDialog(user)}
+                    >
+                      <UserCog className="h-4 w-4" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <UserX className="h-4 w-4" />
                         </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <UserX className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>ยืนยันการลบผู้ใช้</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              คุณต้องการลบผู้ใช้ {user.username} หรือไม่? การดำเนินการนี้ไม่สามารถยกเลิกได้
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDeleteUser(user.id)}>
-                              ลบผู้ใช้
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>ยืนยันการลบผู้ใช้</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            คุณต้องการลบผู้ใช้ {user.username} หรือไม่? การดำเนินการนี้ไม่สามารถยกเลิกได้
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteUser(user.id)}>
+                            ลบผู้ใช้
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </GlassCard>
 
       {/* Edit User Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

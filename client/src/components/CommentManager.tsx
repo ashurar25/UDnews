@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { GlassCard, GlassCardHeader } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -135,34 +135,40 @@ export default function CommentManager() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Search className="h-5 w-5 text-gray-500" />
-              <Input
-                placeholder="ค้นหาความคิดเห็น..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-80"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Filter className="h-5 w-5 text-gray-500" />
-              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as 'all' | 'pending' | 'approved')}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="สถานะ" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">ทั้งหมด</SelectItem>
-                  <SelectItem value="pending">รออนุมัติ</SelectItem>
-                  <SelectItem value="approved">อนุมัติแล้ว</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      <GlassCard
+        header={
+          <GlassCardHeader
+            icon={<MessageSquare className="h-5 w-5 text-orange-600" />}
+            title={<span className="font-kanit text-orange-700">ความคิดเห็น</span>}
+            description={<span className="font-sarabun">ค้นหาและจัดการความคิดเห็นของผู้ใช้</span>}
+          />
+        }
+      >
+        <div className="flex items-center gap-4 mb-4">
+          <div className="flex items-center gap-2">
+            <Search className="h-5 w-5 text-gray-500" />
+            <Input
+              placeholder="ค้นหาความคิดเห็น..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-80"
+            />
           </div>
-        </CardHeader>
-        <CardContent>
+          <div className="flex items-center gap-2">
+            <Filter className="h-5 w-5 text-gray-500" />
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as 'all' | 'pending' | 'approved')}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="สถานะ" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">ทั้งหมด</SelectItem>
+                <SelectItem value="pending">รออนุมัติ</SelectItem>
+                <SelectItem value="approved">อนุมัติแล้ว</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        
           {selectedComments.length > 0 && (
             <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-center justify-between">
@@ -281,8 +287,7 @@ export default function CommentManager() {
               ))}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
+      </GlassCard>
     </div>
   );
 }

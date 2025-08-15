@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { GlassCard, GlassCardHeader } from '@/components/GlassCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -162,81 +162,89 @@ const DonationManager: React.FC = () => {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="border-orange-100">
-          <CardHeader>
-            <CardTitle className="font-kanit flex items-center gap-2 text-orange-700">
-              <Timer className="h-5 w-5 text-orange-500" /> รออนุมัติ ({filteredPending.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {filteredPending.length === 0 && (
-              <div className="text-sm text-muted-foreground font-sarabun">ไม่มีรายการรออนุมัติ</div>
-            )}
-            {filteredPending.map((d) => (
-              <div key={d.id} className="p-3 border rounded-lg flex items-start gap-3 hover:bg-orange-50/40 transition-colors">
-                <div>
-                  <div className="font-sarabun">
-                    {d.isAnonymous || !d.donorName ? 'ผู้ไม่ประสงค์ออกนาม' : d.donorName}
-                  </div>
-                  <div className="text-xs text-muted-foreground font-sarabun">
-                    {new Date(d.createdAt).toLocaleString()} • ref: {d.reference}
-                  </div>
-                  {d.message && (
-                    <div className="text-xs text-muted-foreground font-sarabun mt-1">“{d.message}”</div>
-                  )}
-                  {d.slipUrl ? (
-                    <div className="mt-2 flex items-center gap-2">
-                      <a href={d.slipUrl} target="_blank" rel="noreferrer" className="text-xs text-orange-700 underline font-sarabun">ดูสลิป</a>
-                      <span className="text-[11px] text-muted-foreground font-sarabun">อัปโหลด: {d.slipUploadedAt ? new Date(d.slipUploadedAt).toLocaleString() : '-'}</span>
-                    </div>
-                  ) : (
-                    <div className="mt-2 text-xs text-muted-foreground font-sarabun">ยังไม่มีสลิปแนบ</div>
-                  )}
+        <GlassCard
+          header={
+            <GlassCardHeader
+              title={
+                <span className="font-kanit flex items-center gap-2 text-orange-700">
+                  <Timer className="h-5 w-5 text-orange-500" /> รออนุมัติ ({filteredPending.length})
+                </span>
+              }
+            />
+          }
+          contentClassName="space-y-3"
+        >
+          {filteredPending.length === 0 && (
+            <div className="text-sm text-muted-foreground font-sarabun">ไม่มีรายการรออนุมัติ</div>
+          )}
+          {filteredPending.map((d) => (
+            <div key={d.id} className="p-3 border rounded-lg flex items-start gap-3 hover:bg-orange-50/40 transition-colors">
+              <div>
+                <div className="font-sarabun">
+                  {d.isAnonymous || !d.donorName ? 'ผู้ไม่ประสงค์ออกนาม' : d.donorName}
                 </div>
-                <div className="ml-auto flex items-center gap-2">
-                  <Badge variant="outline" className="font-sarabun">{d.amount} บาท</Badge>
-                  <Button size="sm" onClick={() => approveDonation(d.id)} className="font-sarabun bg-orange-600 hover:bg-orange-700">
-                    <ShieldCheck className="h-4 w-4 mr-2" /> อนุมัติ
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => rejectDonation(d.id)} className="font-sarabun">
-                    ปฏิเสธ
-                  </Button>
+                <div className="text-xs text-muted-foreground font-sarabun">
+                  {new Date(d.createdAt).toLocaleString()} • ref: {d.reference}
                 </div>
+                {d.message && (
+                  <div className="text-xs text-muted-foreground font-sarabun mt-1">“{d.message}”</div>
+                )}
+                {d.slipUrl ? (
+                  <div className="mt-2 flex items-center gap-2">
+                    <a href={d.slipUrl} target="_blank" rel="noreferrer" className="text-xs text-orange-700 underline font-sarabun">ดูสลิป</a>
+                    <span className="text-[11px] text-muted-foreground font-sarabun">อัปโหลด: {d.slipUploadedAt ? new Date(d.slipUploadedAt).toLocaleString() : '-'}</span>
+                  </div>
+                ) : (
+                  <div className="mt-2 text-xs text-muted-foreground font-sarabun">ยังไม่มีสลิปแนบ</div>
+                )}
               </div>
-            ))}
-          </CardContent>
-        </Card>
+              <div className="ml-auto flex items-center gap-2">
+                <Badge variant="outline" className="font-sarabun">{d.amount} บาท</Badge>
+                <Button size="sm" onClick={() => approveDonation(d.id)} className="font-sarabun bg-orange-600 hover:bg-orange-700">
+                  <ShieldCheck className="h-4 w-4 mr-2" /> อนุมัติ
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => rejectDonation(d.id)} className="font-sarabun">
+                  ปฏิเสธ
+                </Button>
+              </div>
+            </div>
+          ))}
+        </GlassCard>
 
-        <Card className="border-green-100">
-          <CardHeader>
-            <CardTitle className="font-kanit flex items-center gap-2 text-green-700">
-              <ShieldCheck className="h-5 w-5 text-green-600" /> อนุมัติล่าสุด
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {filteredApproved.length === 0 && (
-              <div className="text-sm text-muted-foreground font-sarabun">ยังไม่มีรายการ</div>
-            )}
-            {filteredApproved.map((d) => (
-              <div key={d.id} className="p-3 border rounded-lg flex items-center gap-3 hover:bg-green-50/40 transition-colors">
-                <div>
-                  <div className="font-sarabun">
-                    {d.isAnonymous || !d.donorName ? 'ผู้ไม่ประสงค์ออกนาม' : d.donorName}
-                  </div>
-                  <div className="text-xs text-muted-foreground font-sarabun">
-                    {d.approvedAt ? new Date(d.approvedAt).toLocaleString() : new Date(d.createdAt).toLocaleString()} • ref: {d.reference}
-                  </div>
-                  {d.message && (
-                    <div className="text-xs text-muted-foreground font-sarabun mt-1">“{d.message}”</div>
-                  )}
+        <GlassCard
+          header={
+            <GlassCardHeader
+              title={
+                <span className="font-kanit flex items-center gap-2 text-green-700">
+                  <ShieldCheck className="h-5 w-5 text-green-600" /> อนุมัติล่าสุด
+                </span>
+              }
+            />
+          }
+          contentClassName="space-y-3"
+        >
+          {filteredApproved.length === 0 && (
+            <div className="text-sm text-muted-foreground font-sarabun">ยังไม่มีรายการ</div>
+          )}
+          {filteredApproved.map((d) => (
+            <div key={d.id} className="p-3 border rounded-lg flex items-center gap-3 hover:bg-green-50/40 transition-colors">
+              <div>
+                <div className="font-sarabun">
+                  {d.isAnonymous || !d.donorName ? 'ผู้ไม่ประสงค์ออกนาม' : d.donorName}
                 </div>
-                <div className="ml-auto">
-                  <Badge variant="outline" className="font-sarabun">{d.amount} บาท</Badge>
+                <div className="text-xs text-muted-foreground font-sarabun">
+                  {d.approvedAt ? new Date(d.approvedAt).toLocaleString() : new Date(d.createdAt).toLocaleString()} • ref: {d.reference}
                 </div>
+                {d.message && (
+                  <div className="text-xs text-muted-foreground font-sarabun mt-1">“{d.message}”</div>
+                )}
               </div>
-            ))}
-          </CardContent>
-        </Card>
+              <div className="ml-auto">
+                <Badge variant="outline" className="font-sarabun">{d.amount} บาท</Badge>
+              </div>
+            </div>
+          ))}
+        </GlassCard>
       </div>
     </div>
   );

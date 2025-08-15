@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { GlassCard, GlassCardHeader } from "@/components/GlassCard";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -207,13 +208,11 @@ export default function NewsManager() {
 
   if (error) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center text-red-600">
-            เกิดข้อผิดพลาดในการโหลดข้อมูล: {error.toString()}
-          </div>
-        </CardContent>
-      </Card>
+      <GlassCard>
+        <div className="p-6 text-center text-red-600">
+          เกิดข้อผิดพลาดในการโหลดข้อมูล: {error.toString()}
+        </div>
+      </GlassCard>
     );
   }
 
@@ -229,12 +228,12 @@ export default function NewsManager() {
 
       {/* News Form */}
       {isFormOpen && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{editingNews ? "แก้ไขข่าว" : "เพิ่มข่าวใหม่"}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+        <GlassCard
+          header={
+            <GlassCardHeader title={editingNews ? "แก้ไขข่าว" : "เพิ่มข่าวใหม่"} />
+          }
+        >
+          <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Label htmlFor="title">หัวข้อข่าว *</Label>
                 <Input
@@ -318,13 +317,12 @@ export default function NewsManager() {
                 </Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
+        </GlassCard>
       )}
 
       {/* Search and Filter Controls */}
-      <Card>
-        <CardContent className="p-4">
+      <GlassCard className="p-0">
+        <div className="p-4">
           <div className="flex flex-col md:flex-row gap-4 items-center">
             <div className="flex-1">
               <Label htmlFor="search" className="text-sm font-medium">ค้นหาข่าว</Label>
@@ -369,28 +367,24 @@ export default function NewsManager() {
               <span> สำหรับคำค้น "{searchTerm}"</span>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </GlassCard>
 
       {/* News List */}
       <div className="space-y-4">
         {isLoading ? (
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-center">กำลังโหลดข้อมูล...</div>
-            </CardContent>
-          </Card>
+          <GlassCard>
+            <div className="p-6 text-center">กำลังโหลดข้อมูล...</div>
+          </GlassCard>
         ) : filteredNews.length === 0 ? (
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-center text-gray-500">
-                {searchTerm || selectedCategory 
-                  ? "ไม่พบข่าวที่ตรงกับเงื่อนไขการค้นหา" 
-                  : "ยังไม่มีข่าวในระบบ"
-                }
-              </div>
-            </CardContent>
-          </Card>
+          <GlassCard>
+            <div className="p-6 text-center text-gray-500">
+              {searchTerm || selectedCategory 
+                ? "ไม่พบข่าวที่ตรงกับเงื่อนไขการค้นหา" 
+                : "ยังไม่มีข่าวในระบบ"
+              }
+            </div>
+          </GlassCard>
         ) : (
           currentNews.map((newsItem) => (
             <Card key={newsItem.id}>

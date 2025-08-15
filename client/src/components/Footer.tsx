@@ -8,7 +8,7 @@ import { Link } from "wouter";
 
 const Footer = () => {
   return (
-    <footer className="bg-gradient-subtle border-t border-border transition-colors duration-300">
+    <footer className="backdrop-blur-md bg-white/70 dark:bg-zinc-900/40 border-t border-white/30 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-colors duration-300">
       <div className="container max-w-6xl mx-auto py-12 px-6">
         {/* Centered Logo and Description */}
         <div className="text-center mb-12">
@@ -16,10 +16,10 @@ const Footer = () => {
             <img 
               src="/logo.jpg" 
               alt="UD News Logo" 
-              className="h-16 w-16 rounded-full shadow-lg animate-pulse border-2 border-primary/20"
+              className="h-16 w-16 rounded-full shadow-lg animate-pulse motion-reduce:animate-none border-2 border-primary/20"
               loading="lazy"
             />
-            <span className="font-bold font-kanit text-3xl bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 bg-clip-text text-transparent animate-gradient">
+            <span className="font-bold font-kanit text-3xl bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 bg-clip-text text-transparent animate-gradient motion-reduce:animate-none">
               อัพเดทข่าวอุดร - UD News Update
             </span>
           </div>
@@ -129,7 +129,7 @@ const Footer = () => {
         <div className="text-center space-y-4">
           <div className="flex flex-col md:flex-row justify-center items-center space-y-2 md:space-y-0 md:space-x-8">
             <p className="text-sm text-muted-foreground font-sarabun">
-              © 2024 UD News. สงวนลิขสิทธิ์โดย ASHURA STUDIO.
+              2025 UD News Update v.7.1.1. สงวนลิขสิทธิ์โดย ASHURA STUDIO.
             </p>
             <div className="flex flex-wrap justify-center gap-4 text-sm font-sarabun">
               <Link to="/privacy" className="text-muted-foreground hover:text-primary transition-colors">
@@ -143,7 +143,7 @@ const Footer = () => {
           </div>
           
           <p className="text-xs text-muted-foreground font-sarabun opacity-70">
-            พัฒนาด้วย ❤️ เพื่อประชาชนไทย | 
+            พัฒนาด้วย ❤️ เพื่อประชาชนไทย 
           </p>
         </div>
       </div>

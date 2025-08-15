@@ -140,6 +140,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
 
+  // Server-rendered share page for social crawlers (Open Graph/Twitter Cards)
+  // Example: https://your-site.com/share/123
+  app.get('/share/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (Number.isNaN(id)) return res.status(400).send('Invalid id');
+
+      // Build absolute origin
+      const origin = `${req.protocol}://${req.get('host')}`;
+
+      // Try cache first
+      const cacheKey = `news:${id}`;
+      let article = individualNewsCache.get<any>(cacheKey);
+      if (!article) {
+        article = await storage.getNewsById(id);
+        if (!article) return res.status(404).send('Not found');
+        individualNewsCache.set(cacheKey, article);
+      }
+
+      const title = article?.title ? String(article.title) : 'ข่าว';
+      const summary = article?.summary || article?.description || (article?.content ? String(article.content).slice(0, 160) + '…' : '');
+      const image = article?.imageUrl ? String(article.imageUrl) : '/logo.jpg';
+      const imageAbs = image.startsWith('http') ? image : `${origin}${image.startsWith('/') ? '' : '/'}${image}`;
+      const pageUrl = `${origin}/news/${id}`;
+      const shareUrl = `${origin}/share/${id}`;
+      const publishedTime = article?.createdAt ? new Date(article.createdAt).toISOString() : undefined;
+      const modifiedTime = article?.updatedAt ? new Date(article.updatedAt).toISOString() : undefined;
+
+      const escapedTitle = escapeHtml(title);
+      const escapedDesc = escapeHtml(summary || title);
+      const escapedImage = escapeHtml(imageAbs);
+      const escapedPageUrl = escapeHtml(pageUrl);
+      const escapedShareUrl = escapeHtml(shareUrl);
+
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.setHeader('Cache-Control', 'public, max-age=600'); // cache 10 minutes
+
+      const html = `<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${escapedTitle}</title>
+    <link rel="canonical" href="${escapedPageUrl}">
+    <meta name="description" content="${escapedDesc}" />
+    <!-- Open Graph -->
+    <meta property="og:title" content="${escapedTitle}" />
+    <meta property="og:description" content="${escapedDesc}" />
+    <meta property="og:image" content="${escapedImage}" />
+    <meta property="og:url" content="${escapedPageUrl}" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="UD News Update" />
+    ${publishedTime ? `<meta property="article:published_time" content="${publishedTime}" />` : ''}
+    ${modifiedTime ? `<meta property="article:modified_time" content="${modifiedTime}" />` : ''}
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${escapedTitle}" />
+    <meta name="twitter:description" content="${escapedDesc}" />
+    <meta name="twitter:image" content="${escapedImage}" />
+    <meta name="twitter:url" content="${escapedPageUrl}" />
+    <meta http-equiv="refresh" content="0; url=${escapedPageUrl}" />
+    <style>
+      body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial,sans-serif;line-height:1.5;padding:24px;color:#111}
+      .card{max-width:720px;margin:40px auto;border:1px solid #eee;border-radius:12px;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,0.08)}
+      img{width:100%;height:auto;display:block}
+      h1{font-size:24px;margin:16px}
+      p{margin:16px;color:#444}
+      a.btn{display:inline-block;margin:0 16px 16px 16px;padding:10px 16px;background:#f97316;color:#fff;text-decoration:none;border-radius:8px}
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <img src="${escapedImage}" alt="${escapedTitle}" />
+      <h1>${escapedTitle}</h1>
+      <p>${escapedDesc}</p>
+      <a class="btn" href="${escapedPageUrl}">อ่านข่าวนี้</a>
+    </div>
+    <noscript>
+      หากไม่ได้เปลี่ยนหน้าอัตโนมัติ กรุณาคลิกลิงก์นี้: <a href="${escapedPageUrl}">${escapedPageUrl}</a>
+    </noscript>
+  </body>
+  </html>`;
+
+      return res.status(200).send(html);
+    } catch (err) {
+      return res.status(500).send('Internal Server Error');
+    }
+  });
+
   // AI Daily Summary - public (cached, limited)
   app.get('/api/ai/daily-summary', aiSummaryLimiter, async (req, res) => {
     try {

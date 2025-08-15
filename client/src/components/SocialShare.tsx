@@ -66,12 +66,12 @@ const SocialShare: React.FC<SocialShareProps> = ({
   });
 
   const shareUrls = {
-    // Important: use server-side share page for Facebook so it sees proper OG tags and image
+    // Important: use server-side share page for platforms that read OG tags
     facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedOgUrl}&quote=${encodedTitle}`,
-    twitter: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}&hashtags=UDNews,อุดรธานี,ข่าว`,
-    line: `https://social-plugins.line.me/lineit/share?url=${encodedUrl}&text=${encodedTitle}`,
-    whatsapp: `https://wa.me/?text=${encodedTitle}%20${encodedUrl}`,
-    telegram: `https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`,
+    twitter: `https://twitter.com/intent/tweet?url=${encodedOgUrl}&text=${encodedTitle}&hashtags=UDNews,อุดรธานี,ข่าว`,
+    line: `https://social-plugins.line.me/lineit/share?url=${encodedOgUrl}&text=${encodedTitle}`,
+    whatsapp: `https://wa.me/?text=${encodedTitle}%20${encodedOgUrl}`,
+    telegram: `https://t.me/share/url?url=${encodedOgUrl}&text=${encodedTitle}`,
     email: `mailto:?subject=${encodedTitle}&body=${encodedDescription}%0A%0A${encodedUrl}`,
   };
 

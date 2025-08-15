@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { GlassCard, GlassCardHeader } from "@/components/GlassCard";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -210,13 +211,11 @@ export default function RSSManager() {
 
   if (error) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center text-red-600">
-            เกิดข้อผิดพลาดในการโหลดข้อมูล: {error.toString()}
-          </div>
-        </CardContent>
-      </Card>
+      <GlassCard>
+        <div className="p-6 text-center text-red-600">
+          เกิดข้อผิดพลาดในการโหลดข้อมูล: {error.toString()}
+        </div>
+      </GlassCard>
     );
   }
 
@@ -246,34 +245,30 @@ export default function RSSManager() {
 
       {/* Processing Status */}
       {processingStatus && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              สถานะการประมวลผล
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <Badge variant={processingStatus.isProcessing ? "default" : "secondary"}>
-                {processingStatus.isProcessing ? "กำลังประมวลผล" : "พร้อมใช้งาน"}
-              </Badge>
-              <Badge variant={processingStatus.autoProcessingEnabled ? "default" : "secondary"}>
-                ประมวลผลอัตโนมัติ: {processingStatus.autoProcessingEnabled ? "เปิด" : "ปิด"}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
+        <GlassCard
+          header={
+            <GlassCardHeader title={
+              <span className="flex items-center gap-2"><Clock className="h-5 w-5" />สถานะการประมวลผล</span>
+            } />
+          }
+        >
+          <div className="flex items-center gap-4">
+            <Badge variant={processingStatus.isProcessing ? "default" : "secondary"}>
+              {processingStatus.isProcessing ? "กำลังประมวลผล" : "พร้อมใช้งาน"}
+            </Badge>
+            <Badge variant={processingStatus.autoProcessingEnabled ? "default" : "secondary"}>
+              ประมวลผลอัตโนมัติ: {processingStatus.autoProcessingEnabled ? "เปิด" : "ปิด"}
+            </Badge>
+          </div>
+        </GlassCard>
       )}
 
       {/* RSS Feed Form */}
       {isFormOpen && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{editingFeed ? "แก้ไข RSS Feed" : "เพิ่ม RSS Feed ใหม่"}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+        <GlassCard
+          header={<GlassCardHeader title={editingFeed ? "แก้ไข RSS Feed" : "เพิ่ม RSS Feed ใหม่"} />}
+        >
+          <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Label htmlFor="title">ชื่อ RSS Feed *</Label>
                 <Input
@@ -336,24 +331,19 @@ export default function RSSManager() {
                 </Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
+        </GlassCard>
       )}
 
       {/* RSS Feeds List */}
       <div className="space-y-4">
         {isLoading ? (
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-center">กำลังโหลดข้อมูล...</div>
-            </CardContent>
-          </Card>
+          <GlassCard>
+            <div className="p-6 text-center">กำลังโหลดข้อมูล...</div>
+          </GlassCard>
         ) : feeds.length === 0 ? (
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-center text-gray-500">ยังไม่มี RSS Feeds ในระบบ</div>
-            </CardContent>
-          </Card>
+          <GlassCard>
+            <div className="p-6 text-center text-gray-500">ยังไม่มี RSS Feeds ในระบบ</div>
+          </GlassCard>
         ) : (
           feeds.map((feed) => (
             <Card key={feed.id}>

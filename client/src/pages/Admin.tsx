@@ -29,6 +29,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { useToast } from '@/hooks/use-toast';
 
 // Import actual components with error handling
 const NewsManager = lazy(() => import('@/components/NewsManager').catch(() => ({ default: () => <PlaceholderComponent title="จัดการข่าว" /> })));
@@ -51,8 +52,8 @@ const DailySummaryAdmin = lazy(() => import('@/components/DailySummaryAdmin').ca
 
 // Placeholder component for components that don't exist yet
 const PlaceholderComponent = ({ title }: { title: string }) => (
-  <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
-    <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 rounded-t-xl">
+  <Card className="backdrop-blur-md bg-white/70 dark:bg-zinc-900/40 rounded-xl shadow-lg border border-white/30 dark:border-white/10">
+    <CardHeader className="bg-gradient-to-r from-orange-50/70 to-red-50/60 dark:from-orange-900/20 dark:to-red-900/10 rounded-t-xl">
       <CardTitle className="flex items-center gap-2 font-kanit text-orange-700">
         <Settings className="h-5 w-5" />
         {title}
@@ -115,13 +116,14 @@ const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
       if (!username || !password) {
-        alert('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
+        toast({ title: 'กรุณากรอกข้อมูลให้ครบถ้วน', description: 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน', variant: 'destructive' });
         return;
       }
 
@@ -136,29 +138,30 @@ const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         const msg = (data && (data.message || data.error)) || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
-        alert(msg);
+        toast({ title: 'เข้าสู่ระบบไม่สำเร็จ', description: msg, variant: 'destructive' });
         return;
       }
 
       const data = await res.json();
       if (data?.token) {
         localStorage.setItem('adminToken', data.token);
+        toast({ title: 'เข้าสู่ระบบสำเร็จ', description: 'กำลังนำคุณเข้าสู่ระบบจัดการ', duration: 2500 });
         onLogin();
       } else {
-        alert('ไม่พบโทเค็นเข้าสู่ระบบ');
+        toast({ title: 'เกิดข้อผิดพลาด', description: 'ไม่พบโทเค็นเข้าสู่ระบบ', variant: 'destructive' });
       }
     } catch (err) {
       console.error('Admin login error:', err);
-      alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+      toast({ title: 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', description: 'โปรดลองใหม่อีกครั้ง', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-md backdrop-blur-md bg-white/70 dark:bg-zinc-900/40 border border-white/30 dark:border-white/10 shadow-xl">
+        <CardHeader className="text-center bg-gradient-to-r from-orange-50/70 to-red-50/60 dark:from-orange-900/10 dark:to-red-900/10 rounded-t-xl">
           <CardTitle className="text-2xl font-bold font-kanit text-orange-800">
             เข้าสู่ระบบผู้ดูแล
           </CardTitle>
@@ -174,7 +177,7 @@ const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3 py-2 border border-white/40 dark:border-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white/60 dark:bg-white/5"
                 required
               />
             </div>
@@ -184,13 +187,13 @@ const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3 py-2 border border-white/40 dark:border-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white/60 dark:bg-white/5"
                 required
               />
             </div>
             <Button
               type="submit"
-              className="w-full bg-orange-600 hover:bg-orange-700 font-sarabun"
+              className="w-full bg-orange-600 hover:bg-orange-700 font-sarabun shadow-md"
               disabled={isLoading}
             >
               {isLoading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
@@ -249,6 +252,7 @@ function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { toast } = useToast();
 
   // Debug function to test hamburger menu
   const toggleSidebar = () => {
@@ -265,6 +269,7 @@ function AdminDashboard() {
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
+    toast({ title: 'ออกจากระบบสำเร็จ', description: 'กลับสู่หน้าแรก', duration: 2000 });
     window.location.href = '/';
   };
 
@@ -275,7 +280,7 @@ function AdminDashboard() {
           <div className="space-y-6">
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">ภาพรวมระบบ</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
+              <Card className="backdrop-blur-md bg-white/70 dark:bg-zinc-900/40 rounded-xl shadow-lg border border-white/30 dark:border-white/10">
                 <CardContent className="p-6">
                   <div className="text-center">
                     <div className="text-3xl font-bold text-orange-600">
@@ -285,7 +290,7 @@ function AdminDashboard() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
+              <Card className="backdrop-blur-md bg-white/70 dark:bg-zinc-900/40 rounded-xl shadow-lg border border-white/30 dark:border-white/10">
                 <CardContent className="p-6">
                   <div className="text-center">
                     <div className="text-3xl font-bold text-blue-600">
@@ -295,7 +300,7 @@ function AdminDashboard() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
+              <Card className="backdrop-blur-md bg-white/70 dark:bg-zinc-900/40 rounded-xl shadow-lg border border-white/30 dark:border-white/10">
                 <CardContent className="p-6">
                   <div className="text-center">
                     <div className="text-3xl font-bold text-green-600">
@@ -305,7 +310,7 @@ function AdminDashboard() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
+              <Card className="backdrop-blur-md bg-white/70 dark:bg-zinc-900/40 rounded-xl shadow-lg border border-white/30 dark:border-white/10">
                 <CardContent className="p-6">
                   <div className="text-center">
                     <div className="text-3xl font-bold text-purple-600">
@@ -500,7 +505,7 @@ function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div 
@@ -513,10 +518,10 @@ function AdminDashboard() {
       )}
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-56'} ${
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 backdrop-blur-md bg-white/70 dark:bg-zinc-900/40 border-r border-white/30 dark:border-white/10 shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-56'} ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
-        <div className="flex items-center justify-between p-3 border-b border-gray-200">
+        <div className="flex items-center justify-between p-3 border-b border-white/30 dark:border-white/10">
           {!sidebarCollapsed && (
             <h2 className="text-base font-bold font-kanit text-orange-800">ระบบจัดการ</h2>
           )}
@@ -549,7 +554,7 @@ function AdminDashboard() {
         <nav className="p-3 space-y-5">
           {menuItems.map((group) => (
             <div key={group.group}>
-              <h3 className={`text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 font-sarabun ${sidebarCollapsed ? 'hidden' : ''}`}>
+              <h3 className={`text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-2 font-sarabun ${sidebarCollapsed ? 'hidden' : ''}`}>
                 {group.group}
               </h3>
               <div className="space-y-1">
@@ -561,11 +566,12 @@ function AdminDashboard() {
                       onClick={() => {
                         setActiveTab(item.id);
                         setSidebarOpen(false);
+                        toast({ title: `เปิดเมนู: ${item.label}`, description: 'ดำเนินการเรียบร้อย', duration: 2500 });
                       }}
-                      className={`w-full flex ${sidebarCollapsed ? 'justify-center' : 'items-center'} ${sidebarCollapsed ? 'gap-0 px-0' : 'gap-2 px-2'} py-2 text-sm font-medium rounded-lg transition-colors font-sarabun ${
+                      className={`w-full flex ${sidebarCollapsed ? 'justify-center' : 'items-center'} ${sidebarCollapsed ? 'gap-0 px-0' : 'gap-2 px-2'} py-2 text-sm font-medium rounded-lg transition-all font-sarabun ${
                         activeTab === item.id
-                          ? 'bg-orange-100 text-orange-700 border-r-2 border-orange-500'
-                          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                          ? 'ring-1 ring-orange-400/50 bg-white/30 dark:bg-white/10 text-orange-700 dark:text-orange-300'
+                          : 'text-gray-700 dark:text-gray-200 hover:bg-white/20 hover:dark:bg-white/10 hover:text-gray-900 dark:hover:text-white'
                       }`}
                     >
                       <Icon className="h-4 w-4" />
@@ -582,7 +588,7 @@ function AdminDashboard() {
       {/* Main content */}
       <div className={`transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-56'}`}>
         {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200">
+        <header className="backdrop-blur-md bg-white/70 dark:bg-zinc-900/40 shadow-sm border-b border-white/30 dark:border-white/10">
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-4">
               <Button
@@ -614,7 +620,9 @@ function AdminDashboard() {
 
         {/* Main content area */}
         <main className="px-4 pt-2 pb-4 md:pt-2 md:pb-6">
-          {renderContent()}
+          <div className="backdrop-blur-md bg-white/60 dark:bg-zinc-900/30 border border-white/30 dark:border-white/10 rounded-xl shadow-lg p-4 md:p-6">
+            {renderContent()}
+          </div>
         </main>
       </div>
     </div>

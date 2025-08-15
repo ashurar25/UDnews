@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { GlassCard, GlassCardHeader } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -418,157 +419,158 @@ export default function NewsletterManager() {
       </div>
 
       {/* Subscribers Table */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Search className="h-5 w-5 text-gray-500" />
-              <Input
-                placeholder="ค้นหาสมาชิก..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-80"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Filter className="h-5 w-5 text-gray-500" />
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="สถานะ" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">ทั้งหมด</SelectItem>
-                  <SelectItem value="active">ใช้งาน</SelectItem>
-                  <SelectItem value="unsubscribed">ยกเลิกการสมัคร</SelectItem>
-                  <SelectItem value="bounced">ส่งไม่สำเร็จ</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ชื่อ</TableHead>
-                <TableHead>อีเมล</TableHead>
-                <TableHead>สถานะ</TableHead>
-                <TableHead>วันที่สมัคร</TableHead>
-                <TableHead>อีเมลล่าสุด</TableHead>
-                <TableHead>อัตราการเปิด</TableHead>
-                <TableHead>อัตราการคลิก</TableHead>
-                <TableHead>การจัดการ</TableHead>
+      <GlassCard
+        header={
+          <GlassCardHeader
+            title={
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Search className="h-5 w-5 text-gray-500" />
+                  <Input
+                    placeholder="ค้นหาสมาชิก..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-80"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Filter className="h-5 w-5 text-gray-500" />
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="สถานะ" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">ทั้งหมด</SelectItem>
+                      <SelectItem value="active">ใช้งาน</SelectItem>
+                      <SelectItem value="unsubscribed">ยกเลิกการสมัคร</SelectItem>
+                      <SelectItem value="bounced">ส่งไม่สำเร็จ</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            }
+          />
+        }
+      >
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ชื่อ</TableHead>
+              <TableHead>อีเมล</TableHead>
+              <TableHead>สถานะ</TableHead>
+              <TableHead>วันที่สมัคร</TableHead>
+              <TableHead>อีเมลล่าสุด</TableHead>
+              <TableHead>อัตราการเปิด</TableHead>
+              <TableHead>อัตราการคลิก</TableHead>
+              <TableHead>การจัดการ</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredSubscribers.map((subscriber) => (
+              <TableRow key={subscriber.id}>
+                <TableCell className="font-medium">{subscriber.name}</TableCell>
+                <TableCell>{subscriber.email}</TableCell>
+                <TableCell>{getStatusBadge(subscriber.status)}</TableCell>
+                <TableCell>{subscriber.subscribedAt}</TableCell>
+                <TableCell>{subscriber.lastEmailSent || '-'}</TableCell>
+                <TableCell>
+                  <span className={`font-medium ${subscriber.openRate > 70 ? 'text-green-600' : subscriber.openRate > 50 ? 'text-yellow-600' : 'text-red-600'}`}>
+                    {subscriber.openRate}%
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <span className={`font-medium ${subscriber.clickRate > 10 ? 'text-green-600' : subscriber.clickRate > 5 ? 'text-yellow-600' : 'text-red-600'}`}>
+                    {subscriber.clickRate}%
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>ยืนยันการลบสมาชิก</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          คุณต้องการลบสมาชิก {subscriber.name} หรือไม่? การดำเนินการนี้ไม่สามารถยกเลิกได้
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteSubscriber(subscriber.id)}>
+                          ลบสมาชิก
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredSubscribers.map((subscriber) => (
-                <TableRow key={subscriber.id}>
-                  <TableCell className="font-medium">{subscriber.name}</TableCell>
-                  <TableCell>{subscriber.email}</TableCell>
-                  <TableCell>{getStatusBadge(subscriber.status)}</TableCell>
-                  <TableCell>{subscriber.subscribedAt}</TableCell>
-                  <TableCell>{subscriber.lastEmailSent || '-'}</TableCell>
-                  <TableCell>
-                    <span className={`font-medium ${subscriber.openRate > 70 ? 'text-green-600' : subscriber.openRate > 50 ? 'text-yellow-600' : 'text-red-600'}`}>
-                      {subscriber.openRate}%
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span className={`font-medium ${subscriber.clickRate > 10 ? 'text-green-600' : subscriber.clickRate > 5 ? 'text-yellow-600' : 'text-red-600'}`}>
-                      {subscriber.clickRate}%
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>ยืนยันการลบสมาชิก</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            คุณต้องการลบสมาชิก {subscriber.name} หรือไม่? การดำเนินการนี้ไม่สามารถยกเลิกได้
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDeleteSubscriber(subscriber.id)}>
-                            ลบสมาชิก
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            ))}
+          </TableBody>
+        </Table>
+      </GlassCard>
 
       {/* Newsletters Table */}
-      <Card>
-        <CardHeader>
-          <h3 className="text-lg font-semibold">จดหมายข่าว</h3>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>หัวข้อ</TableHead>
-                <TableHead>สถานะ</TableHead>
-                <TableHead>จำนวนผู้รับ</TableHead>
-                <TableHead>อัตราการเปิด</TableHead>
-                <TableHead>อัตราการคลิก</TableHead>
-                <TableHead>วันที่ส่ง/กำหนดส่ง</TableHead>
-                <TableHead>การจัดการ</TableHead>
+      <GlassCard
+        header={<GlassCardHeader title={<h3 className="text-lg font-semibold">จดหมายข่าว</h3>} />}
+      >
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>หัวข้อ</TableHead>
+              <TableHead>สถานะ</TableHead>
+              <TableHead>จำนวนผู้รับ</TableHead>
+              <TableHead>อัตราการเปิด</TableHead>
+              <TableHead>อัตราการคลิก</TableHead>
+              <TableHead>วันที่ส่ง/กำหนดส่ง</TableHead>
+              <TableHead>การจัดการ</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {newsletters.map((newsletter) => (
+              <TableRow key={newsletter.id}>
+                <TableCell className="font-medium">{newsletter.subject}</TableCell>
+                <TableCell>{getNewsletterStatusBadge(newsletter.status)}</TableCell>
+                <TableCell>{newsletter.recipientCount.toLocaleString()}</TableCell>
+                <TableCell>
+                  {newsletter.status === 'sent' ? (
+                    <span className="font-medium text-green-600">
+                      {Math.round((newsletter.openCount / newsletter.recipientCount) * 100)}%
+                    </span>
+                  ) : (
+                    '-'
+                  )}
+                </TableCell>
+                <TableCell>
+                  {newsletter.status === 'sent' ? (
+                    <span className="font-medium text-blue-600">
+                      {Math.round((newsletter.clickCount / newsletter.recipientCount) * 100)}%
+                    </span>
+                  ) : (
+                    '-'
+                  )}
+                </TableCell>
+                <TableCell>
+                  {newsletter.status === 'sent' 
+                    ? newsletter.sentAt 
+                    : newsletter.status === 'scheduled' 
+                      ? newsletter.scheduledAt 
+                      : '-'
+                  }
+                </TableCell>
+                <TableCell>
+                  <Button variant="outline" size="sm">
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {newsletters.map((newsletter) => (
-                <TableRow key={newsletter.id}>
-                  <TableCell className="font-medium">{newsletter.subject}</TableCell>
-                  <TableCell>{getNewsletterStatusBadge(newsletter.status)}</TableCell>
-                  <TableCell>{newsletter.recipientCount.toLocaleString()}</TableCell>
-                  <TableCell>
-                    {newsletter.status === 'sent' ? (
-                      <span className="font-medium text-green-600">
-                        {Math.round((newsletter.openCount / newsletter.recipientCount) * 100)}%
-                      </span>
-                    ) : (
-                      '-'
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {newsletter.status === 'sent' ? (
-                      <span className="font-medium text-blue-600">
-                        {Math.round((newsletter.clickCount / newsletter.recipientCount) * 100)}%
-                      </span>
-                    ) : (
-                      '-'
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {newsletter.status === 'sent' 
-                      ? newsletter.sentAt 
-                      : newsletter.status === 'scheduled' 
-                        ? newsletter.scheduledAt 
-                        : '-'
-                    }
-                  </TableCell>
-                  <TableCell>
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            ))}
+          </TableBody>
+        </Table>
+      </GlassCard>
+
     </div>
   );
-} 
+}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { GlassCard, GlassCardHeader } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -377,128 +378,131 @@ export default function MediaManager() {
       </div>
 
       {/* Search and Filter */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Search className="h-5 w-5 text-gray-500" />
-              <Input
-                placeholder="ค้นหาไฟล์..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-80"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Filter className="h-5 w-5 text-gray-500" />
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="ประเภทไฟล์" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">ทั้งหมด</SelectItem>
-                  <SelectItem value="image">รูปภาพ</SelectItem>
-                  <SelectItem value="video">วิดีโอ</SelectItem>
-                  <SelectItem value="audio">เสียง</SelectItem>
-                  <SelectItem value="document">เอกสาร</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredFiles.map((file) => (
-              <Card key={file.id} className="relative group">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedFiles.includes(file.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedFiles([...selectedFiles, file.id]);
-                        } else {
-                          setSelectedFiles(selectedFiles.filter(id => id !== file.id));
-                        }
-                      }}
+      <GlassCard
+        header={
+          <GlassCardHeader
+            title={
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Search className="h-5 w-5 text-gray-500" />
+                  <Input
+                    placeholder="ค้นหาไฟล์..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-80"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Filter className="h-5 w-5 text-gray-500" />
+                  <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="ประเภทไฟล์" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">ทั้งหมด</SelectItem>
+                      <SelectItem value="image">รูปภาพ</SelectItem>
+                      <SelectItem value="video">วิดีโอ</SelectItem>
+                      <SelectItem value="audio">เสียง</SelectItem>
+                      <SelectItem value="document">เอกสาร</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            }
+          />
+        }
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredFiles.map((file) => (
+            <Card key={file.id} className="relative group">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedFiles.includes(file.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedFiles([...selectedFiles, file.id]);
+                      } else {
+                        setSelectedFiles(selectedFiles.filter(id => id !== file.id));
+                      }
+                    }}
+                  />
+                  {getTypeBadge(file.type)}
+                </div>
+                
+                <div className="text-center mb-3">
+                  {file.thumbnail ? (
+                    <img 
+                      src={file.thumbnail} 
+                      alt={file.altText || file.name}
+                      className="w-full h-24 object-cover rounded mx-auto"
                     />
-                    {getTypeBadge(file.type)}
-                  </div>
-                  
-                  <div className="text-center mb-3">
-                    {file.thumbnail ? (
-                      <img 
-                        src={file.thumbnail} 
-                        alt={file.altText || file.name}
-                        className="w-full h-24 object-cover rounded mx-auto"
-                      />
-                    ) : (
-                      <div className="w-full h-24 bg-gray-100 rounded flex items-center justify-center">
-                        {getFileIcon(file.type)}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-sm truncate" title={file.name}>
-                      {file.name}
-                    </h4>
-                    <p className="text-xs text-gray-500">
-                      {formatFileSize(file.size)}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      อัปโหลดโดย: {file.uploadedBy}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {file.uploadedAt}
-                    </p>
-                  </div>
-                  
-                  <div className="flex items-center gap-1 mt-3">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <Eye className="h-3 w-3 mr-1" />
-                      ดู
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <Download className="h-3 w-3 mr-1" />
-                      ดาวน์โหลด
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => copyFileUrl(file.url)}
-                    >
-                      <Copy className="h-3 w-3" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>ยืนยันการลบไฟล์</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            คุณต้องการลบไฟล์ {file.name} หรือไม่? การดำเนินการนี้ไม่สามารถยกเลิกได้
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDeleteFile(file.id)}>
-                            ลบไฟล์
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+                  ) : (
+                    <div className="w-full h-24 bg-gray-100 rounded flex items-center justify-center">
+                      {getFileIcon(file.type)}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm truncate" title={file.name}>
+                    {file.name}
+                  </h4>
+                  <p className="text-xs text-gray-500">
+                    {formatFileSize(file.size)}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    อัปโหลดโดย: {file.uploadedBy}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {file.uploadedAt}
+                  </p>
+                </div>
+                
+                <div className="flex items-center gap-1 mt-3">
+                  <Button variant="outline" size="sm" className="flex-1">
+                    <Eye className="h-3 w-3 mr-1" />
+                    ดู
+                  </Button>
+                  <Button variant="outline" size="sm" className="flex-1">
+                    <Download className="h-3 w-3 mr-1" />
+                    ดาวน์โหลด
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => copyFileUrl(file.url)}
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>ยืนยันการลบไฟล์</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          คุณต้องการลบไฟล์ {file.name} หรือไม่? การดำเนินการนี้ไม่สามารถยกเลิกได้
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteFile(file.id)}>
+                          ลบไฟล์
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </GlassCard>
     </div>
   );
-} 
+}
