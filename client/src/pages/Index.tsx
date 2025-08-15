@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Clock, Calendar } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getWeatherForecast } from "@/lib/weather-api";
+import { getWeatherForecast, getHourlyForecast, type HourlyWeather } from "@/lib/weather-api";
 import heroImage from "@/assets/news-hero.jpg";
 import localImage from "@/assets/news-local.jpg";
 import politicsImage from "@/assets/news-politics.jpg";
@@ -77,6 +77,8 @@ const Index = () => {
   const [selectedDay, setSelectedDay] = useState<'yesterday' | 'today' | 'tomorrow'>('today');
   const [weatherData, setWeatherData] = useState<ForecastData | null>(null);
   const [isLoadingWeather, setIsLoadingWeather] = useState(true);
+  const [hourly, setHourly] = useState<HourlyWeather[] | null>(null);
+  const [isLoadingHourly, setIsLoadingHourly] = useState(true);
 
   // Load weather data when component mounts
   useEffect(() => {
@@ -97,6 +99,25 @@ const Index = () => {
     // Refresh weather data every 30 minutes
     const interval = setInterval(loadWeather, 30 * 60 * 1000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Load hourly forecast (next 24h in 3-hour steps)
+  useEffect(() => {
+    let mounted = true;
+    const loadHourly = async () => {
+      try {
+        setIsLoadingHourly(true);
+        const data = await getHourlyForecast(24);
+        if (mounted) setHourly(data);
+      } catch (e) {
+        // ignore, API util logs and has fallback
+      } finally {
+        if (mounted) setIsLoadingHourly(false);
+      }
+    };
+    loadHourly();
+    const id = setInterval(loadHourly, 30 * 60 * 1000);
+    return () => { mounted = false; clearInterval(id); };
   }, []);
 
   const currentWeather = weatherData?.[selectedDay] || {
@@ -234,9 +255,39 @@ const Index = () => {
             {/* Lead story */}
             <div className="lg:col-span-7">
               {featuredNews[0] && (
-                <div className="group rounded-xl overflow-hidden shadow-news border border-orange-100 hover:shadow-xl transition-shadow">
-                  <NewsCard {...featuredNews[0]} size="large" variant="overlay" />
-                </div>
+                <>
+                  <div className="group rounded-xl overflow-hidden shadow-news border border-orange-100 hover:shadow-xl transition-shadow">
+                    <NewsCard {...featuredNews[0]} size="large" variant="overlay" />
+                  </div>
+
+                  {/* Hourly Forecast (next 24h) */}
+                  <div className="bg-white/30 backdrop-blur-sm rounded-lg p-3 mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">🕒</span>
+                        <h4 className="text-sm font-bold font-kanit text-foreground">พยากรณ์รายชั่วโมง (24 ชม.)</h4>
+                      </div>
+                      {isLoadingHourly && (
+                        <span className="text-xs font-sarabun text-muted-foreground">กำลังโหลด...</span>
+                      )}
+                    </div>
+                    <div className="overflow-x-auto">
+                      <div className="flex gap-3 min-w-max">
+                        {(hourly || []).map((h, idx) => (
+                          <div key={idx} className="flex flex-col items-center bg-white/40 rounded-lg px-2 py-2 w-16">
+                            <span className="text-[10px] font-sarabun text-muted-foreground">{h.time}</span>
+                            <span className="text-lg leading-none my-1">{h.icon}</span>
+                            <span className="text-sm font-kanit text-orange-600">{h.temp}°</span>
+                            <span className="text-[10px] font-sarabun text-blue-600">{h.rainChance}%</span>
+                          </div>
+                        ))}
+                        {!hourly && !isLoadingHourly && (
+                          <div className="text-xs font-sarabun text-muted-foreground">ไม่มีข้อมูลรายชั่วโมง</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
 

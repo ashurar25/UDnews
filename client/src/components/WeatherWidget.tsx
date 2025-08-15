@@ -1,10 +1,18 @@
 import { useState, useEffect } from "react";
-import { Cloud, Sun, CloudRain } from "lucide-react";
+import { getCurrentWeather } from "@/lib/weather-api";
 
 interface WeatherData {
   temp: number;
-  description: string;
+  high: number;
+  low: number;
+  condition: string;
+  conditionThai: string;
+  icon: string;
   humidity: number;
+  wind: number;
+  city: string;
+  rainChance: number;
+  rainStatus: string;
 }
 
 const WeatherWidget = () => {
@@ -12,44 +20,44 @@ const WeatherWidget = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simple weather widget for Udon Thani
-    // For now, using mock data since we don't have WEATHER_API_KEY
-    const mockWeather: WeatherData = {
-      temp: 32,
-      description: "แจ่มใส",
-      humidity: 65
+    let mounted = true;
+    const load = async () => {
+      try {
+        setLoading(true);
+        const data = await getCurrentWeather();
+        if (mounted) setWeather(data as WeatherData);
+      } catch (e) {
+        // swallow: getCurrentWeather already logs and returns fallback
+      } finally {
+        if (mounted) setLoading(false);
+      }
     };
-    
-    setTimeout(() => {
-      setWeather(mockWeather);
-      setLoading(false);
-    }, 1000);
+    load();
+
+    // refresh every 30 minutes
+    const id = setInterval(load, 30 * 60 * 1000);
+    return () => {
+      mounted = false;
+      clearInterval(id);
+    };
   }, []);
 
   if (loading) {
     return (
       <div className="flex items-center text-sm text-white/80">
-        <div className="animate-spin mr-2">☀️</div>
+        <div className="animate-spin mr-2">🌡️</div>
         <span>กำลังโหลด...</span>
       </div>
     );
   }
 
-  if (!weather) {
-    return null;
-  }
-
-  const getWeatherIcon = () => {
-    if (weather.description.includes('ฝน')) return <CloudRain className="h-4 w-4" />;
-    if (weather.description.includes('เมฆ')) return <Cloud className="h-4 w-4" />;
-    return <Sun className="h-4 w-4" />;
-  };
+  if (!weather) return null;
 
   return (
     <div className="flex items-center text-sm text-white/90 bg-white/10 rounded-lg px-3 py-1">
-      {getWeatherIcon()}
-      <span className="ml-2">
-        อุดรธานี {weather.temp}°C | {weather.description}
+      <span className="mr-2 text-base leading-none">{weather.icon}</span>
+      <span className="ml-1">
+        {weather.city} {weather.temp}°C | {weather.conditionThai}
       </span>
     </div>
   );

@@ -438,4 +438,5 @@ export default function NewsDetail() {
       <Footer />
     </div>
   </AppErrorBoundary>
+);
 }

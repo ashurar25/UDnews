@@ -250,3 +250,72 @@ export async function getWeatherForecast(): Promise<ForecastData> {
     };
   }
 }
+
+// ---------- Hourly Forecast (next ~24h, 3-hour steps from /forecast) ----------
+export interface HourlyWeather {
+  time: string; // e.g. 09:00
+  hour: number; // 0-23 local hour
+  temp: number;
+  icon: string;
+  conditionThai: string;
+  rainChance: number;
+  humidity: number;
+  wind: number; // km/h
+}
+
+export async function getHourlyForecast(limitHours: number = 24): Promise<HourlyWeather[]> {
+  try {
+    const response = await axios.get(`${BASE_URL}/forecast`, {
+      params: {
+        q: `${CITY},${COUNTRY_CODE}`,
+        appid: API_KEY,
+        units: 'metric',
+        lang: 'en'
+      }
+    });
+
+    const list: any[] = response.data.list || [];
+    const maxItems = Math.max(1, Math.ceil(limitHours / 3));
+    const sliced = list.slice(0, maxItems);
+
+    return sliced.map((item: any) => {
+      const dt = new Date(item.dt * 1000);
+      const hour = dt.getHours();
+      const description = item.weather?.[0]?.description || '';
+      const { thai, icon } = getWeatherCondition(description);
+      const humidity = item.main?.humidity ?? 0;
+      const wind = Math.round((item.wind?.speed || 0) * 3.6);
+      const temp = Math.round(item.main?.temp ?? item.temp?.day ?? 0);
+      const rain = getRainProbability(description, humidity);
+
+      const hh = String(hour).padStart(2, '0');
+      return {
+        time: `${hh}:00`,
+        hour,
+        temp,
+        icon,
+        conditionThai: thai,
+        rainChance: rain.chance,
+        humidity,
+        wind,
+      } as HourlyWeather;
+    });
+  } catch (error) {
+    console.error('Error fetching hourly forecast:', error);
+    const now = new Date();
+    return Array.from({ length: 8 }).map((_, i) => {
+      const hour = (now.getHours() + i * 3) % 24;
+      const hh = String(hour).padStart(2, '0');
+      return {
+        time: `${hh}:00`,
+        hour,
+        temp: 31 - (i % 3),
+        icon: '🌤️',
+        conditionThai: 'เมฆบางส่วน',
+        rainChance: 20 + (i % 4) * 5,
+        humidity: 60 + (i % 3) * 5,
+        wind: 10 + (i % 3) * 2,
+      } as HourlyWeather;
+    });
+  }
+}
