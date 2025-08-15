@@ -310,8 +310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch {}
   }, 60 * 1000);
-    next();
-  });
+  
 
   function summarizeBody(body: any) {
     try {
