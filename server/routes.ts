@@ -81,6 +81,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/admin', adminLimiter);
   // Mount database management API routes
   app.use('/api/database', databaseRoutes);
+  // Mount user management API routes
+  app.use('/api/users', userRoutes);
 
   // -----------------------------
   // Public: Comments APIs

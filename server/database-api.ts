@@ -7,6 +7,7 @@ import path from 'path';
 import os from 'os';
 import { exec } from 'child_process';
 import multer from 'multer';
+import { newsArticles, rssFeeds, sponsorBanners, users } from '@shared/schema';
 
 const upload = multer({
   storage: multer.diskStorage({
@@ -107,6 +108,29 @@ router.get('/stats', async (req: Request, res: Response) => {
     const sizeRows = rowsOf(sizeResult);
     const databaseSize = (sizeRows[0]?.size as string) || '0 MB';
 
+    // Specific entity counts for Admin Overview
+    let newsCount = 0;
+    let rssFeedsCount = 0;
+    let sponsorBannersCount = 0;
+    let totalUsers = 0;
+
+    try {
+      const newsCnt = await db.execute(sql`SELECT COUNT(*) as count FROM ${newsArticles}`);
+      newsCount = parseInt((rowsOf(newsCnt)[0]?.count as string) || '0');
+    } catch {}
+    try {
+      const rssCnt = await db.execute(sql`SELECT COUNT(*) as count FROM ${rssFeeds}`);
+      rssFeedsCount = parseInt((rowsOf(rssCnt)[0]?.count as string) || '0');
+    } catch {}
+    try {
+      const sbCnt = await db.execute(sql`SELECT COUNT(*) as count FROM ${sponsorBanners}`);
+      sponsorBannersCount = parseInt((rowsOf(sbCnt)[0]?.count as string) || '0');
+    } catch {}
+    try {
+      const usrCnt = await db.execute(sql`SELECT COUNT(*) as count FROM ${users}`);
+      totalUsers = parseInt((rowsOf(usrCnt)[0]?.count as string) || '0');
+    } catch {}
+
     // Get performance metrics (mock data for now)
     const performance = {
       queryTime: Math.floor(Math.random() * 50) + 10, // 10-60ms
@@ -118,6 +142,10 @@ router.get('/stats', async (req: Request, res: Response) => {
       totalTables,
       totalRecords,
       databaseSize,
+      newsCount,
+      rssFeedsCount,
+      sponsorBannersCount,
+      totalUsers,
       lastBackup: null, // TODO: Implement backup tracking
       connectionStatus: 'connected' as const,
       performance

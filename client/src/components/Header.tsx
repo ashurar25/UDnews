@@ -148,6 +148,15 @@ const Header = () => {
           </div>
         </div>
 
+        {/* Backdrop Overlay for mobile/desktop to close menu when clicking outside */}
+        {isMenuOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black/30 md:bg-transparent"
+            onClick={() => setIsMenuOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+
         {/* Hamburger Menu Dropdown */}
         <div ref={menuRef} className={`absolute top-full right-0 mt-2 w-80 max-h-96 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-orange-200 dark:border-gray-700 z-50 overflow-y-auto ${isMenuOpen ? 'block' : 'hidden'}`}>
           <div className="p-4 space-y-4">

@@ -32,13 +32,28 @@ const TTSReader: React.FC<TTSReaderProps> = ({ title, summary, htmlContent, news
   const [paused, setPaused] = useState<boolean>(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
+  // Detect small screens (mobile) once on mount
+  const isMobile = useMemo(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return false;
+    return window.matchMedia('(max-width: 640px)').matches; // tailwind 'sm'
+  }, []);
+  const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
+
   const textToRead = useMemo(() => {
     const parts =
       readScope === 'summary'
         ? [title, summary]
         : [title, summary, stripHtml(htmlContent)];
-    return (parts.filter(Boolean) as string[]).join('\n\n');
-  }, [title, summary, htmlContent, readScope]);
+    let text = (parts.filter(Boolean) as string[]).join('\n\n');
+    // Limit overly long reads on mobile to improve UX
+    if (isMobile && readScope === 'full') {
+      const MAX_CHARS_MOBILE = 2000; // ~few minutes of audio
+      if (text.length > MAX_CHARS_MOBILE) {
+        text = text.slice(0, MAX_CHARS_MOBILE).trimEnd() + '...';
+      }
+    }
+    return text;
+  }, [title, summary, htmlContent, readScope, isMobile]);
 
   // Load voices (some browsers load async)
   useEffect(() => {
@@ -82,8 +97,11 @@ const TTSReader: React.FC<TTSReaderProps> = ({ title, summary, htmlContent, news
     const savedScope = localStorage.getItem('tts.scope') as 'summary' | 'full' | null;
     if (savedScope === 'summary' || savedScope === 'full') {
       setReadScope(savedScope);
+    } else if (isMobile) {
+      // Default to summary on small screens when no prior preference
+      setReadScope('summary');
     }
-  }, []);
+  }, [isMobile]);
 
   // Persist preferences when changed
   useEffect(() => {
@@ -149,7 +167,7 @@ const TTSReader: React.FC<TTSReaderProps> = ({ title, summary, htmlContent, news
 
   return (
     <Card>
-      <CardContent className="p-4 space-y-3">
+      <CardContent className="p-4 space-y-3 max-h-[70vh] overflow-y-auto sm:max-h-none sm:overflow-visible">
         <div className="flex items-center gap-2">
           <Volume2 className="h-5 w-5 text-primary" />
           <div className="font-kanit font-semibold">ฟังข่าวนี้</div>
@@ -162,7 +180,7 @@ const TTSReader: React.FC<TTSReaderProps> = ({ title, summary, htmlContent, news
             </Button>
           ) : (
             <>
-              <Button variant="outline" onClick={togglePause} className="gap-2" aria-label={paused ? 'เล่นต่อ' : 'พักชั่วคราว'} title={paused ? 'เล่นต่อ' : 'พักชั่วคราว'}>
+              <Button variant="outline" onClick={togglePause} className="gap-2" aria-label={paused ? 'เล่นต่อ' : 'พักชั่วคราว'} title={paused ? 'เล่นต่อ' : 'พัก'}>
                 <Pause className="h-4 w-4" /> {paused ? 'เล่นต่อ' : 'พัก'}
               </Button>
               <Button variant="destructive" onClick={stopSpeaking} className="gap-2" aria-label="หยุดอ่าน" title="หยุดอ่าน">
@@ -171,11 +189,30 @@ const TTSReader: React.FC<TTSReaderProps> = ({ title, summary, htmlContent, news
             </>
           )}
 
-          <div className="flex items-center gap-2 ml-2">
+          {isMobile && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-auto"
+              onClick={() => setShowAdvanced((s) => !s)}
+              aria-expanded={showAdvanced}
+              aria-controls="tts-advanced"
+            >
+              {showAdvanced ? 'ซ่อนการตั้งค่า' : 'ตั้งค่าเพิ่มเติม'}
+            </Button>
+          )}
+        </div>
+
+        {/* Advanced controls */}
+        <div
+          id="tts-advanced"
+          className={`${isMobile ? (showAdvanced ? 'block' : 'hidden') : 'block'} border-t pt-3 mt-2`}
+        >
+          <div className="flex flex-wrap items-center gap-2">
             <Label htmlFor="voice" className="font-sarabun text-sm">เสียง</Label>
             <select
               id="voice"
-              className="border rounded px-2 py-1 text-sm font-sarabun"
+              className="border rounded px-2 py-1 text-sm font-sarabun max-w-[60vw] sm:max-w-none"
               value={selectedVoice}
               onChange={(e) => setSelectedVoice(e.target.value)}
               aria-label="เลือกเสียง"
