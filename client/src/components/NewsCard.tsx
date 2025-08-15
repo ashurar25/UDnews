@@ -101,7 +101,9 @@ const NewsCard = ({
                 <p className={`mt-2 text-white/90 font-sarabun ${size === 'large' ? 'text-sm' : 'text-xs'} line-clamp-2`}>{summary}</p>
                 <div className="mt-3 flex items-center justify-between text-[11px] text-white/80 font-sarabun">
                   <div className="flex items-center gap-2"><Clock className="h-3 w-3" /><span>{time}</span></div>
-                  <div className="flex items-center gap-2"><Eye className="h-3 w-3" /><span>{views}</span></div>
+                  {views && (
+                    <div className="flex items-center gap-2"><Eye className="h-3 w-3" /><span>{views}</span></div>
+                  )}
                 </div>
               </div>
             </>
@@ -135,7 +137,9 @@ const NewsCard = ({
             </p>
             <div className="flex items-center justify-between text-xs text-muted-foreground font-sarabun">
               <div className="flex items-center gap-2"><Clock className="h-3 w-3" /><span>{time}</span></div>
-              <div className="flex items-center gap-2"><Eye className="h-3 w-3" /><span>{views}</span></div>
+              {views && (
+                <div className="flex items-center gap-2"><Eye className="h-3 w-3" /><span>{views}</span></div>
+              )}
             </div>
           </CardContent>
         </>

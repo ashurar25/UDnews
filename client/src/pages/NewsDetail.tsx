@@ -17,6 +17,7 @@ import NewsRating from "@/components/NewsRating";
 import TTSReader from "@/components/TTSReader";
 import AppErrorBoundary from "@/components/AppErrorBoundary";
 import { getHourlyForecastHourly, type HourlyWeather } from "@/lib/weather-api";
+import { api } from "@/lib/api";
 
 interface NewsItem {
   id: number;
@@ -51,9 +52,7 @@ export default function NewsDetail() {
   const { data: news, isLoading, error } = useQuery({
     queryKey: ['/api/news', id],
     queryFn: async () => {
-      const response = await fetch(`/api/news/${id}`);
-      if (!response.ok) throw new Error('Failed to fetch news');
-      const data = await response.json();
+      const data = await api.get(`/api/news/${id}`, { auth: false });
       // Ensure description is available for meta tags, fallback to content
       if (!data.description && data.content) {
         data.description = data.content.substring(0, 160) + '...';
@@ -87,9 +86,7 @@ export default function NewsDetail() {
   const { data: relatedNews } = useQuery({
     queryKey: ['/api/news', news?.category], // Include category in query key
     queryFn: async () => {
-      const response = await fetch('/api/news');
-      if (!response.ok) throw new Error('Failed to fetch news');
-      const allNews = await response.json();
+      const allNews = await api.get('/api/news', { auth: false });
       return allNews
         .filter((item: NewsItem) => item.id !== parseInt(id || '0') && item.category === news?.category)
         .sort((a: NewsItem, b: NewsItem) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -109,12 +106,7 @@ export default function NewsDetail() {
       const shouldRecord = !last || (now - Number(last)) > dayMs;
       if (shouldRecord) {
         setViewCount(prevCount => prevCount + 1);
-        fetch(`/api/analytics/view/${news.id}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }).catch(error => {
+        api.post('/api/analytics/track-view', { newsId: news.id }, { auth: false }).catch(error => {
           console.error('Failed to record view:', error);
         });
         localStorage.setItem(key, String(now));

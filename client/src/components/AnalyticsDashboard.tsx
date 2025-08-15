@@ -4,22 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Eye, TrendingUp, Newspaper, Users } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { api } from "@/lib/api";
 
 const AnalyticsDashboard = () => {
   const { data: analytics, isLoading, error } = useQuery({
     queryKey: ["analytics-summary"],
     queryFn: async () => {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch("/api/analytics/summary", {
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!response.ok) {
-        throw new Error("Failed to fetch analytics");
-      }
-      return response.json();
+      return api.get("/api/analytics/summary");
     },
     refetchInterval: 30000, // Refresh every 30 seconds
     retry: 1,

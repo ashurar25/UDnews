@@ -1,4 +1,5 @@
 import React from 'react';
+import { api } from '@/lib/api';
 
 type Props = { children: React.ReactNode };
 
@@ -17,11 +18,7 @@ export default class AppErrorBoundary extends React.Component<Props, State> {
   componentDidCatch(error: any, errorInfo: any) {
     // Optionally send to analytics/logging endpoint
     try {
-      fetch('/api/analytics/event', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'ui.error', payload: { message: String(error), errorInfo } }),
-      });
+      api.post('/api/analytics/event', { name: 'ui.error', payload: { message: String(error), errorInfo } }, { auth: false });
     } catch {}
   }
 

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Palette, Settings, Sun, Moon, Eye, Save, RefreshCw, Droplets, Flower, Crown, PartyPopper, Heart } from "lucide-react";
+import { api } from "@/lib/api";
 
 interface SiteSetting {
   id: number;
@@ -143,15 +144,8 @@ export default function ThemeSettings() {
   // Load settings from API
   const loadSettings = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch("/api/site-settings", {
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-          'Content-Type': 'application/json'
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
+      const data = await api.get("/api/site-settings");
+      if (data) {
         setSettings(data);
         
         // Extract current theme from settings
@@ -218,31 +212,15 @@ export default function ThemeSettings() {
         
         if (existingSetting) {
           // Update existing
-          const token = localStorage.getItem('adminToken');
-          await fetch(`/api/site-settings/${setting.key}`, {
-            method: "PUT",
-            headers: { 
-              "Content-Type": "application/json",
-              'Authorization': token ? `Bearer ${token}` : ''
-            },
-            body: JSON.stringify({ settingValue: setting.value }),
-          });
+          await api.put(`/api/site-settings/${setting.key}`, { settingValue: setting.value });
         } else {
           // Create new
-          const token = localStorage.getItem('adminToken');
-          await fetch("/api/site-settings", {
-            method: "POST",
-            headers: { 
-              "Content-Type": "application/json",
-              'Authorization': token ? `Bearer ${token}` : ''
-            },
-            body: JSON.stringify({
-              settingKey: setting.key,
-              settingValue: setting.value,
-              settingType: setting.key.startsWith("color_") ? "color" : "theme",
-              description: setting.description,
-              isActive: true,
-            }),
+          await api.post("/api/site-settings", {
+            settingKey: setting.key,
+            settingValue: setting.value,
+            settingType: setting.key.startsWith("color_") ? "color" : "theme",
+            description: setting.description,
+            isActive: true,
           });
         }
       }

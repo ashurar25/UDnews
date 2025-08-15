@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, Calendar, Filter, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import NewsCard from "@/components/NewsCard";
+import { api } from "@/lib/api";
 
 interface SearchFilters {
   query: string;
@@ -28,6 +29,8 @@ const AdvancedSearch = ({ onClose }: AdvancedSearchProps) => {
     sortBy: "date"
   });
   const [isSearching, setIsSearching] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
 
   const categories = [
     { value: "all", label: "ทุกหมวดหมู่" },
@@ -45,9 +48,10 @@ const AdvancedSearch = ({ onClose }: AdvancedSearchProps) => {
     { value: "popularity", label: "ความนิยม" },
     { value: "relevance", label: "ความเกี่ยวข้อง" }
   ];
+  const pageSizeOptions = [12, 24, 36, 48];
 
   const { data: searchResults, isLoading } = useQuery({
-    queryKey: ['/api/news/search', filters],
+    queryKey: ['/api/news/search', filters, page, pageSize],
     queryFn: async () => {
       if (!isSearching) return null;
       
@@ -57,15 +61,16 @@ const AdvancedSearch = ({ onClose }: AdvancedSearchProps) => {
       if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
       if (filters.dateTo) params.append('dateTo', filters.dateTo);
       if (filters.sortBy) params.append('sortBy', filters.sortBy);
+      params.append('page', String(page));
+      params.append('pageSize', String(pageSize));
 
-      const response = await fetch(`/api/news/search?${params.toString()}`);
-      if (!response.ok) throw new Error('Search failed');
-      return response.json();
+      return api.get(`/api/news/search?${params.toString()}`, { auth: false });
     },
     enabled: isSearching,
   });
 
   const handleSearch = () => {
+    setPage(1);
     setIsSearching(true);
   };
 
@@ -78,6 +83,7 @@ const AdvancedSearch = ({ onClose }: AdvancedSearchProps) => {
       sortBy: "date"
     });
     setIsSearching(false);
+    setPage(1);
   };
 
   const updateFilter = (key: keyof SearchFilters, value: string) => {
@@ -168,6 +174,23 @@ const AdvancedSearch = ({ onClose }: AdvancedSearchProps) => {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Page Size */}
+            <div className="space-y-2">
+              <label className="text-sm font-semibold font-kanit">จำนวนต่อหน้า</label>
+              <Select value={String(pageSize)} onValueChange={(value) => { setPage(1); setPageSize(parseInt(value)); }}>
+                <SelectTrigger className="font-sarabun">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {pageSizeOptions.map((n) => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n} รายการ
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Action Buttons */}
@@ -190,7 +213,7 @@ const AdvancedSearch = ({ onClose }: AdvancedSearchProps) => {
           <CardHeader>
             <CardTitle className="font-kanit">
               ผลการค้นหา 
-              {searchResults && ` (${searchResults.length} รายการ)`}
+              {searchResults && ` (${searchResults.total} รายการ)`}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -206,9 +229,9 @@ const AdvancedSearch = ({ onClose }: AdvancedSearchProps) => {
                   </div>
                 ))}
               </div>
-            ) : searchResults && searchResults.length > 0 ? (
+            ) : searchResults && searchResults.items && searchResults.items.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {searchResults.map((news: any) => (
+                {searchResults.items.map((news: any) => (
                   <NewsCard
                     key={news.id}
                     id={news.id}
@@ -216,7 +239,7 @@ const AdvancedSearch = ({ onClose }: AdvancedSearchProps) => {
                     summary={news.summary}
                     category={news.category}
                     time={new Date(news.createdAt).toLocaleDateString('th-TH')}
-                    views={`${Math.floor(Math.random() * 3000 + 500)}`}
+                    views={news.viewCount ? news.viewCount.toLocaleString() : undefined}
                     image={news.imageUrl}
                     isBreaking={news.isBreaking}
                   />
@@ -233,6 +256,33 @@ const AdvancedSearch = ({ onClose }: AdvancedSearchProps) => {
                 <p className="text-sm text-muted-foreground font-sarabun mt-1">
                   ลองเปลี่ยนคำค้นหาหรือปรับเงื่อนไขใหม่
                 </p>
+              </div>
+            )}
+
+            {/* Pagination Controls */}
+            {searchResults && searchResults.total > pageSize && (
+              <div className="flex items-center justify-between pt-6">
+                <div className="text-sm text-muted-foreground font-sarabun">
+                  หน้า {page} จาก {Math.ceil(searchResults.total / pageSize)}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1 || isLoading}
+                  >
+                    ก่อนหน้า
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => p + 1)}
+                    disabled={page >= Math.ceil(searchResults.total / pageSize) || isLoading}
+                  >
+                    ถัดไป
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>

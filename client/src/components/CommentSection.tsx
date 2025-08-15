@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MessageSquare, Reply, Flag, Clock, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
 
 interface Comment {
   id: number;
@@ -39,22 +40,14 @@ const CommentSection = ({ newsId }: CommentSectionProps) => {
   const { data: comments, isLoading } = useQuery({
     queryKey: ["comments", newsId],
     queryFn: async (): Promise<Comment[]> => {
-      const response = await fetch(`/api/comments/${newsId}`);
-      if (!response.ok) throw new Error("Failed to fetch comments");
-      return response.json();
+      return api.get<Comment[]>(`/api/comments/${newsId}`, { auth: false });
     },
   });
 
   // Submit comment mutation
   const submitCommentMutation = useMutation({
     mutationFn: async (commentData: any) => {
-      const response = await fetch("/api/comments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(commentData),
-      });
-      if (!response.ok) throw new Error("Failed to submit comment");
-      return response.json();
+      return api.post("/api/comments", commentData, { auth: false });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["comments", newsId] });
@@ -80,11 +73,7 @@ const CommentSection = ({ newsId }: CommentSectionProps) => {
   // Report comment mutation
   const reportCommentMutation = useMutation({
     mutationFn: async (commentId: number) => {
-      const response = await fetch(`/api/comments/${commentId}/report`, {
-        method: "POST",
-      });
-      if (!response.ok) throw new Error("Failed to report comment");
-      return response.json();
+      return api.post(`/api/comments/${commentId}/report`, undefined, { auth: false });
     },
     onSuccess: () => {
       toast({

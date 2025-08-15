@@ -3,8 +3,8 @@ import { ExternalLink, Eye, Phone } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import axios from "axios";
 import type { SponsorBanner } from "@shared/schema";
+import { api } from "@/lib/api";
 
 interface SponsorBannerProps {
   position: "header" | "sidebar" | "footer" | "between_news";
@@ -15,15 +15,14 @@ const SponsorBannerComponent = ({ position, className = "" }: SponsorBannerProps
   const { data: banners = [], isLoading, isError } = useQuery({
     queryKey: ["/api/sponsor-banners", position],
     queryFn: async () => {
-      const response = await axios.get(`/api/sponsor-banners?position=${position}`);
-      const data = response.data;
+      const data = await api.get<SponsorBanner[]>(`/api/sponsor-banners?position=${position}`, { auth: false });
       return Array.isArray(data) ? data as SponsorBanner[] : [];
     },
   });
 
   const handleBannerClick = async (banner: SponsorBanner) => {
     try {
-      await axios.post(`/api/sponsor-banners/${banner.id}/click`);
+      await api.post(`/api/sponsor-banners/${banner.id}/click`, undefined, { auth: false });
       window.open(banner.linkUrl, '_blank', 'noopener,noreferrer');
     } catch (error) {
       console.error('Failed to record click:', error);

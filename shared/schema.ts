@@ -304,3 +304,20 @@ export const insertDonationSchema = createInsertSchema(donations).pick({
 
 export type Donation = typeof donations.$inferSelect;
 export type InsertDonation = typeof donations.$inferInsert;
+
+// Audit Logs Table
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  method: varchar("method", { length: 10 }).notNull(),
+  path: text("path").notNull(),
+  userId: integer("user_id"),
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
+  bodySummary: text("body_summary"),
+  statusCode: integer("status_code"),
+  latencyMs: integer("latency_ms"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = typeof auditLogs.$inferInsert;

@@ -46,6 +46,7 @@ const ThemeSettings = lazy(() => import('@/components/ThemeSettings').catch(() =
 const SystemSettings = lazy(() => import('@/components/SystemSettings').catch(() => ({ default: () => <PlaceholderComponent title="การตั้งค่าระบบ" /> })));
 const DatabaseManager = lazy(() => import('@/components/DatabaseManager').catch(() => ({ default: () => <PlaceholderComponent title="จัดการฐานข้อมูล" /> })));
 const DonationManager = lazy(() => import('@/components/DonationManager').catch(() => ({ default: () => <PlaceholderComponent title="การบริจาค" /> })));
+const AuditLogViewer = lazy(() => import('@/components/AuditLogViewer').catch(() => ({ default: () => <PlaceholderComponent title="บันทึกกิจกรรม" /> })));
 
 // Placeholder component for components that don't exist yet
 const PlaceholderComponent = ({ title }: { title: string }) => (
@@ -236,6 +237,7 @@ const menuItems = [
       { id: 'themes', label: 'ธีมและการแสดงผล', icon: Palette },
       { id: 'settings', label: 'การตั้งค่าระบบ', icon: Settings },
       { id: 'database', label: 'จัดการฐานข้อมูล', icon: Database },
+      { id: 'auditLogs', label: 'บันทึกกิจกรรม', icon: Clock },
     ]
   }
 ];
@@ -461,6 +463,16 @@ function AdminDashboard() {
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">จัดการฐานข้อมูล</h3>
             <Suspense fallback={<LoadingSpinner />}>
               <DatabaseManager />
+            </Suspense>
+          </div>
+        );
+
+      case 'auditLogs':
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">บันทึกกิจกรรม</h3>
+            <Suspense fallback={<LoadingSpinner />}>
+              <AuditLogViewer />
             </Suspense>
           </div>
         );

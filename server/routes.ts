@@ -24,7 +24,8 @@ import {
   comments,
   newsRatings,
   rssProcessingHistory,
-  donations
+  donations,
+  auditLogs
 } from "@shared/schema";
 import { eq, desc, and, gte, lte, sql, asc } from "drizzle-orm";
 import { rssService } from "./rss-service";
@@ -63,6 +64,14 @@ const generalLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Specific limiter for public news search
+const searchLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 120, // limit each IP to 120 searches per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 50, // limit each IP to 50 API requests per windowMs
@@ -75,14 +84,97 @@ const adminLimiter = rateLimit({
   message: 'Too many admin requests from this IP, please try again later.',
 });
 
+// Specific limiter for view tracking to prevent abuse
+const viewTrackLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 60, // limit each IP to 60 view events per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Apply rate limiting
   app.use('/api/', apiLimiter);
   app.use('/admin', adminLimiter);
+
+  // Audit logging to DB for non-GET API requests
+  app.use((req, res, next) => {
+    if (!(req.path.startsWith('/api/') && req.method !== 'GET')) return next();
+    const start = Date.now();
+    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || '0.0.0.0';
+    const ua = String(req.headers['user-agent'] || '');
+    const bodySummary = summarizeBody(req.body);
+    res.on('finish', async () => {
+      try {
+        const userId = (req as any)?.user?.id ?? null;
+        const latency = Date.now() - start;
+        await db.insert(auditLogs).values({
+          method: req.method,
+          path: req.path,
+          userId: userId as any,
+          ipAddress: ip,
+          userAgent: ua,
+          bodySummary: bodySummary ? JSON.stringify(bodySummary) : null,
+          statusCode: res.statusCode,
+          latencyMs: latency as any,
+        } as any);
+      } catch (e) {
+        // best-effort only
+      }
+    });
+    next();
+  });
+
+  function summarizeBody(body: any) {
+    try {
+      if (!body || typeof body !== 'object') return null;
+      const clone: any = Array.isArray(body) ? [] : {};
+      const keys = Object.keys(body).slice(0, 20);
+      for (const k of keys) {
+        if (/(password|token|secret|authorization|auth)/i.test(k)) {
+          clone[k] = '[REDACTED]';
+        } else if (typeof body[k] === 'string') {
+          clone[k] = (body[k] as string).slice(0, 200);
+        } else {
+          clone[k] = body[k];
+        }
+      }
+      return clone;
+    } catch {
+      return null;
+    }
+  }
   // Mount database management API routes
   app.use('/api/database', databaseRoutes);
   // Mount user management API routes
   app.use('/api/users', userRoutes);
+
+  // Ensure important DB indexes exist (best-effort, idempotent)
+  async function ensureIndexes() {
+    try {
+      // news_views indexes
+      await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_news_views_news_id ON news_views (news_id);` as any);
+      await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_news_views_created_at ON news_views (created_at);` as any);
+      await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_news_views_news_id_created_at ON news_views (news_id, created_at);` as any);
+    } catch (e) {
+      console.warn('ensureIndexes news_views failed:', e);
+    }
+    try {
+      // news_articles indexes
+      await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_news_articles_created_at ON news_articles (created_at);` as any);
+      await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_news_articles_category ON news_articles (category);` as any);
+    } catch (e) {
+      console.warn('ensureIndexes news_articles failed:', e);
+    }
+    try {
+      // audit_logs indexes
+      await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs (created_at);` as any);
+      await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id_created_at ON audit_logs (user_id, created_at);` as any);
+    } catch (e) {
+      console.warn('ensureIndexes audit_logs failed:', e);
+    }
+  }
+  ensureIndexes().catch(() => {});
 
   // -----------------------------
   // Public: Comments APIs
@@ -96,6 +188,198 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching comments:', error);
       res.status(500).json({ error: 'Failed to fetch comments' });
+    }
+  });
+
+  // -----------------------------
+  // News Search with pagination (public)
+  // -----------------------------
+  app.get('/api/news/search', searchLimiter, async (req, res) => {
+    try {
+      const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+      const category = typeof req.query.category === 'string' && req.query.category !== 'all' ? req.query.category : undefined;
+      const dateFrom = typeof req.query.dateFrom === 'string' && req.query.dateFrom ? new Date(req.query.dateFrom) : undefined;
+      const dateTo = typeof req.query.dateTo === 'string' && req.query.dateTo ? new Date(req.query.dateTo) : undefined;
+      const sortBy = typeof req.query.sortBy === 'string' ? req.query.sortBy : 'date';
+      const page = Math.max(1, parseInt(String(req.query.page || '1')));
+      const pageSize = Math.min(50, Math.max(1, parseInt(String(req.query.pageSize || '12'))));
+
+      const whereConds: any[] = [];
+      if (category) whereConds.push(eq(newsArticles.category as any, category));
+      if (dateFrom) whereConds.push(gte(newsArticles.createdAt as any, dateFrom));
+      if (dateTo) whereConds.push(lte(newsArticles.createdAt as any, dateTo));
+      if (q) {
+        const like = `%${q.toLowerCase()}%`;
+        whereConds.push(sql`(lower(${newsArticles.title}) like ${like} or lower(${newsArticles.summary}) like ${like})`);
+      }
+
+      const whereExpr = whereConds.length ? and(...whereConds) : undefined;
+
+      // total count
+      const totalRow = await db
+        .select({ cnt: sql<number>`count(*)` })
+        .from(newsArticles)
+        .where(whereExpr as any)
+        .limit(1);
+      const total = Number(totalRow?.[0]?.cnt || 0);
+
+      // items with sorting and pagination (+ real popularity by view count)
+      const offset = (page - 1) * pageSize;
+      let items;
+      if (sortBy === 'popularity') {
+        items = await db
+          .select({
+            id: newsArticles.id,
+            title: newsArticles.title,
+            summary: newsArticles.summary,
+            category: newsArticles.category,
+            imageUrl: newsArticles.imageUrl,
+            isBreaking: newsArticles.isBreaking,
+            createdAt: newsArticles.createdAt,
+            updatedAt: newsArticles.updatedAt,
+            viewCount: sql<number>`COALESCE(COUNT(${newsViews.id}), 0)`,
+          })
+          .from(newsArticles)
+          .leftJoin(newsViews, eq(newsViews.newsId as any, newsArticles.id as any))
+          .where(whereExpr as any)
+          .groupBy(newsArticles.id)
+          .orderBy(desc(sql`COALESCE(COUNT(${newsViews.id}), 0)`), desc(newsArticles.createdAt))
+          .limit(pageSize)
+          .offset(offset);
+      } else {
+        items = await db
+          .select({
+            id: newsArticles.id,
+            title: newsArticles.title,
+            summary: newsArticles.summary,
+            category: newsArticles.category,
+            imageUrl: newsArticles.imageUrl,
+            isBreaking: newsArticles.isBreaking,
+            createdAt: newsArticles.createdAt,
+            updatedAt: newsArticles.updatedAt,
+            viewCount: sql<number>`COALESCE(COUNT(${newsViews.id}), 0)`,
+          })
+          .from(newsArticles)
+          .leftJoin(newsViews, eq(newsViews.newsId as any, newsArticles.id as any))
+          .where(whereExpr as any)
+          .groupBy(newsArticles.id)
+          .orderBy(desc(newsArticles.createdAt))
+          .limit(pageSize)
+          .offset(offset);
+      }
+
+      res.json({ items, total, page, pageSize });
+    } catch (error) {
+      console.error('Error in /api/news/search:', error);
+      res.status(500).json({ error: 'Failed to search news' });
+    }
+  });
+
+  // -----------------------------
+  // Analytics: summary (admin dashboard, but can be public read)
+  // -----------------------------
+  app.get('/api/analytics/summary', authMiddleware, async (_req, res) => {
+    try {
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      // totalViews
+      const totalViewsRow = await db
+        .select({ cnt: sql<number>`count(*)` })
+        .from(newsViews)
+        .limit(1);
+      const totalViews = Number(totalViewsRow?.[0]?.cnt || 0);
+
+      // todayViews
+      const todayViewsRow = await db
+        .select({ cnt: sql<number>`count(*)` })
+        .from(newsViews)
+        .where(gte((newsViews as any).createdAt, todayStart))
+        .limit(1);
+      const todayViews = Number(todayViewsRow?.[0]?.cnt || 0);
+
+      // totalNews
+      const totalNewsRow = await db
+        .select({ cnt: sql<number>`count(*)` })
+        .from(newsArticles)
+        .limit(1);
+      const totalNews = Number(totalNewsRow?.[0]?.cnt || 0);
+
+      // popularNews (top 5 by total views)
+      const popular = await db
+        .select({
+          newsId: newsArticles.id,
+          title: newsArticles.title,
+          category: newsArticles.category,
+          publishedAt: newsArticles.createdAt,
+          viewCount: sql<number>`COALESCE(COUNT(${newsViews.id}), 0)`,
+        })
+        .from(newsArticles)
+        .leftJoin(newsViews, eq(newsViews.newsId as any, newsArticles.id as any))
+        .groupBy(newsArticles.id)
+        .orderBy(desc(sql`COALESCE(COUNT(${newsViews.id}), 0)`), desc(newsArticles.createdAt))
+        .limit(5);
+
+      res.json({ totalViews, todayViews, totalNews, popularNews: popular });
+    } catch (error) {
+      console.error('Error building analytics summary:', error);
+      res.status(500).json({ error: 'Failed to build analytics summary' });
+    }
+  });
+
+  // -----------------------------
+  // Analytics: view tracking (public, best-effort)
+  // -----------------------------
+  app.post('/api/analytics/track-view', viewTrackLimiter, async (req, res) => {
+    try {
+      const newsId = Number(req.body?.newsId);
+      if (!newsId || Number.isNaN(newsId)) {
+        return res.status(400).json({ error: 'newsId is required' });
+      }
+      const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || '0.0.0.0';
+      const userAgent = String(req.headers['user-agent'] || '');
+      const now = new Date();
+      const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+      // Best-effort dedup within 24h per IP/news
+      try {
+        const existing = await db
+          .select({ id: newsViews.id })
+          .from(newsViews)
+          .where(and(
+            eq(newsViews.newsId as any, newsId as any),
+            eq((newsViews as any).ipAddress, ip),
+            gte((newsViews as any).createdAt, dayAgo)
+          ))
+          .limit(1);
+        if (existing && existing.length > 0) {
+          return res.json({ success: true, dedup: true });
+        }
+      } catch (e) {
+        // If schema doesn't support the above, proceed to insert blindly
+      }
+
+      try {
+        await db.insert(newsViews).values({
+          // @ts-ignore: rely on schema at runtime
+          newsId,
+          // @ts-ignore
+          ipAddress: ip,
+          // @ts-ignore
+          userAgent,
+          // @ts-ignore
+          createdAt: now,
+        } as any);
+      } catch (e) {
+        // Swallow errors to avoid impacting UX
+        console.warn('track-view insert failed:', e);
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error tracking view:', error);
+      // Still return 200 to avoid blocking UI, but indicate failure
+      res.status(200).json({ success: false });
     }
   });
 
@@ -946,17 +1230,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/sponsor-banners", async (req, res) => {
-    try {
-      const validatedData = insertSponsorBannerSchema.parse(req.body);
-      const banner = await storage.insertSponsorBanner(validatedData);
-      res.status(201).json(banner);
-    } catch (error) {
-      res.status(400).json({ error: "Invalid sponsor banner data" });
-    }
-  });
-
-  app.put("/api/sponsor-banners/:id", async (req, res) => {
+  app.put("/api/sponsor-banners/:id", authMiddleware, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const validatedData = insertSponsorBannerSchema.partial().parse(req.body);
@@ -970,7 +1244,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/sponsor-banners/:id", async (req, res) => {
+  app.post("/api/sponsor-banners", authMiddleware, async (req, res) => {
+    try {
+      const validatedData = insertSponsorBannerSchema.parse(req.body);
+      const banner = await storage.insertSponsorBanner(validatedData);
+      res.status(201).json(banner);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid sponsor banner data" });
+    }
+  });
+
+  app.delete("/api/sponsor-banners/:id", authMiddleware, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteSponsorBanner(id);
@@ -980,50 +1264,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ error: "Failed to delete sponsor banner" });
-    }
-  });
-
-  app.post("/api/sponsor-banners/:id/click", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const success = await storage.incrementBannerClick(id);
-      if (!success) {
-        return res.status(404).json({ error: "Sponsor banner not found" });
-      }
-      res.status(200).json({ message: "Click recorded" });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to record click" });
-    }
-  });
-
-  // RSS Processing routes with no-cache headers
-  app.post("/api/rss/process", async (req, res) => {
-    try {
-      res.set({
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      });
-
-      await rssService.processAllFeeds();
-      res.json({ message: "RSS processing started" });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to start RSS processing" });
-    }
-  });
-
-  app.post("/api/rss/process/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const feed = await storage.getRssFeedById(id);
-      if (!feed) {
-        return res.status(404).json({ error: "RSS feed not found" });
-      }
-
-      const count = await rssService.processFeed(id, feed.url, feed.category);
-      res.json({ message: `Processed ${count} articles from ${feed.title}` });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to process RSS feed" });
     }
   });
 
@@ -1052,7 +1292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/rss/auto/start", async (req, res) => {
+  app.post("/api/rss/auto/start", authMiddleware, async (req, res) => {
     try {
       rssService.startAutoProcessing();
       res.json({ message: "Automatic RSS processing started (every 30 minutes)" });
@@ -1061,7 +1301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/rss/auto/stop", async (req, res) => {
+  app.post("/api/rss/auto/stop", authMiddleware, async (req, res) => {
     try {
       rssService.stopAutoProcessing();
       res.json({ message: "Automatic RSS processing stopped" });
@@ -1895,6 +2135,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (e) {
       console.error(e);
       res.status(500).json({ error: 'Failed to get recent donations' });
+    }
+  });
+
+
+  // Admin: Audit logs (filterable)
+  app.get('/api/audit-logs', authMiddleware, async (req, res) => {
+    try {
+      const { userId, method, path: pathQ, statusCode, from, to, page = '1', pageSize = '50' } = req.query as any;
+      const whereClauses: any[] = [];
+      if (userId) whereClauses.push(sql`user_id = ${Number(userId)}`);
+      if (method) whereClauses.push(sql`method = ${String(method)}`);
+      if (statusCode) whereClauses.push(sql`status_code = ${Number(statusCode)}`);
+      if (pathQ) whereClauses.push(sql`path ILIKE '%' || ${String(pathQ)} || '%'`);
+      if (from) whereClauses.push(sql`created_at >= ${new Date(String(from))}`);
+      if (to) whereClauses.push(sql`created_at <= ${new Date(String(to))}`);
+      const p = Math.max(1, parseInt(String(page)) || 1);
+      const ps = Math.min(200, Math.max(1, parseInt(String(pageSize)) || 50));
+      const offset = (p - 1) * ps;
+
+      const items = await db.select().from(auditLogs)
+        .where(whereClauses.length ? and(...whereClauses as any) : undefined as any)
+        .orderBy(desc(auditLogs.createdAt))
+        .limit(ps as any)
+        .offset(offset as any);
+
+      res.json({ page: p, pageSize: ps, items });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Failed to fetch audit logs' });
     }
   });
 

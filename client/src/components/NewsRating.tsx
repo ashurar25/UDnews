@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { api } from "@/lib/api";
 
 interface NewsRatingProps {
   newsId: number;
@@ -19,9 +19,7 @@ const NewsRating = ({ newsId, className = "" }: NewsRatingProps) => {
   const { data: ratings } = useQuery({
     queryKey: [`/api/news/${newsId}/ratings`],
     queryFn: async () => {
-      const response = await fetch(`/api/news/${newsId}/ratings`);
-      if (!response.ok) throw new Error('Failed to fetch ratings');
-      return response.json();
+      return api.get(`/api/news/${newsId}/ratings`, { auth: false });
     },
   });
 
@@ -36,10 +34,7 @@ const NewsRating = ({ newsId, className = "" }: NewsRatingProps) => {
   // Submit rating mutation
   const ratingMutation = useMutation({
     mutationFn: async (rating: 'like' | 'dislike') => {
-      return apiRequest(`/api/news/${newsId}/rate`, {
-        method: "POST",
-        body: JSON.stringify({ rating }),
-      });
+      return api.post(`/api/news/${newsId}/rate`, { rating }, { auth: false });
     },
     onSuccess: (_, rating) => {
       queryClient.invalidateQueries({ queryKey: [`/api/news/${newsId}/ratings`] });

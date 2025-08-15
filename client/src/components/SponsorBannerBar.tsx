@@ -3,10 +3,10 @@ import { ExternalLink, Eye, Phone, ChevronLeft, ChevronRight } from "lucide-reac
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import axios from "axios";
 import type { SponsorBanner } from "@shared/schema";
 import { useState, useEffect } from "react";
 import { useTrackEvent } from "@/lib/useTrackEvent";
+import { api } from "@/lib/api";
 
 interface SponsorBannerBarProps {
   position?: "header" | "sidebar" | "footer" | "between_news";
@@ -29,8 +29,7 @@ const SponsorBannerBar = ({
   const { data: allBanners = [], isLoading, isError } = useQuery({
     queryKey: ["/api/sponsor-banners", position],
     queryFn: async () => {
-      const response = await axios.get(`/api/sponsor-banners?position=${position}`);
-      const data = response.data;
+      const data = await api.get<SponsorBanner[]>(`/api/sponsor-banners?position=${position}`, { auth: false });
       return Array.isArray(data) ? data as SponsorBanner[] : [];
     },
   });
@@ -42,7 +41,7 @@ const SponsorBannerBar = ({
     try {
       // track sponsor banner click
       track('sponsor.click', { bannerId: banner.id, position, linkUrl: banner.linkUrl, title: banner.title }, { cooldownMs: 2000 });
-      await axios.post(`/api/sponsor-banners/${banner.id}/click`);
+      await api.post(`/api/sponsor-banners/${banner.id}/click`, undefined, { auth: false });
       window.open(banner.linkUrl, '_blank', 'noopener,noreferrer');
     } catch (error) {
       console.error('Failed to record click:', error);
