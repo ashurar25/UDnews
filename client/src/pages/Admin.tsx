@@ -520,8 +520,8 @@ function AdminDashboard() {
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-50 w-64 backdrop-blur-md bg-white/70 dark:bg-zinc-900/40 border-r border-white/30 dark:border-white/10 shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-56'} ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
-        <div className="flex items-center justify-between p-3 border-b border-white/30 dark:border-white/10">
+      } flex flex-col min-h-0`}>
+        <div className="flex items-center justify-between p-3 border-b border-white/30 dark:border-white/10 flex-shrink-0">
           {!sidebarCollapsed && (
             <h2 className="text-base font-bold font-kanit text-orange-800">ระบบจัดการ</h2>
           )}
@@ -551,7 +551,7 @@ function AdminDashboard() {
           </div>
         </div>
 
-        <nav className="p-3 space-y-5">
+        <nav className="p-3 space-y-5 flex-1 overflow-y-auto">
           {menuItems.map((group) => (
             <div key={group.group}>
               <h3 className={`text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-2 font-sarabun ${sidebarCollapsed ? 'hidden' : ''}`}>

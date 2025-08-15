@@ -139,6 +139,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // best-effort only
       }
     });
+    next();
+  });
 
   // Server-rendered share page for social crawlers (Open Graph/Twitter Cards)
   // Example: https://your-site.com/share/123
@@ -353,9 +355,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.warn('ensureIndexes news_articles failed:', e);
     }
     try {
-      // audit_logs indexes
-      await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs (created_at);` as any);
-      await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id_created_at ON audit_logs (user_id, created_at);` as any);
+      // audit_logs indexes (guarded if table not present yet)
+      const rows: any = await db.execute(
+        sql`SELECT to_regclass('public.audit_logs') AS reg;` as any
+      );
+      const exists = Array.isArray(rows) ? rows[0]?.reg : (rows as any)?.rows?.[0]?.reg;
+      if (!exists) {
+        console.warn("ensureIndexes: 'audit_logs' table not found; skipping audit index creation. Run migrations (e.g. `npm run db:push`) to create the table.");
+      } else {
+        await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs (created_at);` as any);
+        await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id_created_at ON audit_logs (user_id, created_at);` as any);
+      }
     } catch (e) {
       console.warn('ensureIndexes audit_logs failed:', e);
     }
