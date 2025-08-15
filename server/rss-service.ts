@@ -260,10 +260,13 @@ export class RSSService {
       .replace(/&gt;/g, '>')
       .replace(/&quot;/g, '"')
       .replace(/&#039;/g, "'")
+      .replace(/&#8216;/g, "'") // left single quotation mark
       .replace(/&#8217;/g, "'")
       .replace(/&#8220;/g, '"')
       .replace(/&#8221;/g, '"')
       .replace(/&#8230;/g, '...')
+      .replace(/&#8211;/g, '-') // en dash
+      .replace(/&#8212;/g, '—') // em dash
       .trim();
 
     return text;

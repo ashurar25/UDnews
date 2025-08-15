@@ -36,8 +36,12 @@ const SocialShare: React.FC<SocialShareProps> = ({
   const { toast } = useToast();
   const { track } = useTrackEvent();
 
-  const currentUrl = url || `${window.location.origin}/news/${newsId}`;
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const currentUrl = url || `${origin}/news/${newsId}`;
+  // Server-rendered OG share page ensures crawlers (e.g., Facebook) get the right tags and image
+  const shareOgUrl = `${origin}/share/${newsId}`;
   const encodedUrl = encodeURIComponent(currentUrl);
+  const encodedOgUrl = encodeURIComponent(shareOgUrl);
   const encodedTitle = encodeURIComponent(title);
   const encodedDescription = encodeURIComponent(description);
 
@@ -62,7 +66,8 @@ const SocialShare: React.FC<SocialShareProps> = ({
   });
 
   const shareUrls = {
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedTitle}`,
+    // Important: use server-side share page for Facebook so it sees proper OG tags and image
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedOgUrl}&quote=${encodedTitle}`,
     twitter: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}&hashtags=UDNews,อุดรธานี,ข่าว`,
     line: `https://social-plugins.line.me/lineit/share?url=${encodedUrl}&text=${encodedTitle}`,
     whatsapp: `https://wa.me/?text=${encodedTitle}%20${encodedUrl}`,
@@ -133,11 +138,19 @@ const SocialShare: React.FC<SocialShareProps> = ({
       const left = (window.innerWidth - width) / 2;
       const top = (window.innerHeight - height) / 2;
       
-      window.open(
+      const win = window.open(
         url,
         'share',
         `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
       );
+      // Popup blocker fallback
+      if (!win || win.closed || typeof win.closed === 'undefined') {
+        toast({
+          title: 'เปิดหน้าต่างแชร์ไม่สำเร็จ',
+          description: 'เบราว์เซอร์อาจบล็อกป๊อปอัพ กรุณาอนุญาตป๊อปอัพสำหรับเว็บไซต์นี้แล้วลองอีกครั้ง',
+          variant: 'destructive',
+        });
+      }
     }
   };
 

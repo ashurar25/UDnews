@@ -48,13 +48,17 @@ const TTSReader: React.FC<TTSReaderProps> = ({ title, summary, htmlContent, news
       setVoices(v);
       // Load preferred voice from localStorage if available
       const savedVoice = localStorage.getItem('tts.voice');
+      const thaiVoices = v.filter(
+        (voice) => voice.lang?.toLowerCase().startsWith('th') || /thai/i.test(voice.name)
+      );
       if (savedVoice && v.find((voice) => voice.name === savedVoice)) {
         setSelectedVoice(savedVoice);
-      } else {
+      } else if (thaiVoices[0]) {
         // Prefer Thai voice if available
-        const th = v.find((voice) => voice.lang?.toLowerCase().startsWith('th'));
-        if (th) setSelectedVoice(th.name);
-        else if (v[0]) setSelectedVoice(v[0].name);
+        setSelectedVoice(thaiVoices[0].name);
+      } else if (v[0]) {
+        // Fallback to the first available voice
+        setSelectedVoice(v[0].name);
       }
     };
     load();
@@ -107,7 +111,9 @@ const TTSReader: React.FC<TTSReaderProps> = ({ title, summary, htmlContent, news
     utterance.rate = rate; // 0.1 to 10
     const voice = voices.find((v) => v.name === selectedVoice);
     if (voice) utterance.voice = voice;
-    utterance.lang = voice?.lang || 'th-TH';
+    // If the selected voice is not Thai but Thai is desired, force lang to th-TH as a hint for engines
+    const isThaiSelected = voice?.lang?.toLowerCase().startsWith('th') || /thai/i.test(voice?.name ?? '');
+    utterance.lang = isThaiSelected ? (voice?.lang ?? 'th-TH') : (voice?.lang || 'th-TH');
 
     utterance.onend = () => {
       setSpeaking(false);
@@ -174,7 +180,12 @@ const TTSReader: React.FC<TTSReaderProps> = ({ title, summary, htmlContent, news
               onChange={(e) => setSelectedVoice(e.target.value)}
               aria-label="เลือกเสียง"
             >
-              {voices.map((v) => (
+              {[
+                // Show Thai voices first
+                ...voices.filter((v) => v.lang?.toLowerCase().startsWith('th') || /thai/i.test(v.name)),
+                // Then the rest (non-Thai)
+                ...voices.filter((v) => !(v.lang?.toLowerCase().startsWith('th') || /thai/i.test(v.name)))
+              ].map((v) => (
                 <option key={v.name} value={v.name}>{v.name} ({v.lang})</option>
               ))}
             </select>
@@ -207,6 +218,20 @@ const TTSReader: React.FC<TTSReaderProps> = ({ title, summary, htmlContent, news
             />
             <span className="text-xs text-muted-foreground w-10">{rate.toFixed(2)}x</span>
           </div>
+
+          {/* Notice when Thai voice is unavailable */}
+          {voices.length > 0 && !voices.some((v) => v.lang?.toLowerCase().startsWith('th') || /thai/i.test(v.name)) && (
+            <div className="w-full mt-2 text-xs text-muted-foreground font-sarabun bg-muted/40 border rounded p-2">
+              ไม่พบเสียงภาษาไทยในเบราว์เซอร์ของคุณ จึงอาจอ่านเป็นสำเนียงภาษาอื่น
+              <br />
+              วิธีแก้แนะนำ:
+              <ul className="list-disc ml-5 mt-1">
+                <li><b>Windows (Edge/Chrome):</b> Settings → Time & Language → Language & region → Add language → เพิ่ม "Thai" และ <b>Speech</b> แล้วรีสตาร์ทเบราว์เซอร์</li>
+                <li><b>macOS (Safari/Chrome):</b> System Settings → Accessibility → Spoken Content → System Voice → <b>Manage Voices…</b> → ดาวน์โหลดภาษาไทย</li>
+                <li>หากยังไม่มีเสียงไทย ลองอัปเดตเบราว์เซอร์หรือใช้ Edge/Chrome บนอุปกรณ์ที่มีแพ็กเสียงไทย</li>
+              </ul>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
