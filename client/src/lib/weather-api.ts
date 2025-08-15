@@ -25,6 +25,9 @@ const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY || '549bd92b3ea0b8be798
 const BASE_URL = 'https://api.openweathermap.org/data/2.5';
 const CITY = 'Udon Thani';
 const COUNTRY_CODE = 'TH';
+// Udon Thani coordinates (approx.) for Open-Meteo
+const UDON_LAT = 17.4138;
+const UDON_LON = 102.7870;
 
 // Weather condition mapping to Thai and emoji
 const weatherConditionMap: Record<string, { thai: string; icon: string }> = {
@@ -37,7 +40,10 @@ const weatherConditionMap: Record<string, { thai: string; icon: string }> = {
   'thunderstorm': { thai: 'พายุฝนฟ้าคะนอง', icon: '⛈️' },
   'snow': { thai: 'หิมะ', icon: '🌨️' },
   'mist': { thai: 'หมอก', icon: '🌫️' },
-  'overcast clouds': { thai: 'เมฆครึ้ม', icon: '☁️' }
+  'overcast clouds': { thai: 'เมฆครึ้ม', icon: '☁️' },
+  'light rain': { thai: 'ฝนเล็กน้อย', icon: '🌦️' },
+  'moderate rain': { thai: 'ฝนปานกลาง', icon: '🌧️' },
+  'heavy intensity rain': { thai: 'ฝนตกหนัก', icon: '🌧️' },
 };
 
 function getWeatherCondition(description: string): { thai: string; icon: string } {
@@ -317,5 +323,108 @@ export async function getHourlyForecast(limitHours: number = 24): Promise<Hourly
         wind: 10 + (i % 3) * 2,
       } as HourlyWeather;
     });
+  }
+}
+
+// ---------- True Hourly (1-hour step) using Open-Meteo (no API key required) ----------
+// Weather code mapping from Open-Meteo to Thai/icon
+const openMeteoCodeMap: Record<number, { thai: string; icon: string }> = {
+  0: { thai: 'ท้องฟ้าแจ่มใส', icon: '☀️' },
+  1: { thai: 'แดดจัด', icon: '🌤️' },
+  2: { thai: 'เมฆบางส่วน', icon: '⛅' },
+  3: { thai: 'เมฆครึ้ม', icon: '☁️' },
+  45: { thai: 'หมอก', icon: '🌫️' },
+  48: { thai: 'น้ำค้างแข็ง', icon: '🌫️' },
+  51: { thai: 'ฝนปรอยๆ เบา', icon: '🌦️' },
+  53: { thai: 'ฝนปรอยๆ ปานกลาง', icon: '🌦️' },
+  55: { thai: 'ฝนปรอยๆ หนัก', icon: '🌧️' },
+  56: { thai: 'ฝนเยือกแข็งเบา', icon: '🌧️' },
+  57: { thai: 'ฝนเยือกแข็งหนัก', icon: '🌧️' },
+  61: { thai: 'ฝนเล็กน้อย', icon: '🌦️' },
+  63: { thai: 'ฝนปานกลาง', icon: '🌧️' },
+  65: { thai: 'ฝนตกหนัก', icon: '🌧️' },
+  66: { thai: 'ฝนเยือกแข็งเล็กน้อย', icon: '🌧️' },
+  67: { thai: 'ฝนเยือกแข็งหนัก', icon: '🌧️' },
+  71: { thai: 'หิมะเล็กน้อย', icon: '🌨️' },
+  73: { thai: 'หิมะปานกลาง', icon: '🌨️' },
+  75: { thai: 'หิมะหนัก', icon: '🌨️' },
+  77: { thai: 'เกล็ดน้ำแข็ง', icon: '🌨️' },
+  80: { thai: 'ฝนซู่เบา', icon: '🌦️' },
+  81: { thai: 'ฝนซู่ปานกลาง', icon: '🌧️' },
+  82: { thai: 'ฝนซู่หนัก', icon: '⛈️' },
+  85: { thai: 'หิมะซู่เบา', icon: '🌨️' },
+  86: { thai: 'หิมะซู่หนัก', icon: '🌨️' },
+  95: { thai: 'พายุฝนฟ้าคะนอง', icon: '⛈️' },
+  96: { thai: 'พายุฝนฟ้าคะนองมีลูกเห็บเล็ก', icon: '⛈️' },
+  99: { thai: 'พายุฝนฟ้าคะนองมีลูกเห็บใหญ่', icon: '⛈️' },
+};
+
+export async function getHourlyForecastHourly(limitHours: number = 24): Promise<HourlyWeather[]> {
+  try {
+    // Request hourly data from Open-Meteo for Udon Thani
+    const url = 'https://api.open-meteo.com/v1/forecast';
+    const params = {
+      latitude: UDON_LAT,
+      longitude: UDON_LON,
+      hourly: [
+        'temperature_2m',
+        'relative_humidity_2m',
+        'precipitation_probability',
+        'windspeed_10m',
+        'weathercode'
+      ].join(','),
+      forecast_days: 2,
+      timezone: 'Asia/Bangkok',
+    } as const;
+
+    const response = await axios.get(url, { params });
+    const hourly = response.data?.hourly;
+    const times: string[] = hourly?.time || [];
+    const temps: number[] = hourly?.temperature_2m || [];
+    const hums: number[] = hourly?.relative_humidity_2m || [];
+    const pops: number[] = hourly?.precipitation_probability || [];
+    const winds: number[] = hourly?.windspeed_10m || [];
+    const codes: number[] = hourly?.weathercode || [];
+
+    const now = new Date();
+    const results: HourlyWeather[] = [];
+    for (let i = 0; i < times.length; i++) {
+      const dt = new Date(times[i]);
+      if (dt < now) continue; // only future/current
+      const hour = dt.getHours();
+      const hh = String(hour).padStart(2, '0');
+      const code = codes[i] ?? 0;
+      const map = openMeteoCodeMap[code] || { thai: 'ไม่ระบุ', icon: '🌡️' };
+      results.push({
+        time: `${hh}:00`,
+        hour,
+        temp: Math.round(temps[i] ?? 0),
+        icon: map.icon,
+        conditionThai: map.thai,
+        rainChance: Math.max(0, Math.min(100, Math.round(pops[i] ?? 0))),
+        humidity: Math.round(hums[i] ?? 0),
+        wind: Math.round(winds[i] ?? 0),
+      });
+      if (results.length >= limitHours) break;
+    }
+
+    // Fallback if API returns nothing
+    if (results.length === 0) throw new Error('No hourly data');
+    return results;
+  } catch (err) {
+    console.error('Error fetching 1-hourly forecast (Open-Meteo):', err);
+    // Fallback to 3-hour forecast as a backup
+    const threeHourly = await getHourlyForecast(limitHours);
+    // Expand 3-hour steps into per-hour by repeating values
+    const expanded: HourlyWeather[] = [];
+    for (const block of threeHourly) {
+      for (let k = 0; k < 3 && expanded.length < limitHours; k++) {
+        const hour = (block.hour + k) % 24;
+        const hh = String(hour).padStart(2, '0');
+        expanded.push({ ...block, hour, time: `${hh}:00` });
+      }
+      if (expanded.length >= limitHours) break;
+    }
+    return expanded.slice(0, limitHours);
   }
 }

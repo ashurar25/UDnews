@@ -16,6 +16,7 @@ import SocialShare from "@/components/SocialShare";
 import NewsRating from "@/components/NewsRating";
 import TTSReader from "@/components/TTSReader";
 import AppErrorBoundary from "@/components/AppErrorBoundary";
+import { getHourlyForecastHourly, type HourlyWeather } from "@/lib/weather-api";
 
 interface NewsItem {
   id: number;
@@ -35,6 +36,8 @@ export default function NewsDetail() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const [viewCount, setViewCount] = useState(0); // Initialize viewCount to 0
+  const [hourly1h, setHourly1h] = useState<HourlyWeather[] | null>(null);
+  const [isLoadingHourly1h, setIsLoadingHourly1h] = useState(true);
 
   // Scroll to top when page loads or ID changes
   useEffect(() => {
@@ -61,6 +64,24 @@ export default function NewsDetail() {
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes
   });
+
+  // Load true hourly forecast (1-hour step) for Udon Thani sidebar
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        setIsLoadingHourly1h(true);
+        const data = await getHourlyForecastHourly(12); // show next 12 hours for detail page
+        if (mounted) setHourly1h(data);
+      } catch {}
+      finally {
+        if (mounted) setIsLoadingHourly1h(false);
+      }
+    };
+    load();
+    const id = setInterval(load, 30 * 60 * 1000);
+    return () => { mounted = false; clearInterval(id); };
+  }, []);
 
   // Fetch related news - limited to 3 items for better performance
   const { data: relatedNews } = useQuery({
@@ -335,6 +356,45 @@ export default function NewsDetail() {
             <div className="hidden lg:block">
               <SponsorBannerBar position="sidebar" autoPlay={true} showNavigation={false} bannerCount={2} />
             </div>
+
+            {/* Hourly Weather (Real, 1-hour step) */}
+            <Card className="border-white/30 bg-white/10 backdrop-blur-md shadow-lg">
+              <CardContent className="p-6">
+                <h3 className="text-xl font-bold font-kanit mb-4">พยากรณ์รายชั่วโมง (อุดรธานี)</h3>
+                <div className="relative rounded-xl p-3 border border-white/30 bg-white/20 backdrop-blur-md shadow-md overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-white/20 pointer-events-none" />
+                  <div className="relative z-10">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">🕘</span>
+                        <span className="text-sm font-kanit">ถัดไป 12 ชั่วโมง</span>
+                      </div>
+                      {isLoadingHourly1h && (
+                        <span className="text-xs font-sarabun text-muted-foreground">กำลังโหลด...</span>
+                      )}
+                    </div>
+                    <div className="overflow-x-auto snap-x snap-mandatory scroll-smooth">
+                      <div className="flex gap-3 min-w-max">
+                        {(hourly1h || []).map((h, idx) => (
+                          <div
+                            key={idx}
+                            className="flex flex-col items-center rounded-2xl px-2 py-2 w-16 border border-white/30 bg-white/40 backdrop-blur-md shadow-sm hover:bg-white/60 hover:shadow transition-all snap-center"
+                          >
+                            <span className="text-[10px] font-sarabun text-muted-foreground">{h.time}</span>
+                            <span className="text-lg leading-none my-1">{h.icon}</span>
+                            <span className="text-sm font-kanit text-orange-600">{h.temp}°</span>
+                            <span className="text-[10px] font-sarabun text-blue-600">{h.rainChance}%</span>
+                          </div>
+                        ))}
+                        {!hourly1h && !isLoadingHourly1h && (
+                          <div className="text-xs font-sarabun text-muted-foreground">ไม่มีข้อมูลรายชั่วโมง</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Related News */}
             <Card>

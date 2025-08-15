@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Clock, Calendar } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getWeatherForecast, getHourlyForecast, type HourlyWeather } from "@/lib/weather-api";
+import { getWeatherForecast, getHourlyForecast, getHourlyForecastHourly, type HourlyWeather } from "@/lib/weather-api";
 import heroImage from "@/assets/news-hero.jpg";
 import localImage from "@/assets/news-local.jpg";
 import politicsImage from "@/assets/news-politics.jpg";
@@ -79,6 +79,8 @@ const Index = () => {
   const [isLoadingWeather, setIsLoadingWeather] = useState(true);
   const [hourly, setHourly] = useState<HourlyWeather[] | null>(null);
   const [isLoadingHourly, setIsLoadingHourly] = useState(true);
+  const [hourly1h, setHourly1h] = useState<HourlyWeather[] | null>(null);
+  const [isLoadingHourly1h, setIsLoadingHourly1h] = useState(true);
 
   // Load weather data when component mounts
   useEffect(() => {
@@ -117,6 +119,24 @@ const Index = () => {
     };
     loadHourly();
     const id = setInterval(loadHourly, 30 * 60 * 1000);
+    return () => { mounted = false; clearInterval(id); };
+  }, []);
+
+  // Load true hourly forecast (1-hour step) for Udon Thani
+  useEffect(() => {
+    let mounted = true;
+    const loadHourly1h = async () => {
+      try {
+        setIsLoadingHourly1h(true);
+        const data = await getHourlyForecastHourly(24);
+        if (mounted) setHourly1h(data);
+      } catch {}
+      finally {
+        if (mounted) setIsLoadingHourly1h(false);
+      }
+    };
+    loadHourly1h();
+    const id = setInterval(loadHourly1h, 30 * 60 * 1000);
     return () => { mounted = false; clearInterval(id); };
   }, []);
 
@@ -261,29 +281,32 @@ const Index = () => {
                   </div>
 
                   {/* Hourly Forecast (next 24h) */}
-                  <div className="bg-white/30 backdrop-blur-sm rounded-lg p-3 mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">🕒</span>
-                        <h4 className="text-sm font-bold font-kanit text-foreground">พยากรณ์รายชั่วโมง (24 ชม.)</h4>
-                      </div>
-                      {isLoadingHourly && (
-                        <span className="text-xs font-sarabun text-muted-foreground">กำลังโหลด...</span>
-                      )}
-                    </div>
-                    <div className="overflow-x-auto">
-                      <div className="flex gap-3 min-w-max">
-                        {(hourly || []).map((h, idx) => (
-                          <div key={idx} className="flex flex-col items-center bg-white/40 rounded-lg px-2 py-2 w-16">
-                            <span className="text-[10px] font-sarabun text-muted-foreground">{h.time}</span>
-                            <span className="text-lg leading-none my-1">{h.icon}</span>
-                            <span className="text-sm font-kanit text-orange-600">{h.temp}°</span>
-                            <span className="text-[10px] font-sarabun text-blue-600">{h.rainChance}%</span>
-                          </div>
-                        ))}
-                        {!hourly && !isLoadingHourly && (
-                          <div className="text-xs font-sarabun text-muted-foreground">ไม่มีข้อมูลรายชั่วโมง</div>
+                  <div className="relative rounded-xl p-3 mb-4 border border-white/30 bg-white/20 backdrop-blur-md shadow-md overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-white/20 pointer-events-none" />
+                    <div className="relative z-10">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">🕒</span>
+                          <h4 className="text-sm font-bold font-kanit text-foreground">พยากรณ์รายชั่วโมง (24 ชม.)</h4>
+                        </div>
+                        {isLoadingHourly && (
+                          <span className="text-xs font-sarabun text-muted-foreground">กำลังโหลด...</span>
                         )}
+                      </div>
+                      <div className="overflow-x-auto snap-x snap-mandatory scroll-smooth">
+                        <div className="flex gap-3 min-w-max">
+                          {(hourly || []).map((h, idx) => (
+                            <div key={idx} className="flex flex-col items-center rounded-2xl px-2 py-2 w-16 border border-white/30 bg-white/40 backdrop-blur-md shadow-sm hover:bg-white/60 hover:shadow transition-all snap-center">
+                              <span className="text-[10px] font-sarabun text-muted-foreground">{h.time}</span>
+                              <span className="text-lg leading-none my-1">{h.icon}</span>
+                              <span className="text-sm font-kanit text-orange-600">{h.temp}°</span>
+                              <span className="text-[10px] font-sarabun text-blue-600">{h.rainChance}%</span>
+                            </div>
+                          ))}
+                          {!hourly && !isLoadingHourly && (
+                            <div className="text-xs font-sarabun text-muted-foreground">ไม่มีข้อมูลรายชั่วโมง</div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -359,9 +382,11 @@ const Index = () => {
             {/* Newsletter Signup */}
             <NewsletterSignup className="shadow-news" />
 
-            {/* Weather Widget */}
-            <div className="relative rounded-lg p-6 shadow-news overflow-hidden bg-gradient-to-br from-orange-200/40 via-yellow-100/30 to-blue-200/40 backdrop-blur-sm border border-white/20">
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-300/20 via-transparent to-blue-300/20"></div>
+            {/* Weather Widget */
+            // Improved visuals + real hourly (1-hour) forecast for Udon Thani
+            }
+            <div className="relative rounded-xl p-6 shadow-news overflow-hidden border border-white/30 bg-white/10 backdrop-blur-md">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-white/20 pointer-events-none"></div>
               <div className="relative z-10">
                 <h3 className="text-xl font-bold font-kanit mb-4 text-foreground">
                   สภาพอากาศอุดรธานี
@@ -420,7 +445,7 @@ const Index = () => {
                   )}
 
                   {/* High/Low Temps */}
-                  <div className="flex justify-between mt-2 text-sm font-sarabun bg-white/30 backdrop-blur-sm rounded-lg p-3">
+                  <div className="flex justify-between mt-2 text-sm font-sarabun bg-white/20 backdrop-blur-md border border-white/30 rounded-lg p-3">
                     <div className="text-center">
                       <span className="text-red-500 font-bold">{currentWeather.high}°C</span>
                       <p className="text-xs text-muted-foreground">สูงสุด</p>
@@ -512,9 +537,41 @@ const Index = () => {
                   </div>
                 </div>
 
+                {/* Hourly (Real, 1-hour step) */}
+                <div className="relative rounded-xl p-3 mb-4 border border-white/30 bg-white/20 backdrop-blur-md shadow-md overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-white/20 pointer-events-none" />
+                  <div className="relative z-10">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">🕘</span>
+                        <h4 className="text-sm font-bold font-kanit text-foreground">พยากรณ์รายชั่วโมง (จริง)</h4>
+                      </div>
+                      {isLoadingHourly1h && (
+                        <span className="text-xs font-sarabun text-muted-foreground">กำลังโหลด...</span>
+                      )}
+                    </div>
+                    <div className="overflow-x-auto snap-x snap-mandatory scroll-smooth">
+                      <div className="flex gap-3 min-w-max">
+                        {(hourly1h || []).map((h, idx) => (
+                          <div key={idx} className="flex flex-col items-center rounded-2xl px-2 py-2 w-16 border border-white/30 bg-white/40 backdrop-blur-md shadow-sm hover:bg-white/60 hover:shadow transition-all snap-center">
+                            <span className="text-[10px] font-sarabun text-muted-foreground">{h.time}</span>
+                            <span className="text-lg leading-none my-1">{h.icon}</span>
+                            <span className="text-sm font-kanit text-orange-600">{h.temp}°</span>
+                            <span className="text-[10px] font-sarabun text-blue-600">{h.rainChance}%</span>
+                          </div>
+                        ))}
+                        {!hourly1h && !isLoadingHourly1h && (
+                          <div className="text-xs font-sarabun text-muted-foreground">ไม่มีข้อมูลรายชั่วโมง</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Rain Forecast */}
-                <div className="bg-white/30 backdrop-blur-sm rounded-lg p-3 mb-4">
-                  <div className="text-center">
+                <div className="relative rounded-xl p-3 mb-4 border border-white/30 bg-white/20 backdrop-blur-md shadow-md overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-white/20 pointer-events-none" />
+                  <div className="relative z-10 text-center">
                     <div className="flex items-center justify-center gap-2 mb-2">
                       <span className="text-lg">🌧️</span>
                       <h4 className="text-sm font-bold font-kanit text-foreground">พยากรณ์ฝน</h4>
@@ -529,7 +586,7 @@ const Index = () => {
                     </div>
 
                     {/* Rain probability bar */}
-                    <div className="w-full bg-white/20 rounded-full h-2 mb-2">
+                    <div className="w-full bg-white/20 rounded-full h-2 mb-2 border border-white/30">
                       <div 
                         className={`h-2 rounded-full transition-all duration-500 ${
                           currentWeather.rainChance >= 70 
