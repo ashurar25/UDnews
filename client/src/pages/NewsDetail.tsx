@@ -31,7 +31,7 @@ interface NewsItem {
   description?: string; // Added for potential meta description
 }
 
-const NewsDetail = () => {
+export default function NewsDetail() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const [viewCount, setViewCount] = useState(0); // Initialize viewCount to 0
@@ -435,10 +435,7 @@ const NewsDetail = () => {
           <SponsorBannerBar position="footer" autoPlay={true} showNavigation={false} bannerCount={2} />
         </div>
       </main>
-
       <Footer />
     </div>
   </AppErrorBoundary>
-);
-
-export default NewsDetail;
+}
