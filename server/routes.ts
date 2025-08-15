@@ -29,7 +29,8 @@ import {
 } from "@shared/schema";
 import { eq, desc, and, gte, lte, sql, asc } from "drizzle-orm";
 import { rssService } from "./rss-service";
-import { authenticateToken as authMiddleware, generateToken } from "./middleware/auth";
+import { getCachedDailySummary, generateDailySummary } from './ai-summarizer';
+import { authenticateToken as authMiddleware, generateToken, authorizeRoles } from "./middleware/auth";
 import rateLimit from "express-rate-limit";
 import path from 'path';
 import fs from 'fs';
@@ -84,6 +85,22 @@ const adminLimiter = rateLimit({
   message: 'Too many admin requests from this IP, please try again later.',
 });
 
+// Limiter for audit logs endpoint
+const auditLogsLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Limiter for AI daily summary public endpoint
+const aiSummaryLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Specific limiter for view tracking to prevent abuse
 const viewTrackLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
@@ -122,6 +139,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // best-effort only
       }
     });
+
+  // AI Daily Summary - public (cached, limited)
+  app.get('/api/ai/daily-summary', aiSummaryLimiter, async (req, res) => {
+    try {
+      const dateQ = String((req.query as any).date || '').trim();
+      const now = new Date();
+      // Build YYYY-MM-DD in Asia/Bangkok (+07:00)
+      const toLocalDate = (d: Date) => {
+        const tzMs = 7 * 60 * 60 * 1000;
+        const local = new Date(d.getTime() + tzMs);
+        const y = local.getUTCFullYear();
+        const m = String(local.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(local.getUTCDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      };
+      const dateStr = dateQ || toLocalDate(now);
+
+      let summary = await getCachedDailySummary(dateStr);
+      if (!summary) {
+        // Best-effort generation (respecting rate limit)
+        try {
+          summary = await generateDailySummary(dateStr);
+        } catch (e) {
+          // If generation fails, return empty but not 500 for public UX
+          console.error('daily-summary generation error', e);
+          return res.json({ date: dateStr, bullets: [], highlights: [], topLinks: [], generatedAt: null });
+        }
+      }
+      res.json(summary);
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Failed to get daily summary' });
+    }
+  });
+
+  // AI Daily Summary - admin regenerate
+  app.post('/api/ai/daily-summary/regenerate', authMiddleware, authorizeRoles('admin'), async (req, res) => {
+    try {
+      const { date } = req.body as any;
+      const now = new Date();
+      const toLocalDate = (d: Date) => {
+        const tzMs = 7 * 60 * 60 * 1000;
+        const local = new Date(d.getTime() + tzMs);
+        const y = local.getUTCFullYear();
+        const m = String(local.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(local.getUTCDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      };
+      const dateStr = (String(date || '').trim()) || toLocalDate(now);
+      const result = await generateDailySummary(dateStr);
+      res.json(result);
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Failed to regenerate daily summary' });
+    }
+  });
+
+  // Simple daily scheduler at 20:00 Asia/Bangkok to pre-generate summary
+  let lastScheduledDate = '';
+  setInterval(async () => {
+    try {
+      const now = new Date();
+      const tzMs = 7 * 60 * 60 * 1000;
+      const local = new Date(now.getTime() + tzMs);
+      const hours = local.getUTCHours();
+      const y = local.getUTCFullYear();
+      const m = String(local.getUTCMonth() + 1).padStart(2, '0');
+      const d = String(local.getUTCDate()).padStart(2, '0');
+      const dateStr = `${y}-${m}-${d}`;
+      if (hours >= 20 && lastScheduledDate !== dateStr) {
+        lastScheduledDate = dateStr;
+        try {
+          console.log('[scheduler] Generating daily summary for', dateStr);
+          await generateDailySummary(dateStr);
+        } catch (e) {
+          console.error('[scheduler] Failed to generate daily summary', e);
+        }
+      }
+    } catch {}
+  }, 60 * 1000);
     next();
   });
 
@@ -938,7 +1035,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'udnews2025secure';
 
       if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-        const token = generateToken({ id: 1, username: ADMIN_USERNAME });
+        const token = generateToken({ id: 1, username: ADMIN_USERNAME, role: 'admin' });
         res.json({ 
           success: true, 
           token,
@@ -1162,7 +1259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/news", authMiddleware, async (req, res) => {
+  app.post("/api/news", authMiddleware, authorizeRoles('admin'), async (req, res) => {
     try {
       const validatedData = insertNewsSchema.parse(req.body);
       const article = await storage.insertNews(validatedData);
@@ -1177,7 +1274,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/news/:id", authMiddleware, async (req, res) => {
+  app.put("/api/news/:id", authMiddleware, authorizeRoles('admin'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const validatedData = insertNewsSchema.partial().parse(req.body);
@@ -1191,7 +1288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/news/:id", authMiddleware, async (req, res) => {
+  app.delete("/api/news/:id", authMiddleware, authorizeRoles('admin'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteNews(id);
@@ -1230,7 +1327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/sponsor-banners/:id", authMiddleware, async (req, res) => {
+  app.put("/api/sponsor-banners/:id", authMiddleware, authorizeRoles('admin'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const validatedData = insertSponsorBannerSchema.partial().parse(req.body);
@@ -1244,7 +1341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/sponsor-banners", authMiddleware, async (req, res) => {
+  app.post("/api/sponsor-banners", authMiddleware, authorizeRoles('admin'), async (req, res) => {
     try {
       const validatedData = insertSponsorBannerSchema.parse(req.body);
       const banner = await storage.insertSponsorBanner(validatedData);
@@ -1254,7 +1351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/sponsor-banners/:id", authMiddleware, async (req, res) => {
+  app.delete("/api/sponsor-banners/:id", authMiddleware, authorizeRoles('admin'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteSponsorBanner(id);
@@ -1292,7 +1389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/rss/auto/start", authMiddleware, async (req, res) => {
+  app.post("/api/rss/auto/start", authMiddleware, authorizeRoles('admin'), async (req, res) => {
     try {
       rssService.startAutoProcessing();
       res.json({ message: "Automatic RSS processing started (every 30 minutes)" });
@@ -1301,7 +1398,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/rss/auto/stop", authMiddleware, async (req, res) => {
+  app.post("/api/rss/auto/stop", authMiddleware, authorizeRoles('admin'), async (req, res) => {
     try {
       rssService.stopAutoProcessing();
       res.json({ message: "Automatic RSS processing stopped" });
@@ -2140,7 +2237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // Admin: Audit logs (filterable)
-  app.get('/api/audit-logs', authMiddleware, async (req, res) => {
+  app.get('/api/audit-logs', auditLogsLimiter, authMiddleware, authorizeRoles('admin'), async (req, res) => {
     try {
       const { userId, method, path: pathQ, statusCode, from, to, page = '1', pageSize = '50' } = req.query as any;
       const whereClauses: any[] = [];
@@ -2160,7 +2257,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .limit(ps as any)
         .offset(offset as any);
 
-      res.json({ page: p, pageSize: ps, items });
+      const [{ count }] = await db
+        .select({ count: sql<number>`cast(count(*) as int)` })
+        .from(auditLogs)
+        .where(whereClauses.length ? and(...whereClauses as any) : undefined as any);
+
+      res.json({ page: p, pageSize: ps, total: count, items });
     } catch (e) {
       console.error(e);
       res.status(500).json({ error: 'Failed to fetch audit logs' });

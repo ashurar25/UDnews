@@ -23,6 +23,7 @@ interface AuditLogItem {
 interface AuditLogResponse {
   page: number;
   pageSize: number;
+  total: number;
   items: AuditLogItem[];
 }
 
@@ -34,7 +35,6 @@ function useAuditLogs(params: Record<string, any>) {
   return useQuery<AuditLogResponse>({
     queryKey: ['audit-logs', params],
     queryFn: () => api.get(`/api/audit-logs?${qs.toString()}`),
-    keepPreviousData: true,
   });
 }
 
@@ -48,7 +48,83 @@ export default function AuditLogViewer() {
   const [page, setPage] = React.useState<number>(1);
   const [pageSize, setPageSize] = React.useState<number>(50);
 
-  const { data, isLoading, isError, refetch } = useAuditLogs({ method, path: pathQ, userId, statusCode, from, to, page, pageSize });
+  const query = useAuditLogs({ method, path: pathQ, userId, statusCode, from, to, page, pageSize });
+  const data = query.data as AuditLogResponse | undefined;
+  const { isLoading, isError, refetch } = query as any;
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  // Load filters from URL once
+  React.useEffect(() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const m = sp.get('method') || '';
+      const pth = sp.get('path') || '';
+      const uid = sp.get('userId') || '';
+      const sc = sp.get('statusCode') || '';
+      const f = sp.get('from') || '';
+      const t = sp.get('to') || '';
+      const pg = parseInt(sp.get('page') || '1');
+      const psz = parseInt(sp.get('pageSize') || '50');
+      if (m) setMethod(m);
+      if (pth) setPathQ(pth);
+      if (uid) setUserId(uid);
+      if (sc) setStatusCode(sc);
+      if (f) setFrom(f);
+      if (t) setTo(t);
+      if (!isNaN(pg) && pg > 0) setPage(pg);
+      if (!isNaN(psz) && psz > 0) setPageSize(psz);
+    } catch {}
+  }, []);
+
+  // Persist filters to URL
+  React.useEffect(() => {
+    const sp = new URLSearchParams();
+    if (method) sp.set('method', method);
+    if (pathQ) sp.set('path', pathQ);
+    if (userId) sp.set('userId', userId);
+    if (statusCode) sp.set('statusCode', statusCode);
+    if (from) sp.set('from', from);
+    if (to) sp.set('to', to);
+    sp.set('page', String(page));
+    sp.set('pageSize', String(pageSize));
+    const qs = sp.toString();
+    const url = `${window.location.pathname}${qs ? `?${qs}` : ''}`;
+    window.history.replaceState({}, '', url);
+  }, [method, pathQ, userId, statusCode, from, to, page, pageSize]);
+
+  const exportCsv = () => {
+    const rows = (data?.items || []).map((r) => ({
+      id: r.id,
+      createdAt: r.createdAt,
+      userId: r.userId ?? '',
+      method: r.method,
+      path: r.path,
+      statusCode: r.statusCode ?? '',
+      ipAddress: r.ipAddress ?? '',
+      latencyMs: r.latencyMs ?? '',
+      userAgent: r.userAgent ?? '',
+      bodySummary: typeof r.bodySummary === 'string' ? r.bodySummary : JSON.stringify(r.bodySummary ?? ''),
+    }));
+    const header = Object.keys(rows[0] || { id: '', createdAt: '', userId: '', method: '', path: '', statusCode: '', ipAddress: '', latencyMs: '', userAgent: '', bodySummary: '' });
+    const escape = (val: any) => {
+      const s = String(val ?? '');
+      if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+        return '"' + s.replace(/"/g, '""') + '"';
+      }
+      return s;
+    };
+    const csv = [header.join(',')]
+      .concat(rows.map((row) => header.map((h) => escape((row as any)[h])).join(',')))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'audit-logs.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const resetFilters = () => {
     setMethod('');
@@ -68,6 +144,7 @@ export default function AuditLogViewer() {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4 space-y-4">
+        <div className="text-sm text-gray-600">รวม {total.toLocaleString()} รายการ</div>
         {/* Filters */}
         <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
           <div className="md:col-span-1">
@@ -101,6 +178,7 @@ export default function AuditLogViewer() {
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => refetch()}>รีเฟรช</Button>
+            <Button variant="secondary" onClick={exportCsv}>ส่งออก CSV</Button>
             <Button variant="ghost" onClick={resetFilters}>ล้างตัวกรอง</Button>
           </div>
           <div className="flex items-center gap-2">
@@ -142,7 +220,7 @@ export default function AuditLogViewer() {
               {isError && !isLoading && (
                 <tr><td className="p-4 text-red-600" colSpan={8}>ไม่สามารถโหลดข้อมูลได้</td></tr>
               )}
-              {!isLoading && !isError && data?.items?.length === 0 && (
+              {!isLoading && !isError && (data?.items?.length ?? 0) === 0 && (
                 <tr><td className="p-4" colSpan={8}>ไม่มีข้อมูล</td></tr>
               )}
               {!isLoading && !isError && data?.items?.map((row) => (
@@ -163,10 +241,10 @@ export default function AuditLogViewer() {
 
         {/* Pagination */}
         <div className="flex items-center justify-between mt-2">
-          <div className="text-sm text-gray-600">หน้า {page}</div>
+          <div className="text-sm text-gray-600">หน้า {page} / {isNaN(totalPages) ? '-' : totalPages}</div>
           <div className="flex gap-2">
             <Button variant="outline" disabled={page <= 1 || isLoading} onClick={() => setPage((p) => Math.max(1, p - 1))}>ก่อนหน้า</Button>
-            <Button variant="default" disabled={isLoading || (data && data.items.length < pageSize)} onClick={() => setPage((p) => p + 1)}>ถัดไป</Button>
+            <Button variant="default" disabled={isLoading || page >= totalPages} onClick={() => setPage((p) => p + 1)}>ถัดไป</Button>
           </div>
         </div>
       </CardContent>

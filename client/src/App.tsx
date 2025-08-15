@@ -25,6 +25,7 @@ import SystemStatus from "@/pages/SystemStatus";
 import "./App.css";
 import { ErrorBoundary } from "react-error-boundary";
 import GAListener from "@/components/GAListener";
+import DailySummary from "./pages/DailySummary";
 
 function ErrorFallback({error, resetErrorBoundary}: {error: Error, resetErrorBoundary: () => void}) {
   return (
@@ -87,6 +88,7 @@ const App = () => (
             <Route path="/system-status" component={SystemStatus} />
             <Route path="/login" component={Login} />
             <Route path="/admin" component={Admin} />
+            <Route path="/daily-summary" component={DailySummary} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route component={NotFound} />
           </Switch>

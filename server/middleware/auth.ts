@@ -8,6 +8,7 @@ export interface AuthRequest extends Request {
   user?: {
     id: number;
     username: string;
+    role?: string;
   };
 }
 
@@ -28,8 +29,19 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
   });
 };
 
-export const generateToken = (user: { id: number; username: string }) => {
+export const generateToken = (user: { id: number; username: string; role?: string }) => {
   return jwt.sign(user, JWT_SECRET, { expiresIn: '24h' });
+};
+
+// Role-based authorization middleware
+export const authorizeRoles = (...roles: string[]) => {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    const role = req.user?.role || 'admin';
+    if (!roles.includes(role)) {
+      return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    next();
+  };
 };
 
 // Rate limiting middleware
