@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Pencil, Trash2, Plus, RefreshCw, Play, Pause, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
 
 interface RSSFeed {
   id: number;
@@ -61,54 +62,19 @@ export default function RSSManager() {
   // Fixed: เพิ่ม queryFn ที่ขาดหาย
   const { data: feeds = [], isLoading, error } = useQuery({
     queryKey: ["/api/rss-feeds"],
-    queryFn: async (): Promise<RSSFeed[]> => {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch("/api/rss-feeds", {
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    },
+    queryFn: async (): Promise<RSSFeed[]> => api.get("/api/rss-feeds"),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
 
   const { data: processingStatus } = useQuery({
     queryKey: ["/api/rss/status"],
-    queryFn: async (): Promise<ProcessingStatus> => {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch("/api/rss/status", {
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    },
+    queryFn: async (): Promise<ProcessingStatus> => api.get("/api/rss/status"),
     refetchInterval: 10000, // Refetch every 10 seconds
   });
 
   const createFeedMutation = useMutation({
-    mutationFn: async (data: RSSFormData): Promise<RSSFeed> => {
-      const response = await fetch("/api/rss-feeds", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          'Authorization': localStorage.getItem('adminToken') ? `Bearer ${localStorage.getItem('adminToken')}` : ''
-        },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw new Error("Failed to create RSS feed");
-      return response.json();
-    },
+    mutationFn: async (data: RSSFormData): Promise<RSSFeed> => api.post("/api/rss-feeds", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/rss-feeds"] });
       toast({ title: "สำเร็จ", description: "เพิ่ม RSS Feed ใหม่แล้ว" });
@@ -124,18 +90,8 @@ export default function RSSManager() {
   });
 
   const updateFeedMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<RSSFormData> }): Promise<RSSFeed> => {
-      const response = await fetch(`/api/rss-feeds/${id}`, {
-        method: "PUT",
-        headers: { 
-          "Content-Type": "application/json",
-          'Authorization': localStorage.getItem('adminToken') ? `Bearer ${localStorage.getItem('adminToken')}` : ''
-        },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw new Error("Failed to update RSS feed");
-      return response.json();
-    },
+    mutationFn: async ({ id, data }: { id: number; data: Partial<RSSFormData> }): Promise<RSSFeed> =>
+      api.put(`/api/rss-feeds/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/rss-feeds"] });
       toast({ title: "สำเร็จ", description: "แก้ไข RSS Feed แล้ว" });
@@ -152,13 +108,7 @@ export default function RSSManager() {
 
   const deleteFeedMutation = useMutation({
     mutationFn: async (id: number): Promise<void> => {
-      const response = await fetch(`/api/rss-feeds/${id}`, { 
-        method: "DELETE",
-        headers: {
-          'Authorization': localStorage.getItem('adminToken') ? `Bearer ${localStorage.getItem('adminToken')}` : ''
-        }
-      });
-      if (!response.ok) throw new Error("Failed to delete RSS feed");
+      await api.delete(`/api/rss-feeds/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/rss-feeds"] });
@@ -175,13 +125,7 @@ export default function RSSManager() {
 
   const processAllFeedsMutation = useMutation({
     mutationFn: async (): Promise<void> => {
-      const response = await fetch("/api/rss/process", { 
-        method: "POST",
-        headers: {
-          'Authorization': localStorage.getItem('adminToken') ? `Bearer ${localStorage.getItem('adminToken')}` : ''
-        }
-      });
-      if (!response.ok) throw new Error("Failed to process feeds");
+      await api.post("/api/rss/process");
     },
     onSuccess: () => {
       toast({ title: "สำเร็จ", description: "เริ่มประมวลผล RSS Feeds แล้ว" });
@@ -198,13 +142,7 @@ export default function RSSManager() {
 
   const processSingleFeedMutation = useMutation({
     mutationFn: async (id: number): Promise<void> => {
-      const response = await fetch(`/api/rss/process/${id}`, { 
-        method: "POST",
-        headers: {
-          'Authorization': localStorage.getItem('adminToken') ? `Bearer ${localStorage.getItem('adminToken')}` : ''
-        }
-      });
-      if (!response.ok) throw new Error("Failed to process feed");
+      await api.post(`/api/rss/process/${id}`);
     },
     onSuccess: () => {
       toast({ title: "สำเร็จ", description: "ประมวลผล RSS Feed แล้ว" });

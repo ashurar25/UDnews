@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Database, RefreshCw, Download, Upload, Trash2, Search, Filter, Eye, Edit, Plus, Settings, BarChart3, Users, FileText, MessageSquare, Bell } from "lucide-react";
+import { api } from "@/lib/api";
 
 interface DatabaseStats {
   totalTables: number;
@@ -71,19 +72,7 @@ export default function DatabaseManager() {
   const [isRestoreDialogOpen, setIsRestoreDialogOpen] = useState(false);
   const [backupName, setBackupName] = useState('');
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('adminToken');
-    return { 'Authorization': token ? `Bearer ${token}` : '' } as Record<string, string>;
-  };
-
-  const handleUnauthorized = (res: Response) => {
-    if (res.status === 401 || res.status === 403) {
-      localStorage.removeItem('adminToken');
-      window.location.href = '/admin';
-      return true;
-    }
-    return false;
-  };
+  // Auth and 401 handling are centralized in api helper
 
   // Load database information
   useEffect(() => {
@@ -95,28 +84,12 @@ export default function DatabaseManager() {
       setIsLoading(true);
       
       // Fetch database stats
-      const statsResponse = await fetch('/api/database/stats', { headers: { ...getAuthHeaders() } });
-      if (statsResponse.ok) {
-        const stats = await statsResponse.json();
-        setDatabaseStats(stats);
-      } else {
-        if (handleUnauthorized(statsResponse)) return;
-        let errorData: any = {};
-        try { errorData = await statsResponse.json(); } catch {}
-        throw new Error(errorData.error || `HTTP ${statsResponse.status}: ${statsResponse.statusText}`);
-      }
+      const stats = await api.get<DatabaseStats>('/api/database/stats');
+      setDatabaseStats(stats);
 
       // Fetch tables info
-      const tablesResponse = await fetch('/api/database/tables', { headers: { ...getAuthHeaders() } });
-      if (tablesResponse.ok) {
-        const tablesData = await tablesResponse.json();
-        setTables(tablesData);
-      } else {
-        if (handleUnauthorized(tablesResponse)) return;
-        let errorData: any = {};
-        try { errorData = await tablesResponse.json(); } catch {}
-        throw new Error(errorData.error || `HTTP ${tablesResponse.status}: ${tablesResponse.statusText}`);
-      }
+      const tablesData = await api.get<TableInfo[]>('/api/database/tables');
+      setTables(tablesData);
     } catch (error) {
       console.error('Error loading database info:', error);
       
@@ -143,17 +116,9 @@ export default function DatabaseManager() {
 
   const loadTableData = async (tableName: string) => {
     try {
-      const response = await fetch(`/api/database/tables/${tableName}/data?limit=100`, {
-        headers: { ...getAuthHeaders() }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setTableData(data);
-        setSelectedTable(tableName);
-      } else {
-        if (handleUnauthorized(response)) return;
-        throw new Error(`HTTP ${response.status}`);
-      }
+      const data = await api.get<any[]>(`/api/database/tables/${tableName}/data?limit=100`);
+      setTableData(data);
+      setSelectedTable(tableName);
     } catch (error) {
       toast({
         title: "เกิดข้อผิดพลาด",
@@ -165,13 +130,7 @@ export default function DatabaseManager() {
 
   const createBackup = async () => {
     try {
-      const response = await fetch('/api/database/backup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify({ name: backupName })
-      });
-
-      if (response.ok) {
+      await api.post('/api/database/backup', { name: backupName });
         toast({
           title: "สำรองข้อมูลสำเร็จ",
           description: `สร้างไฟล์สำรองข้อมูล ${backupName} เรียบร้อยแล้ว`,
@@ -179,10 +138,6 @@ export default function DatabaseManager() {
         setIsBackupDialogOpen(false);
         setBackupName('');
         loadDatabaseInfo(); // Refresh stats
-      } else {
-        if (handleUnauthorized(response)) return;
-        throw new Error('Backup failed');
-      }
     } catch (error) {
       toast({
         title: "เกิดข้อผิดพลาด",
@@ -196,24 +151,13 @@ export default function DatabaseManager() {
     try {
       const formData = new FormData();
       formData.append('backup', backupFile);
-
-      const response = await fetch('/api/database/restore', {
-        method: 'POST',
-        headers: { ...getAuthHeaders() },
-        body: formData
-      });
-
-      if (response.ok) {
+      await api.upload('/api/database/restore', formData);
         toast({
           title: "กู้คืนข้อมูลสำเร็จ",
           description: "กู้คืนข้อมูลจากไฟล์สำรองเรียบร้อยแล้ว",
         });
         setIsRestoreDialogOpen(false);
         loadDatabaseInfo(); // Refresh stats
-      } else {
-        if (handleUnauthorized(response)) return;
-        throw new Error('Restore failed');
-      }
     } catch (error) {
       toast({
         title: "เกิดข้อผิดพลาด",
@@ -225,17 +169,12 @@ export default function DatabaseManager() {
 
   const clearCache = async () => {
     try {
-      const response = await fetch('/api/database/clear-cache', { method: 'POST', headers: { ...getAuthHeaders() } });
-      if (response.ok) {
+      await api.post('/api/database/clear-cache');
         toast({
           title: "ล้างแคชสำเร็จ",
           description: "แคชฐานข้อมูลถูกล้างเรียบร้อยแล้ว",
         });
         loadDatabaseInfo(); // Refresh stats
-      } else {
-        if (handleUnauthorized(response)) return;
-        throw new Error('Clear cache failed');
-      }
     } catch (error) {
       toast({
         title: "เกิดข้อผิดพลาด",

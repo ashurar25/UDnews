@@ -878,7 +878,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/news", async (req, res) => {
+  app.post("/api/news", authMiddleware, async (req, res) => {
     try {
       const validatedData = insertNewsSchema.parse(req.body);
       const article = await storage.insertNews(validatedData);
@@ -893,7 +893,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/news/:id", async (req, res) => {
+  app.put("/api/news/:id", authMiddleware, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const validatedData = insertNewsSchema.partial().parse(req.body);
@@ -907,7 +907,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/news/:id", async (req, res) => {
+  app.delete("/api/news/:id", authMiddleware, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteNews(id);

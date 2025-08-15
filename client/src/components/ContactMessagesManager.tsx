@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Trash2, Mail, MailOpen, Calendar, User, AtSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,19 +46,8 @@ const ContactMessagesManager = () => {
   const fetchMessages = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch("/api/contact-messages", {
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-          'Content-Type': 'application/json'
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setMessages(data);
-      } else {
-        throw new Error("Failed to fetch messages");
-      }
+      const data = await api.get<ContactMessage[]>("/api/contact-messages");
+      setMessages(data);
     } catch (error) {
       toast({
         title: "เกิดข้อผิดพลาด",
@@ -71,16 +61,7 @@ const ContactMessagesManager = () => {
 
   const markAsRead = async (id: number) => {
     try {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch(`/api/contact-messages/${id}/read`, {
-        method: "PUT",
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
+      await api.put(`/api/contact-messages/${id}/read`);
         setMessages(prev => 
           prev.map(msg => 
             msg.id === id ? { ...msg, isRead: true } : msg
@@ -90,9 +71,6 @@ const ContactMessagesManager = () => {
           title: "สำเร็จ",
           description: "ทำเครื่องหมายอ่านแล้ว",
         });
-      } else {
-        throw new Error("Failed to mark as read");
-      }
     } catch (error) {
       toast({
         title: "เกิดข้อผิดพลาด",
@@ -104,23 +82,12 @@ const ContactMessagesManager = () => {
 
   const deleteMessage = async (id: number) => {
     try {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch(`/api/contact-messages/${id}`, {
-        method: "DELETE",
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : ''
-        }
-      });
-
-      if (response.ok) {
+      await api.delete(`/api/contact-messages/${id}`);
         setMessages(prev => prev.filter(msg => msg.id !== id));
         toast({
           title: "สำเร็จ",
           description: "ลบข้อความแล้ว",
         });
-      } else {
-        throw new Error("Failed to delete message");
-      }
     } catch (error) {
       toast({
         title: "เกิดข้อผิดพลาด",

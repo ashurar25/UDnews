@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { AlertCircle, CheckCircle2, Heart, RefreshCcw, ShieldCheck, Timer } from 'lucide-react';
+import { api } from '@/lib/api';
 
 interface Donation {
   id: number;
@@ -34,23 +35,14 @@ const DonationManager: React.FC = () => {
   const [notice, setNotice] = useState<string>('');
   const [onlyWithSlip, setOnlyWithSlip] = useState<boolean>(false);
 
-  const adminToken = useMemo(() => localStorage.getItem('adminToken') || '', []);
-
   const fetchDonations = async () => {
     setLoading(true);
     setError('');
     try {
-      const headers: HeadersInit = adminToken ? { Authorization: `Bearer ${adminToken}` } : {};
-      const [pRes, aRes] = await Promise.all([
-        fetch('/api/donations?status=pending', { headers }),
-        fetch('/api/donations?status=approved&limit=20', { headers }),
+      const [p, a] = await Promise.all([
+        api.get<Donation[]>('/api/donations?status=pending'),
+        api.get<Donation[]>('/api/donations?status=approved&limit=20'),
       ]);
-      if (!pRes.ok || !aRes.ok) {
-        const perr = await pRes.json().catch(() => ({} as any));
-        const aerr = await aRes.json().catch(() => ({} as any));
-        throw new Error((perr as any)?.error || (aerr as any)?.error || 'ไม่สามารถดึงข้อมูลการบริจาคได้');
-      }
-      const [p, a] = await Promise.all([pRes.json(), aRes.json()]);
       setPending(p || []);
       setApproved(a || []);
     } catch (e) {
@@ -61,22 +53,10 @@ const DonationManager: React.FC = () => {
   };
 
   const rejectDonation = async (id: number) => {
-    if (!adminToken) {
-      setError('ไม่พบสิทธิ์ผู้ดูแลระบบ กรุณาเข้าสู่ระบบใหม่');
-      return;
-    }
     const reason = window.prompt('ระบุเหตุผลที่ปฏิเสธ (เช่น สลิปไม่ถูกต้อง/ไม่พบรายการ)');
     if (reason === null) return; // cancelled
     try {
-      const res = await fetch(`/api/donations/reject/${id}`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: reason || 'rejected' }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error((data as any)?.error || 'Reject failed');
-      }
+      await api.post(`/api/donations/reject/${id}`, { reason: reason || 'rejected' });
       setPending((prev) => prev.filter((d) => d.id !== id));
       setNotice('ปฏิเสธรายการสำเร็จ');
       setTimeout(() => setNotice(''), 2000);
@@ -102,19 +82,8 @@ const DonationManager: React.FC = () => {
   }, []);
 
   const approveDonation = async (id: number) => {
-    if (!adminToken) {
-      setError('ไม่พบสิทธิ์ผู้ดูแลระบบ กรุณาเข้าสู่ระบบใหม่');
-      return;
-    }
     try {
-      const res = await fetch(`/api/donations/approve/${id}`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${adminToken}` },
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error((data as any)?.error || 'Approve failed');
-      }
+      await api.post(`/api/donations/approve/${id}`);
       // Optimistic update: remove from pending
       setPending((prev) => prev.filter((d) => d.id !== id));
       // Refresh approved list

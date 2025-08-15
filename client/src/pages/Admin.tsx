@@ -1,4 +1,5 @@
 import React, { useState, Suspense, lazy } from 'react';
+import { api } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { 
   Menu, 
@@ -254,16 +255,7 @@ function AdminDashboard() {
   // Fetch database stats
   const { data: databaseStats } = useQuery({
     queryKey: ['database-stats'],
-    queryFn: async () => {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch('/api/database/stats', {
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : ''
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch database stats');
-      return response.json();
-    },
+    queryFn: async () => api.get('/api/database/stats'),
     refetchInterval: 30000,
   });
 

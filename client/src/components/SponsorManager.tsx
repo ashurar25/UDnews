@@ -14,7 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, ExternalLink, Eye, Calendar } from "lucide-react";
 import { z } from "zod";
-import axios from "axios";
+import { api } from "@/lib/api";
 import type { SponsorBanner, InsertSponsorBanner } from "@shared/schema";
 import { insertSponsorBannerSchema } from "@shared/schema";
 
@@ -33,10 +33,7 @@ const SponsorManager = () => {
 
   const { data: banners = [], isLoading } = useQuery({
     queryKey: ["/api/sponsor-banners"],
-    queryFn: async () => {
-      const response = await axios.get("/api/sponsor-banners");
-      return response.data as SponsorBanner[];
-    },
+    queryFn: async () => api.get<SponsorBanner[]>("/api/sponsor-banners"),
   });
 
   const form = useForm<FormData>({
@@ -53,10 +50,7 @@ const SponsorManager = () => {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: InsertSponsorBanner) => {
-      const response = await axios.post("/api/sponsor-banners", data);
-      return response.data;
-    },
+    mutationFn: async (data: InsertSponsorBanner) => api.post("/api/sponsor-banners", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sponsor-banners"] });
       toast({ title: "สร้างแบนเนอร์สปอนเซอร์สำเร็จ" });
@@ -74,10 +68,8 @@ const SponsorManager = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<InsertSponsorBanner> }) => {
-      const response = await axios.put(`/api/sponsor-banners/${id}`, data);
-      return response.data;
-    },
+    mutationFn: async ({ id, data }: { id: number; data: Partial<InsertSponsorBanner> }) =>
+      api.put(`/api/sponsor-banners/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sponsor-banners"] });
       toast({ title: "อัพเดทแบนเนอร์สปอนเซอร์สำเร็จ" });
@@ -96,7 +88,7 @@ const SponsorManager = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await axios.delete(`/api/sponsor-banners/${id}`);
+      await api.delete(`/api/sponsor-banners/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sponsor-banners"] });

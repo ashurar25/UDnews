@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Users, UserPlus, UserCog, UserX, Shield, Mail, Calendar, Search } from "lucide-react";
+import { api } from "@/lib/api";
 
 interface User {
   id: string;
@@ -45,116 +46,16 @@ export default function UserManager() {
   const loadUsers = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/users', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data);
-      } else {
-        // Check if it's an authentication error
-        if (response.status === 401 || response.status === 403) {
-          toast({
-            title: "สิทธิ์ไม่เพียงพอ",
-            description: "กรุณาเข้าสู่ระบบใหม่",
-            variant: "destructive"
-          });
-          // Clear token and redirect to admin login page
-          try { localStorage.removeItem('adminToken'); } catch {}
-          window.location.href = '/admin';
-          return;
-        }
-        
-        // Fallback to mock data if API fails
-        const mockUsers: User[] = [
-          {
-            id: '1',
-            username: 'admin',
-            email: 'admin@udnews.com',
-            role: 'admin',
-            status: 'active',
-            createdAt: '2024-01-01',
-            lastLogin: '2024-12-19 10:30:00'
-          },
-          {
-            id: '2',
-            username: 'editor1',
-            email: 'editor1@udnews.com',
-            role: 'editor',
-            status: 'active',
-            createdAt: '2024-01-15',
-            lastLogin: '2024-12-18 15:45:00'
-          },
-          {
-            id: '3',
-            username: 'user1',
-            email: 'user1@udnews.com',
-            role: 'user',
-            status: 'active',
-            createdAt: '2024-02-01',
-            lastLogin: '2024-12-17 09:15:00'
-          }
-        ];
-        setUsers(mockUsers);
-        
-        toast({
-          title: "ใช้ข้อมูลจำลอง",
-          description: "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ ใช้ข้อมูลจำลองแทน",
-          variant: "default"
-        });
-      }
+      const data = await api.get<User[]>('/api/users');
+      setUsers(data);
     } catch (error) {
       console.error('Error loading users:', error);
       
-      let errorMessage = "ไม่สามารถโหลดข้อมูลผู้ใช้ได้";
-      if (error instanceof Error) {
-        if (error.message.includes('Failed to fetch')) {
-          errorMessage = "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้";
-        } else {
-          errorMessage = error.message;
-        }
-      }
-      
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: errorMessage,
+        description: "ไม่สามารถโหลดข้อมูลผู้ใช้ได้",
         variant: "destructive"
       });
-      
-      // Fallback to mock data on network error
-      const mockUsers: User[] = [
-        {
-          id: '1',
-          username: 'admin',
-          email: 'admin@udnews.com',
-          role: 'admin',
-          status: 'active',
-          createdAt: '2024-01-01',
-          lastLogin: '2024-12-19 10:30:00'
-        },
-        {
-          id: '2',
-          username: 'editor1',
-          email: 'editor1@udnews.com',
-          role: 'editor',
-          status: 'active',
-          createdAt: '2024-01-15',
-          lastLogin: '2024-12-18 15:45:00'
-        },
-        {
-          id: '3',
-          username: 'user1',
-          email: 'user1@udnews.com',
-          role: 'user',
-          status: 'active',
-          createdAt: '2024-02-01',
-          lastLogin: '2024-12-17 09:15:00'
-        }
-      ];
-      setUsers(mockUsers);
     } finally {
       setIsLoading(false);
     }
@@ -167,17 +68,7 @@ export default function UserManager() {
 
   const handleAddUser = async () => {
     try {
-      const response = await fetch('/api/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-        },
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        const newUser = await response.json();
+      const newUser = await api.post<User>('/api/users', formData);
         setUsers([...users, newUser]);
         setIsAddDialogOpen(false);
         setFormData({ username: '', email: '', password: '', role: 'user', status: 'active' });
@@ -186,9 +77,6 @@ export default function UserManager() {
           title: "เพิ่มผู้ใช้สำเร็จ",
           description: `ผู้ใช้ ${newUser.username} ถูกเพิ่มเรียบร้อยแล้ว`,
         });
-      } else {
-        throw new Error('Failed to add user');
-      }
     } catch (error) {
       console.error('Error adding user:', error);
       toast({
@@ -204,47 +92,16 @@ export default function UserManager() {
     
     try {
       // Update user details
-      const updateRes = await fetch(`/api/users/${editingUser.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-        },
-        body: JSON.stringify({
-          username: formData.username,
-          email: formData.email,
-          role: formData.role,
-          status: formData.status,
-        })
+      await api.put(`/api/users/${editingUser.id}`, {
+        username: formData.username,
+        email: formData.email,
+        role: formData.role,
+        status: formData.status,
       });
-
-      if (!updateRes.ok) {
-        if (updateRes.status === 401 || updateRes.status === 403) {
-          try { localStorage.removeItem('adminToken'); } catch {}
-          window.location.href = '/admin';
-          return;
-        }
-        throw new Error('Failed to update user');
-      }
 
       // Change password if provided
       if (formData.password && formData.password.trim().length > 0) {
-        const pwdRes = await fetch(`/api/users/${editingUser.id}/password`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-          },
-          body: JSON.stringify({ currentPassword: '', newPassword: formData.password })
-        });
-        if (!pwdRes.ok) {
-          if (pwdRes.status === 401 || pwdRes.status === 403) {
-            try { localStorage.removeItem('adminToken'); } catch {}
-            window.location.href = '/admin';
-            return;
-          }
-          throw new Error('Failed to change password');
-        }
+        await api.patch(`/api/users/${editingUser.id}/password`, { currentPassword: '', newPassword: formData.password });
       }
 
       // Refresh list
@@ -268,22 +125,7 @@ export default function UserManager() {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      const res = await fetch(`/api/users/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-        }
-      });
-      if (!res.ok) {
-        if (res.status === 401 || res.status === 403) {
-          try { localStorage.removeItem('adminToken'); } catch {}
-          window.location.href = '/admin';
-          return;
-        }
-        let msg = 'ไม่สามารถลบผู้ใช้ได้';
-        try { const data = await res.json(); msg = data.error || data.message || msg; } catch {}
-        throw new Error(msg);
-      }
+      await api.delete(`/api/users/${userId}`);
 
       const userToDelete = users.find(u => u.id === userId);
       setUsers(users.filter(u => u.id !== userId));

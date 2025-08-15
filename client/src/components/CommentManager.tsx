@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { MessageSquare, CheckCircle, XCircle, Trash2, Search, Filter } from "lucide-react";
+import { api } from "@/lib/api";
 
 interface AdminComment {
   id: number;
@@ -28,22 +29,13 @@ export default function CommentManager() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved'>('all');
   const [selectedComments, setSelectedComments] = useState<number[]>([]);
 
-  const adminToken = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
-
   const fetchComments = useCallback(async () => {
     setIsLoading(true);
     try {
       // Backend supports filter=approved|all; we'll use approved when requested, otherwise all
       const serverFilter = statusFilter === 'approved' ? 'approved' : 'all';
-      const res = await fetch(`/api/admin/comments?filter=${serverFilter}&limit=100`, {
-        headers: {
-          'Authorization': adminToken ? `Bearer ${adminToken}` : '',
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!res.ok) throw new Error('Failed to load comments');
       const data: Array<{ id: number; content: string; authorName: string; createdAt: string; newsTitle: string; isApproved: boolean }>
-        = await res.json();
+        = await api.get(`/api/admin/comments?filter=${serverFilter}&limit=100`);
       setComments(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error(e);
@@ -51,7 +43,7 @@ export default function CommentManager() {
     } finally {
       setIsLoading(false);
     }
-  }, [statusFilter, adminToken, toast]);
+  }, [statusFilter, toast]);
 
   useEffect(() => {
     fetchComments();
@@ -72,14 +64,7 @@ export default function CommentManager() {
 
   const handleApprove = async (commentId: number) => {
     try {
-      const res = await fetch(`/api/admin/comments/${commentId}/approve`, {
-        method: 'POST',
-        headers: {
-          'Authorization': adminToken ? `Bearer ${adminToken}` : '',
-          'Content-Type': 'application/json',
-        },
-      });
-      if (!res.ok) throw new Error('Approve failed');
+      await api.post(`/api/admin/comments/${commentId}/approve`);
       // Optimistic update
       setComments((prev) => prev.map(c => c.id === commentId ? { ...c, isApproved: true } : c));
       toast({ title: 'อนุมัติแล้ว', description: 'ความคิดเห็นถูกอนุมัติเรียบร้อย' });
@@ -90,11 +75,7 @@ export default function CommentManager() {
 
   const handleDeleteComment = async (commentId: number) => {
     try {
-      const res = await fetch(`/api/admin/comments/${commentId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': adminToken ? `Bearer ${adminToken}` : '' },
-      });
-      if (!res.ok && res.status !== 204) throw new Error('Delete failed');
+      await api.delete(`/api/admin/comments/${commentId}`);
       setComments((prev) => prev.filter((c) => c.id !== commentId));
       toast({ title: 'ลบความคิดเห็นสำเร็จ', description: 'ความคิดเห็นถูกลบเรียบร้อยแล้ว' });
     } catch (error) {
@@ -113,10 +94,7 @@ export default function CommentManager() {
     }
 
     try {
-      await Promise.all(selectedComments.map(id => fetch(`/api/admin/comments/${id}/approve`, {
-        method: 'POST',
-        headers: { 'Authorization': adminToken ? `Bearer ${adminToken}` : '' },
-      })));
+      await Promise.all(selectedComments.map(id => api.post(`/api/admin/comments/${id}/approve`)));
       setComments(prev => prev.map(c => selectedComments.includes(c.id) ? { ...c, isApproved: true } : c));
       setSelectedComments([]);
       toast({ title: 'อนุมัติทั้งหมดสำเร็จ', description: `จำนวน ${selectedComments.length} รายการ` });

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Pencil, Trash2, Plus, Eye, Calendar, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
 
 interface News {
   id: number;
@@ -64,37 +65,13 @@ export default function NewsManager() {
   // Fixed: เพิ่ม queryFn ที่ขาดหาย และ authentication token
   const { data: news = [], isLoading, error } = useQuery({
     queryKey: ["/api/news"],
-    queryFn: async (): Promise<News[]> => {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch("/api/news", {
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    },
+    queryFn: async (): Promise<News[]> => api.get("/api/news", { auth: false }),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const createNewsMutation = useMutation({
-    mutationFn: async (data: NewsFormData): Promise<News> => {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch("/api/news", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          'Authorization': token ? `Bearer ${token}` : ''
-        },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw new Error("Failed to create news");
-      return response.json();
-    },
+    mutationFn: async (data: NewsFormData): Promise<News> => api.post("/api/news", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/news"] });
       toast({ title: "สำเร็จ", description: "เพิ่มข่าวใหม่แล้ว" });
@@ -110,19 +87,8 @@ export default function NewsManager() {
   });
 
   const updateNewsMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<NewsFormData> }): Promise<News> => {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch(`/api/news/${id}`, {
-        method: "PUT",
-        headers: { 
-          "Content-Type": "application/json",
-          'Authorization': token ? `Bearer ${token}` : ''
-        },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw new Error("Failed to update news");
-      return response.json();
-    },
+    mutationFn: async ({ id, data }: { id: number; data: Partial<NewsFormData> }): Promise<News> =>
+      api.put(`/api/news/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/news"] });
       toast({ title: "สำเร็จ", description: "แก้ไขข่าวแล้ว" });
@@ -139,14 +105,7 @@ export default function NewsManager() {
 
   const deleteNewsMutation = useMutation({
     mutationFn: async (id: number): Promise<void> => {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch(`/api/news/${id}`, { 
-        method: "DELETE",
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : ''
-        }
-      });
-      if (!response.ok) throw new Error("Failed to delete news");
+      await api.delete(`/api/news/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/news"] });
