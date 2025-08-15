@@ -3,8 +3,12 @@ import { newsArticles } from '@shared/schema';
 import { and, gte, lte, desc } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
+// __dirname is not available in ESM; derive it from import.meta.url
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const CACHE_FILE = path.join(__dirname, 'data', 'daily-summaries.json');
 
 export interface DailySummaryData {
