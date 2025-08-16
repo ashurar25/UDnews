@@ -502,7 +502,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const todayViewsRow = await db
         .select({ cnt: sql<number>`count(*)` })
         .from(newsViews)
-        .where(gte((newsViews as any).createdAt, todayStart))
+        .where(gte(newsViews.viewedAt, todayStart))
         .limit(1);
       const todayViews = Number(todayViewsRow?.[0]?.cnt || 0);
 
@@ -557,7 +557,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .where(and(
             eq(newsViews.newsId as any, newsId as any),
             eq((newsViews as any).ipAddress, ip),
-            gte((newsViews as any).createdAt, dayAgo)
+            gte(newsViews.viewedAt, dayAgo)
           ))
           .limit(1);
         if (existing && existing.length > 0) {
@@ -576,7 +576,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // @ts-ignore
           userAgent,
           // @ts-ignore
-          createdAt: now,
+          viewedAt: now,
         } as any);
       } catch (e) {
         // Swallow errors to avoid impacting UX
