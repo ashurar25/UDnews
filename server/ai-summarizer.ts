@@ -76,7 +76,10 @@ function buildPromptTH(articles: any[], dateStr: string) {
 }
 
 async function callOpenAI(prompt: string) {
-  if (!OPENAI_API_KEY) throw new Error('OPENAI_API_KEY is not set');
+  // Graceful degradation: if key missing, return empty JSON structure
+  if (!OPENAI_API_KEY) {
+    return JSON.stringify({ bullets: [], highlights: [], topLinks: [] });
+  }
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -94,6 +97,10 @@ async function callOpenAI(prompt: string) {
   });
   if (!res.ok) {
     const t = await res.text();
+    // If quota/rate-limited, degrade gracefully with empty result
+    if (res.status === 429 || /insufficient_quota/i.test(t)) {
+      return JSON.stringify({ bullets: [], highlights: [], topLinks: [] });
+    }
     throw new Error(`OpenAI error: ${res.status} ${t}`);
   }
   const data = await res.json();

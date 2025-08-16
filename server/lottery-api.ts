@@ -6,21 +6,36 @@ import Parser from 'rss-parser';
 // Docs: https://api.rayriffy.com/
 const BASE = process.env.LOTTERY_API_BASE || 'https://api.rayriffy.com/api';
 
-const cache = new NodeCache({ stdTTL: 300, checkperiod: 120 }); // 5 minutes
+const cache = new NodeCache({ stdTTL: 300, checkperiod: 120 }); // 5 minutes fresh cache
+const STALE_TTL_SECONDS = 24 * 60 * 60; // 24 hours for stale fallback
 
 function cacheKey(path: string) {
   return `lottery:${path}`;
 }
 
+function staleKey(path: string) {
+  return `lottery:stale:${path}`;
+}
+
 async function getJson<T>(path: string): Promise<T> {
   const key = cacheKey(path);
+  const sKey = staleKey(path);
   const cached = cache.get<T>(key);
   if (cached) return cached;
-  const res = await fetch(`${BASE}${path}`);
-  if (!res.ok) throw new Error(`Lottery API error: ${res.status}`);
-  const data = await res.json();
-  cache.set(key, data, 300);
-  return data as T;
+  try {
+    const res = await fetch(`${BASE}${path}`);
+    if (!res.ok) throw new Error(`Lottery API error: ${res.status}`);
+    const data = await res.json();
+    // set fresh and stale caches
+    cache.set(key, data, 300);
+    cache.set(sKey, data, STALE_TTL_SECONDS);
+    return data as T;
+  } catch (err: any) {
+    // fallback to stale cache if available
+    const stale = cache.get<T>(sKey);
+    if (stale) return stale;
+    throw err;
+  }
 }
 
 // Map Rayriffy payload to a normalized structure our client can use
