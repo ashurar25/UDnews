@@ -14,6 +14,102 @@ interface WeatherData {
   rainStatus: string; // สถานะฝน
 }
 
+// ---------- Daily forecast (real 5-day) from OpenWeather (3h steps grouped by day) ----------
+export interface DailyForecastDay {
+  date: string; // YYYY-MM-DD
+  day: string;  // Mon/Tue in TH
+  icon: string; // emoji/icon
+  conditionThai: string;
+  high: number;
+  low: number;
+  rainChance: number; // approx probability in %
+}
+
+export async function getDailyForecast(days: number = 5): Promise<DailyForecastDay[]> {
+  try {
+    const response = await axios.get(`${BASE_URL}/forecast`, {
+      params: {
+        q: `${CITY},${COUNTRY_CODE}`,
+        appid: API_KEY,
+        units: 'metric',
+        lang: 'en'
+      }
+    });
+
+    const list: any[] = response.data?.list || [];
+    const byDate: Record<string, any[]> = {};
+    for (const item of list) {
+      const dt = new Date(item.dt * 1000);
+      const key = dt.toISOString().slice(0, 10);
+      if (!byDate[key]) byDate[key] = [];
+      byDate[key].push(item);
+    }
+
+    // Build daily metrics for the next `days` including today
+    const results: DailyForecastDay[] = [];
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const dates = Object.keys(byDate)
+      .filter(d => d >= todayStr)
+      .sort()
+      .slice(0, days);
+
+    for (const d of dates) {
+      const items = byDate[d];
+      let hi = -Infinity, lo = Infinity;
+      let humidSum = 0, count = 0;
+      let desc = '';
+      // use midday item for condition when available
+      let chosen = items.reduce((best: any, cur: any) => {
+        const hour = new Date(cur.dt * 1000).getHours();
+        const score = -Math.abs(12 - hour); // prefer around noon
+        return !best || score > (best._score ?? -99) ? Object.assign(cur, { _score: score }) : best;
+      }, null as any);
+      for (const it of items) {
+        const main = it.main || {};
+        if (typeof main.temp_max === 'number') hi = Math.max(hi, Math.round(main.temp_max));
+        if (typeof main.temp_min === 'number') lo = Math.min(lo, Math.round(main.temp_min));
+        if (typeof main.humidity === 'number') { humidSum += main.humidity; count++; }
+      }
+      if (!isFinite(hi)) hi = Math.round(items[0]?.main?.temp_max ?? 0);
+      if (!isFinite(lo)) lo = Math.round(items[0]?.main?.temp_min ?? 0);
+      desc = chosen?.weather?.[0]?.description || items[0]?.weather?.[0]?.description || '';
+      const avgHum = count ? Math.round(humidSum / count) : 60;
+      const cond = getWeatherCondition(desc);
+      const rain = getRainProbability(desc, avgHum);
+
+      const dateObj = new Date(d);
+      results.push({
+        date: d,
+        day: new Intl.DateTimeFormat('th-TH', { weekday: 'short' }).format(dateObj),
+        icon: cond.icon,
+        conditionThai: cond.thai,
+        high: hi,
+        low: lo,
+        rainChance: rain.chance,
+      });
+    }
+
+    return results;
+  } catch (error) {
+    console.error('Error fetching daily forecast:', error);
+    // Fallback simple sequence
+    const today = new Date();
+    return Array.from({ length: days }).map((_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      return {
+        date: d.toISOString().slice(0, 10),
+        day: new Intl.DateTimeFormat('th-TH', { weekday: 'short' }).format(d),
+        icon: i % 2 ? '🌤️' : '☀️',
+        conditionThai: i % 2 ? 'เมฆบางส่วน' : 'แจ่มใส',
+        high: 34 - i,
+        low: 25 - Math.min(i, 3),
+        rainChance: 20 + i * 5,
+      } as DailyForecastDay;
+    });
+  }
+}
+
 interface ForecastData {
   yesterday: WeatherData;
   today: WeatherData;

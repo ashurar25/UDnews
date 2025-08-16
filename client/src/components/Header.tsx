@@ -54,6 +54,7 @@ const Header = () => {
     { name: "การเมือง", href: "/category/politics" },
     { name: "กีฬา", href: "/category/sports" },
     { name: "บันเทิง", href: "/category/entertainment" },
+    { name: "ตรวจหวย", href: "/lottery" },
     { name: "ติดต่อเรา", href: "/contact" }
   ];
 

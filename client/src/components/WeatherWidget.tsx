@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getCurrentWeather } from "@/lib/weather-api";
+import { getCurrentWeather, getDailyForecast } from "@/lib/weather-api";
 import { FiDroplet, FiWind, FiSun, FiCloudRain, FiMapPin, FiClock, FiCalendar, FiChevronDown, FiChevronUp } from "react-icons/fi";
 import { WiDaySunny, WiRain, WiCloudy, WiDayCloudy, WiThunderstorm, WiFog } from "react-icons/wi";
 import { format, parseISO } from "date-fns";
@@ -82,28 +82,23 @@ const WeatherWidget = () => {
     const load = async () => {
       try {
         setLoading(true);
-        const weatherData = await getCurrentWeather();
+        const [weatherData, daily] = await Promise.all([
+          getCurrentWeather(),
+          getDailyForecast(5),
+        ]);
         
         if (mounted) {
           setWeather(weatherData as WeatherData);
-          
-          // Use a simple forecast based on current weather data
-          // In a real app, you would fetch actual forecast data here
-          const today = new Date();
-          const formattedForecast = Array(5).fill(0).map((_, i) => {
-            const date = new Date();
-            date.setDate(today.getDate() + i);
-            return {
-              date: date.toISOString().split('T')[0],
-              day: format(date, 'EEE', { locale: th }),
-              icon: weatherData.icon,
-              high: Math.round(weatherData.high - (i * 2)),
-              low: Math.round(weatherData.low - (i * 1.5)),
-              rainChance: Math.min(90, weatherData.rainChance + (i * 5))
-            };
-          });
-          
-          setForecast(formattedForecast);
+          // Map real daily forecast
+          const mapped = daily.map(d => ({
+            date: d.date,
+            day: d.day,
+            icon: d.icon,
+            high: Math.round(d.high),
+            low: Math.round(d.low),
+            rainChance: Math.round(d.rainChance),
+          }));
+          setForecast(mapped);
           setLastUpdated(new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }));
         }
       } catch (e) {

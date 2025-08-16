@@ -44,6 +44,7 @@ import QRCode from 'qrcode';
 import type { InsertDonation } from "@shared/schema";
 import { SitemapGenerator } from './sitemap-generator';
 import { notificationService } from './notification-service';
+import lotteryRoutes from './lottery-api';
 
 // Simple HTML escape for meta tag content
 function escapeHtml(input: string): string {
@@ -345,6 +346,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/database', databaseRoutes);
   // Mount user management API routes
   app.use('/api/users', userRoutes);
+  // Mount lottery API routes (public)
+  app.use('/api/lottery', lotteryRoutes);
 
   // Ensure important DB indexes exist (best-effort, idempotent)
   async function ensureIndexes() {
