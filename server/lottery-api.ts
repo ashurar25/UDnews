@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import NodeCache from 'node-cache';
+import Parser from 'rss-parser';
 
 // Thai Government Lottery community API (Rayriffy)
 // Docs: https://api.rayriffy.com/
@@ -120,3 +121,34 @@ router.post('/thai/check', async (req, res) => {
 });
 
 export default router;
+
+// -------------------------------
+// Additional: Daily News lotto RSS
+// -------------------------------
+// Endpoint: GET /api/lottery/thai/rss/dailynews
+// Returns: { items: Array<{ title, link, pubDate, isoDate, summary }> }
+const parser = new Parser({ timeout: 10000 });
+
+router.get('/thai/rss/dailynews', async (_req, res) => {
+  const key = cacheKey('dailynews-rss');
+  const cached = cache.get<any>(key);
+  if (cached) return res.json(cached);
+
+  try {
+    const feedUrl = 'https://www.dailynews.co.th/lotto/feed/';
+    const feed = await parser.parseURL(feedUrl);
+    const items = (feed.items || []).map((it) => ({
+      title: it.title || '',
+      link: it.link || '',
+      pubDate: it.pubDate || '',
+      isoDate: it.isoDate || '',
+      // Some feeds use 'contentSnippet' or 'content', fallback to empty
+      summary: (it as any).contentSnippet || (it as any).content || '',
+    }));
+    const payload = { items };
+    cache.set(key, payload, 300);
+    res.json(payload);
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message || 'Failed to fetch Daily News RSS' });
+  }
+});
