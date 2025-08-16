@@ -206,9 +206,11 @@ const Header = () => {
                   <span className="font-sarabun text-sm text-gray-600 dark:text-gray-400">เปลี่ยนธีม:</span>
                   <ThemeToggle />
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-sarabun text-sm text-gray-600 dark:text-gray-400">สภาพอากาศ:</span>
-                  <WeatherWidget />
+                <div className="flex items-center gap-2">
+                  <span className="font-sarabun text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">สภาพอากาศ:</span>
+                  <div className="min-w-[180px]">
+                    <WeatherWidget />
+                  </div>
                 </div>
               </div>
 

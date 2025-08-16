@@ -54,7 +54,7 @@ const WeatherWidget = () => {
   if (!weather) return null;
 
   return (
-    <div className="group relative flex items-center text-xs md:text-sm text-white/95 bg-gradient-to-r from-orange-500/30 via-yellow-400/25 to-blue-500/30 rounded-full px-3 py-1 backdrop-blur-sm border border-white/20 shadow-sm">
+    <div className="group relative flex items-center text-xs md:text-sm text-white/95 bg-gradient-to-r from-orange-500/50 via-yellow-400/40 to-blue-500/50 rounded-full px-3 py-1 backdrop-blur-sm border border-white/30 shadow-md hover:shadow-lg transition-all duration-300">
       <span className="mr-2 text-base leading-none drop-shadow">{weather.icon}</span>
       <div className="flex items-center gap-2">
         <span className="font-kanit font-semibold drop-shadow">{weather.city}</span>
@@ -65,7 +65,7 @@ const WeatherWidget = () => {
 
       {/* Hover card with details (pure CSS) */}
       <div className="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 absolute left-0 top-full mt-2 w-max min-w-[240px] z-50">
-        <div className="rounded-xl bg-white/95 text-foreground shadow-lg ring-1 ring-black/5 p-3">
+        <div className="rounded-xl bg-gradient-to-br from-white/95 to-gray-50/95 text-foreground shadow-xl ring-1 ring-white/30 p-4 backdrop-blur-sm">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <span className="text-2xl">{weather.icon}</span>
@@ -77,25 +77,25 @@ const WeatherWidget = () => {
             <div className="text-2xl font-kanit text-orange-600">{weather.temp}°</div>
           </div>
           <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="bg-orange-50 rounded-md p-2">
+            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-2 border border-orange-100 shadow-sm">
               <div className="text-[10px] font-sarabun text-muted-foreground">สูงสุด</div>
               <div className="font-kanit text-sm text-orange-600">{weather.high}°</div>
             </div>
-            <div className="bg-blue-50 rounded-md p-2">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-2 border border-blue-100 shadow-sm">
               <div className="text-[10px] font-sarabun text-muted-foreground">ต่ำสุด</div>
               <div className="font-kanit text-sm text-blue-600">{weather.low}°</div>
             </div>
-            <div className="bg-sky-50 rounded-md p-2">
+            <div className="bg-gradient-to-br from-sky-50 to-sky-100 rounded-lg p-2 border border-sky-100 shadow-sm">
               <div className="text-[10px] font-sarabun text-muted-foreground">โอกาสฝน</div>
               <div className="font-kanit text-sm text-sky-600">{weather.rainChance}%</div>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2 mt-2 text-center">
-            <div className="bg-emerald-50 rounded-md p-2">
+            <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg p-2 border border-emerald-100 shadow-sm">
               <div className="text-[10px] font-sarabun text-muted-foreground">ความชื้น</div>
               <div className="font-kanit text-sm text-emerald-600">{weather.humidity}%</div>
             </div>
-            <div className="bg-lime-50 rounded-md p-2">
+            <div className="bg-gradient-to-br from-lime-50 to-lime-100 rounded-lg p-2 border border-lime-100 shadow-sm">
               <div className="text-[10px] font-sarabun text-muted-foreground">ลม</div>
               <div className="font-kanit text-sm text-lime-700">{weather.wind} km/h</div>
             </div>
