@@ -44,6 +44,11 @@ const SocialShare: React.FC<SocialShareProps> = ({
   const encodedOgUrl = encodeURIComponent(shareOgUrl);
   const encodedTitle = encodeURIComponent(title);
   const encodedDescription = encodeURIComponent(description);
+  
+  // Add image URL as a query parameter to force Facebook to refetch the share URL
+  const imageParam = imageUrl ? `&picture=${encodeURIComponent(imageUrl)}` : '';
+  const shareOgUrlWithImage = imageUrl ? `${shareOgUrl}?image=${encodeURIComponent(imageUrl)}` : shareOgUrl;
+  const encodedOgUrlWithImage = encodeURIComponent(shareOgUrlWithImage);
 
   // Track social shares
   const trackShareMutation = useMutation({
@@ -67,7 +72,7 @@ const SocialShare: React.FC<SocialShareProps> = ({
 
   const shareUrls = {
     // Important: use server-side share page for platforms that read OG tags
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedOgUrl}&quote=${encodedTitle}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedOgUrlWithImage}&quote=${encodedTitle}${imageParam}`,
     twitter: `https://twitter.com/intent/tweet?url=${encodedOgUrl}&text=${encodedTitle}&hashtags=UDNews,อุดรธานี,ข่าว`,
     line: `https://social-plugins.line.me/lineit/share?url=${encodedOgUrl}&text=${encodedTitle}`,
     whatsapp: `https://wa.me/?text=${encodedTitle}%20${encodedOgUrl}`,

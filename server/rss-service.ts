@@ -500,35 +500,105 @@ export class RSSService {
       return false; // Skip duplicate articles
     }
 
-    // Gather up to 5 image hotlinks (prefer enclosure first)
+    // First, clean the content to extract images properly
+    const cleanedContent = this.cleanContent(item.content || item.contentSnippet, item.contentEncoded);
+    
+    // Extract all image URLs from the cleaned content
+    const contentImageUrls: string[] = [];
+    try {
+      const root = parse(cleanedContent);
+      const imgElements = root.querySelectorAll('img');
+      for (const img of imgElements) {
+        const src = img.getAttribute('src') || img.getAttribute('data-src') || '';
+        if (src && !contentImageUrls.includes(src)) {
+          contentImageUrls.push(src);
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing content for images:', error);
+    }
+
+    // Gather up to 5 image hotlinks (prefer enclosure first, then content images, then other sources)
     const enclosureUrl = item.enclosure?.url;
     const extracted = this.extractImageUrls(item.contentEncoded || item.content || item.contentSnippet, item.mediaContent, item.mediaThumbnail);
+    
+    // Combine all candidate URLs with priority: enclosure > content images > other extracted images
     const candidateUrls: string[] = [];
     if (enclosureUrl) candidateUrls.push(enclosureUrl);
+    // Add content images next
+    for (const u of contentImageUrls) if (!candidateUrls.includes(u)) candidateUrls.push(u);
+    // Add other extracted images
     for (const u of extracted) if (!candidateUrls.includes(u)) candidateUrls.push(u);
 
-    // Hotlink-first: choose first candidate without strict network checks
-    let chosenImageUrl: string | null = candidateUrls[0] || null;
+    // Try to find a working image URL
+    let chosenImageUrl: string | null = null;
+    
+    // First try enclosure or first content image
+    const primaryCandidate = candidateUrls[0];
+    if (primaryCandidate) {
+      const isAvailable = await this.checkUrlOk(primaryCandidate);
+      if (isAvailable) {
+        chosenImageUrl = primaryCandidate;
+      } else {
+        // Try to download and store the image
+        const localUrl = await this.downloadAndStoreImage(primaryCandidate);
+        if (localUrl) chosenImageUrl = localUrl;
+      }
+    }
 
-    // If no candidates, try scraping og:image from article page
+    // If still no image, try scraping og:image from article page
     if (!chosenImageUrl) {
       const og = await this.fetchOgImageUrl(item.link);
-      if (og) chosenImageUrl = og;
+      if (og) {
+        const isAvailable = await this.checkUrlOk(og);
+        if (isAvailable) {
+          chosenImageUrl = og;
+        } else {
+          const localUrl = await this.downloadAndStoreImage(og);
+          if (localUrl) chosenImageUrl = localUrl;
+        }
+      }
     }
 
-    // Final fallback: download first candidate if present but broken, otherwise try downloading og image
-    if (!chosenImageUrl && candidateUrls.length) {
-      const local = await this.downloadAndStoreImage(candidateUrls[0]);
-      if (local) chosenImageUrl = local;
-    }
-
-    const cleanedContent = this.cleanContent(item.content || item.contentSnippet, item.contentEncoded);
+    // Generate summary from cleaned content (without images)
     const summary = this.generateSummary(cleanedContent);
+    
+    // Process the content to ensure images are properly formatted and hosted
+    let processedContent = cleanedContent;
+    
+    // If we have content images, ensure they're properly hosted
+    if (contentImageUrls.length > 0) {
+      try {
+        const root = parse(cleanedContent);
+        const imgElements = root.querySelectorAll('img');
+        
+        for (const img of imgElements) {
+          const src = img.getAttribute('src') || img.getAttribute('data-src');
+          if (src) {
+            // Download and replace with local URL if needed
+            const localUrl = await this.downloadAndStoreImage(src);
+            if (localUrl) {
+              img.setAttribute('src', localUrl);
+              img.removeAttribute('data-src');
+              // Add responsive image classes
+              img.setAttribute('class', 'max-w-full h-auto rounded-lg my-4');
+              img.setAttribute('loading', 'lazy');
+              img.setAttribute('alt', item.title || 'News image');
+            }
+          }
+        }
+        
+        // Update the processed content with optimized images
+        processedContent = root.toString();
+      } catch (error) {
+        console.error('Error processing images in content:', error);
+      }
+    }
 
     const newsData: InsertNews = {
       title: item.title.trim(),
       summary: summary,
-      content: cleanedContent || 'เนื้อหาจาก RSS Feed',
+      content: processedContent || 'เนื้อหาจาก RSS Feed',
       category: this.determineCategory(feedCategory, item.categories),
       imageUrl: chosenImageUrl,
       sourceUrl: item.link || null,

@@ -166,8 +166,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const title = article?.title ? String(article.title) : 'ข่าว';
       const summary = article?.summary || article?.description || (article?.content ? String(article.content).slice(0, 160) + '…' : '');
-      const image = article?.imageUrl ? String(article.imageUrl) : '/logo.jpg';
-      const imageAbs = image.startsWith('http') ? image : `${origin}${image.startsWith('/') ? '' : '/'}${image}`;
+      
+      // Use image from query parameter if available, otherwise fall back to article image or logo
+      let image = req.query.image ? String(req.query.image) : 
+                (article?.imageUrl ? String(article.imageUrl) : '/logo.jpg');
+      
+      // Ensure the image URL is absolute
+      const imageAbs = image.startsWith('http') ? image : 
+                      image.startsWith('/') ? `${origin}${image}` : 
+                      `${origin}/${image}`;
       const pageUrl = `${origin}/news/${id}`;
       const shareUrl = `${origin}/share/${id}`;
       const publishedTime = article?.createdAt ? new Date(article.createdAt).toISOString() : undefined;
