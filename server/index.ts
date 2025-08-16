@@ -1,8 +1,19 @@
-// Load environment variables from .env as early as possible
-import 'dotenv/config';
+// Load environment variables as early as possible (prefer .env.local over .env)
+import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
+try {
+  const rootDir = path.resolve(import.meta.dirname, '..');
+  const localEnv = path.join(rootDir, '.env.local');
+  const defaultEnv = path.join(rootDir, '.env');
+  if (fs.existsSync(localEnv)) {
+    dotenv.config({ path: localEnv });
+  } else if (fs.existsSync(defaultEnv)) {
+    dotenv.config({ path: defaultEnv });
+  }
+} catch {}
 
 import express, { type Request, Response, NextFunction } from "express";
-import path from "path";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { rssService } from "./rss-service";

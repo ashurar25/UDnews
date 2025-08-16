@@ -3,7 +3,7 @@ import { sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,8 +31,10 @@ async function getAppliedMigrations() {
 async function applyMigration(name: string) {
   console.log(`Applying migration: ${name}`);
   
-  // Import the migration module
-  const migration = await import(path.join('..', 'migrations', name));
+  // Import the migration module using file URL to handle Windows paths/extensions correctly
+  const modulePath = path.join(__dirname, '..', 'migrations', name);
+  const moduleUrl = pathToFileURL(modulePath).href;
+  const migration = await import(moduleUrl);
   
   // Run the migration in a transaction
   await db.transaction(async (tx) => {
