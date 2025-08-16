@@ -1,23 +1,35 @@
 import { Router } from 'express';
 import { db } from './db';
 import { eq } from 'drizzle-orm';
-import { authenticateToken } from './middleware/auth';
+import { authenticateToken, authorizeRoles } from './middleware/auth';
 import bcrypt from 'bcrypt';
-import { users } from '@shared/schema';
+import { users, userValidationSchema, UserRole } from '@shared/schema';
+import { z } from 'zod';
+import { sql } from 'drizzle-orm';
 
 const router = Router();
 
-// Apply authentication middleware to all user routes
-router.use(authenticateToken);
+// Apply authentication and admin authorization middleware to all user routes
+router.use(authenticateToken, authorizeRoles('admin'));
 
 // Get all users
 router.get('/', async (req, res) => {
   try {
-    const rows = await db.select().from(users);
-    // Note: current users table has only id, username, password
-    // Do not return passwords
-    const safe = rows.map(u => ({ id: u.id, username: u.username }));
-    res.json(safe);
+    const rows = await db.query.users.findMany({
+      columns: {
+        id: true,
+        username: true,
+        role: true,
+        email: true,
+        isActive: true,
+        lastLogin: true,
+        createdAt: true,
+        updatedAt: true
+      },
+      orderBy: (users, { desc }) => [desc(users.createdAt)]
+    });
+    
+    res.json(rows);
   } catch (error) {
     console.error('Error getting users:', error);
     res.status(500).json({ error: 'Failed to get users' });
@@ -27,21 +39,49 @@ router.get('/', async (req, res) => {
 // Create new user
 router.post('/', async (req, res) => {
   try {
-    const { username, password } = req.body as { username?: string; password?: string };
+    // Validate input using the shared schema
+    const validation = userValidationSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ 
+        error: 'Invalid input', 
+        details: validation.error.issues 
+      });
+    }
+    
+    const { username, password, role, email, isActive } = validation.data;
 
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Username and password are required' });
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required' });
+    }
+
+    // Check if username already exists
+    const existingUser = await db.query.users.findFirst({
+      where: eq(users.username, username)
+    });
+
+    if (existingUser) {
+      return res.status(409).json({ error: 'Username already exists' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const inserted = await db
       .insert(users)
-      .values({ username, password: hashedPassword })
+      .values({ 
+        username, 
+        password: hashedPassword,
+        role: role as UserRole,
+        email: email || null,
+        isActive,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
       .returning();
 
     const created = inserted[0];
-    res.status(201).json({ id: created.id, username: created.username });
+    // Don't return password hash
+    const { password: _, ...userWithoutPassword } = created;
+    res.status(201).json(userWithoutPassword);
   } catch (error) {
     console.error('Error creating user:', error);
     res.status(500).json({ error: 'Failed to create user' });
@@ -52,20 +92,54 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { username } = req.body as { username?: string };
+    
+    // Validate input using the shared schema, but make fields optional
+    const validation = userValidationSchema.partial().safeParse(req.body);
+    
+    if (!validation.success) {
+      return res.status(400).json({ 
+        error: 'Invalid input', 
+        details: validation.error.issues 
+      });
+    }
 
-    if (!username) {
-      return res.status(400).json({ error: 'Username is required' });
+    const updateData: {
+      username?: string;
+      role?: UserRole;
+      email?: string | null;
+      isActive?: boolean;
+      password?: string;
+      updatedAt?: Date;
+    } = { 
+      updatedAt: new Date() 
+    };
+
+    if (validation.data.username) updateData.username = validation.data.username;
+    if (validation.data.role) updateData.role = validation.data.role as UserRole;
+    if (validation.data.email !== undefined) updateData.email = validation.data.email || null;
+    if (validation.data.isActive !== undefined) updateData.isActive = validation.data.isActive;
+
+    // Handle password update if provided
+    if (validation.data.password) {
+      updateData.password = await bcrypt.hash(validation.data.password, 10);
+    }
+
+    // Don't allow empty update
+    if (Object.keys(updateData).length === 1) { // only updatedAt was set
+      return res.status(400).json({ error: 'No valid fields to update' });
     }
 
     const updated = await db
       .update(users)
-      .set({ username })
+      .set(updateData)
       .where(eq(users.id, Number(id)))
       .returning();
 
     if (!updated[0]) return res.status(404).json({ error: 'User not found' });
-    res.json({ id: updated[0].id, username: updated[0].username });
+    
+    // Don't return password hash
+    const { password: _, ...userWithoutPassword } = updated[0];
+    res.json(userWithoutPassword);
   } catch (error) {
     console.error('Error updating user:', error);
     res.status(500).json({ error: 'Failed to update user' });

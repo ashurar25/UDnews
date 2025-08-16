@@ -1,10 +1,10 @@
 import type { Express, Request, Response } from "express";
 import { Readable } from 'stream';
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { db } from "./db";
+import bcrypt from 'bcrypt';
 import NodeCache from 'node-cache';
 import { 
+  users,
   insertRssFeedSchema, 
   insertNewsSchema, 
   insertSponsorBannerSchema, 
@@ -25,9 +25,12 @@ import {
   newsRatings,
   rssProcessingHistory,
   donations,
-  auditLogs
+  auditLogs,
+  UserRole
 } from "@shared/schema";
 import { eq, desc, and, gte, lte, sql, asc } from "drizzle-orm";
+import { db } from "./db";
+import { storage } from "./storage";
 import { rssService } from "./rss-service";
 import { getCachedDailySummary, generateDailySummary } from './ai-summarizer';
 import { authenticateToken as authMiddleware, generateToken, authorizeRoles } from "./middleware/auth";
@@ -1128,23 +1131,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { username, password } = req.body;
 
-      // Simple hardcoded admin credentials (แนะนำให้เปลี่ยนใน production)
-      const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-      const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'udnews2025secure';
-
-      if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-        const token = generateToken({ id: 1, username: ADMIN_USERNAME, role: 'admin' });
-        res.json({ 
-          success: true, 
-          token,
-          message: 'Login successful' 
-        });
-      } else {
-        res.status(401).json({ 
-          success: false, 
-          message: 'Invalid credentials' 
+      if (!username || !password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Username and password are required'
         });
       }
+
+      // Find user in database
+      const user = await db.query.users.findFirst({
+        where: (usersTable, { eq }) => eq(usersTable.username, username)
+      });
+
+      // Verify user exists and is active
+      if (!user || !user.isActive) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid credentials or account is inactive'
+        });
+      }
+
+      // Verify password
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid credentials'
+        });
+      }
+
+      // Update last login time
+      await db.update(users)
+        .set({ lastLogin: new Date() })
+        .where(eq(users.id, user.id));
+
+      // Generate JWT token
+      const token = generateToken({ 
+        id: user.id, 
+        username: user.username, 
+        role: user.role as UserRole 
+      });
+
+      res.json({
+        success: true,
+        token,
+        user: {
+          id: user.id,
+          username: user.username,
+          role: user.role,
+          email: user.email
+        },
+        message: 'Login successful'
+      });
     } catch (error) {
       res.status(500).json({ 
         success: false, 

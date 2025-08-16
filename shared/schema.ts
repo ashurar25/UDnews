@@ -9,15 +9,33 @@ const news = pgTable("news", {
   title: text("title").notNull(),
 });
 
+// Define user roles as a type
+export type UserRole = 'admin' | 'editor' | 'viewer';
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  role: text("role").$type<UserRole>().notNull().default('editor'),
+  email: text("email"),
+  isActive: boolean("is_active").notNull().default(true),
+  lastLogin: timestamp("last_login"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+// Create a base schema with validation
+export const userValidationSchema = z.object({
+  username: z.string().min(3).max(50),
+  password: z.string().min(8).optional(),
+  role: z.enum(['admin', 'editor', 'viewer'] as const).default('editor'),
+  email: z.string().email().or(z.literal('')).optional(),
+  isActive: z.boolean().default(true)
+});
+
+// Create insert schema from the base validation schema
+export const insertUserSchema = userValidationSchema.extend({
+  password: z.string().min(8) // Make password required for new users
 });
 
 export const rssFeeds = pgTable("rss_feeds", {
