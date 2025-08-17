@@ -68,18 +68,62 @@ class DisasterAlertService {
   // ตรวจสอบข้อมูลจากกรมอุตุนิยมวิทยา
   async checkTMDAlerts() {
     try {
-      // จำลองการเรียก API ของกรมอุตุนิยมวิทยา
-      // ในการใช้งานจริง ควรใช้ API key และ endpoint จริง
-      const response = await fetch('https://api.tmd.go.th/api/warnings', {
-        headers: {
-          'Accept': 'application/json',
-          // 'Authorization': `Bearer ${process.env.TMD_API_KEY}`
-        }
-      });
+      const apiKey = process.env.TMD_API_KEY;
+      if (!apiKey) {
+        console.warn('⚠️ TMD_API_KEY is not set; skipping TMD check and using simulation');
+        await this.simulateWeatherCheck();
+        return;
+      }
 
-      if (response.ok) {
-        const data = await response.json();
-        await this.processWeatherAlerts(data);
+      // NOTE: Endpoint shape per TMD docs. If schema differs, we parse defensively below.
+      // Udon Thani city coordinates (approx): 17.413, 102.787
+      const lat = process.env.TMD_DEFAULT_LAT || '17.413';
+      const lon = process.env.TMD_DEFAULT_LON || '102.787';
+
+      // Attempt common TMD NWP API pattern for forecast by location. Adjust if needed.
+      const urlCandidates = [
+        // Preferred v1 API (as per example)
+        `https://data.tmd.go.th/nwpapiv1/forecast/location/city?lat=${lat}&lon=${lon}`,
+        `https://data.tmd.go.th/nwpapiv1/forecast/location?lat=${lat}&lon=${lon}`,
+        // Legacy paths kept as fallback
+        `https://data.tmd.go.th/nwpapi/forecast/location/city?lat=${lat}&lon=${lon}`,
+        `https://data.tmd.go.th/nwpapi/forecast/location?lat=${lat}&lon=${lon}`
+      ];
+
+      let fetched = false;
+      for (const url of urlCandidates) {
+        try {
+          const response = await fetch(url, {
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            // TMD sometimes requires no-cache to avoid stale proxies
+            cache: 'no-store' as any
+          } as any);
+
+          if (response.ok) {
+            // Optional: log rate limit headers if present for observability
+            const rl = response.headers.get('X-RateLimit-Remaining') || response.headers.get('x-ratelimit-remaining');
+            const rlLimit = response.headers.get('X-RateLimit-Limit') || response.headers.get('x-ratelimit-limit');
+            if (rl || rlLimit) {
+              console.log(`TMD rate limit: remaining=${rl ?? 'n/a'}/${rlLimit ?? 'n/a'}`);
+            }
+            const data = await response.json();
+            await this.processWeatherAlerts(data);
+            fetched = true;
+            break;
+          } else {
+            console.warn(`TMD request failed ${response.status} for ${url}`);
+          }
+        } catch (err) {
+          console.warn(`TMD request error for ${url}:`, err);
+        }
+      }
+
+      if (!fetched) {
+        // As a fallback if endpoint changed/unavailable
+        await this.simulateWeatherCheck();
       }
     } catch (error) {
       // ถ้า API ไม่พร้อมใช้งาน ให้ใช้ข้อมูลจำลอง
@@ -88,9 +132,110 @@ class DisasterAlertService {
   }
 
   // ประมวลผลข้อมูลเตือนภัยสภาพอากาศจาก TMD (แบบย่อเพื่อแก้ TS error และรองรับภายหลัง)
-  private async processWeatherAlerts(_data: any): Promise<void> {
-    // สามารถขยาย logic ภายหลังได้
-    return;
+  private async processWeatherAlerts(data: any): Promise<void> {
+    try {
+      // Defensive parsing: handle multiple potential structures
+      // Common structures: { data: { forecast: [...] } } or { forecast: [...] }
+      const root = (data && (data.data || data)) || {};
+      const forecasts: any[] = root.forecast || root.forecasts || root.items || [];
+
+      if (!Array.isArray(forecasts) || forecasts.length === 0) {
+        // Some APIs nest hourly under a station/city node
+        const values = Object.values(root) as any[];
+        const firstArray = values.find((v) => Array.isArray(v));
+        if (Array.isArray(firstArray)) {
+          await this.processWeatherAlerts({ forecast: firstArray });
+          return;
+        }
+        return; // No usable data
+      }
+
+      // Evaluate next 6-12 hours for severe conditions
+      const now = Date.now();
+      const horizonMs = 12 * 60 * 60 * 1000; // 12 hours
+      const upcoming = forecasts.filter((f: any) => {
+        const t = new Date(f.time || f.date || f.datetime || f.timestamp || now).getTime();
+        return !Number.isNaN(t) && t >= now && t <= now + horizonMs;
+      });
+
+      // Extract precipitation probability and accumulation, wind, thunder flags
+      const pickNum = (obj: any, keys: string[], def = 0) => {
+        for (const k of keys) {
+          const v = obj?.[k];
+          const n = typeof v === 'string' ? parseFloat(v) : (typeof v === 'number' ? v : undefined);
+          if (typeof n === 'number' && !Number.isNaN(n)) return n;
+        }
+        return def;
+      };
+
+      const pickBool = (obj: any, keys: string[]) => {
+        for (const k of keys) {
+          const v = obj?.[k];
+          if (typeof v === 'boolean') return v;
+          if (typeof v === 'string' && ['true','1','yes'].includes(v.toLowerCase())) return true;
+          if (typeof v === 'number') return v !== 0;
+        }
+        return false;
+      };
+
+      let maxPop = 0; // probability of precipitation %
+      let maxRain = 0; // rain accumulation mm
+      let maxWind = 0; // wind speed m/s or km/h (normalize roughly)
+      let anyThunder = false;
+
+      for (const f of upcoming) {
+        const pop = pickNum(f, ['pop','precipProbability','precip_prob','rain_prob']);
+        const rain = pickNum(f, ['rain','precip_mm','precipitation','rain_accumulation']);
+        let wind = pickNum(f, ['wind','windSpeed','wind_speed']);
+        // Normalize if likely km/h -> convert to m/s (rough guess if value seems high)
+        if (wind > 60) wind = wind / 3.6;
+        const thunder = pickBool(f, ['thunder','thunderstorm','storm']);
+
+        if (pop > maxPop) maxPop = pop;
+        if (rain > maxRain) maxRain = rain;
+        if (wind > maxWind) maxWind = wind;
+        anyThunder = anyThunder || thunder;
+      }
+
+      // Threshold mapping (tunable)
+      // Critical: thunder or very high precipitation probability and accumulation
+      let severity: DisasterAlert['severity'] | null = null;
+      if (anyThunder && (maxPop >= 80 || maxRain >= 50)) {
+        severity = 'critical';
+      } else if (maxPop >= 70 || maxRain >= 30 || maxWind >= 20) {
+        severity = 'high';
+      } else if (maxPop >= 50 || maxRain >= 10) {
+        severity = 'medium';
+      } else if (maxPop >= 30) {
+        severity = 'low';
+      }
+
+      if (!severity) return; // No alert-worthy conditions
+
+      const alert: DisasterAlert = {
+        id: `tmd-${Math.floor(now / (60 * 60 * 1000))}`, // hourly bucket to avoid spam
+        type: anyThunder || maxWind >= 20 ? 'storm' : (maxRain >= 20 ? 'flood' : 'storm'),
+        severity,
+        title: severity === 'critical' ? 'พายุรุนแรงใกล้เข้าพื้นที่' : severity === 'high' ? 'ฝนตกหนัก/ลมแรง' : 'สภาพอากาศแปรปรวน',
+        description: `คาดการณ์ฝน/พายุในช่วง 12 ชม. (POP≈${Math.round(maxPop)}%, ฝนสะสม≈${Math.round(maxRain)}mm, ลม≈${Math.round(maxWind)}m/s)` ,
+        area: 'อุดรธานี',
+        startTime: new Date().toISOString(),
+        instructions: severity === 'critical'
+          ? 'งดกิจกรรมกลางแจ้ง หาที่หลบภัย ปฏิบัติตามประกาศทางการ'
+          : severity === 'high'
+          ? 'ระวังน้ำท่วมฉับพลัน/ลมแรง ติดตามประกาศจากหน่วยงานรัฐ'
+          : 'เตรียมอุปกรณ์กันฝนและติดตามสภาพอากาศ',
+        source: 'TMD',
+        isActive: true
+      };
+
+      if (!this.alerts.find(a => a.id === alert.id)) {
+        await this.processNewAlert(alert);
+      }
+    } catch (err) {
+      console.warn('TMD weather parsing failed, fallback to simulation');
+      await this.simulateWeatherCheck();
+    }
   }
 
   // ตรวจสอบแผ่นดินไหวจาก USGS

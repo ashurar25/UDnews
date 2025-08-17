@@ -18,7 +18,14 @@ type LotteryResults = {
 
 function NumberPill({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center justify-center rounded-md border px-2 py-1 text-sm font-mono bg-orange-50/70 border-orange-200 text-orange-800 dark:bg-gray-700 dark:text-orange-200">
+    <span
+      className="inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-sm font-mono
+                 bg-gradient-to-br from-white/90 via-orange-50/80 to-white/60
+                 dark:from-gray-700 dark:via-gray-700/80 dark:to-gray-600/70
+                 text-orange-800 dark:text-orange-200
+                 border border-white/60 dark:border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.08)]
+                 backdrop-blur-sm"
+    >
       {children}
     </span>
   );
@@ -48,7 +55,6 @@ export default function LotteryResults() {
   const [data, setData] = React.useState<LotteryResults | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [showMore, setShowMore] = React.useState(false);
   const [usingFallback, setUsingFallback] = React.useState(false);
 
   React.useEffect(() => {
@@ -108,90 +114,72 @@ export default function LotteryResults() {
   const first = data?.firstPrize;
   const front3 = data?.front3 || [];
   const last3 = data?.last3 || [];
-  const last2 = data?.last2 ? [data.last2] : [];
-
-  const longSections = [
-    { label: 'รางวัลที่ 2', values: data?.prize2 },
-    { label: 'รางวัลที่ 3', values: data?.prize3 },
-    { label: 'รางวัลที่ 4', values: data?.prize4 },
-    { label: 'รางวัลที่ 5', values: data?.prize5 },
-  ];
+  const last2Arr = data?.last2 ? [data.last2] : [];
 
   return (
     <div className="w-full">
-      {/* Featured card */}
-      <div className="rounded-xl border border-orange-200 dark:border-gray-700 bg-gradient-to-br from-white to-orange-50 dark:from-gray-800 dark:to-gray-900 p-5 shadow-sm mb-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <div className="text-sm text-gray-600 dark:text-gray-300 font-sarabun">{loading ? 'กำลังโหลด…' : (error ? <span className='text-red-600'>{error}</span> : (data?.date || ''))}</div>
-            <h3 className="text-2xl font-bold font-kanit text-orange-800 dark:text-orange-200">รางวัลที่ 1</h3>
-          </div>
-          <div className="text-3xl sm:text-4xl font-extrabold font-mono text-orange-700 dark:text-orange-300 tracking-widest">
-            {first || '— — — — — —'}
-          </div>
-        </div>
-        {usingFallback && !error && (
-          <div className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 inline-flex items-center px-2 py-1 rounded font-sarabun">
-            ใช้ข้อมูลสำรองจาก Rayriffy API
-          </div>
-        )}
-        {data?.nearFirstPrize && data.nearFirstPrize.length > 0 && (
-          <div className="mt-3">
-            <div className="text-sm font-sarabun text-gray-600 dark:text-gray-300">รางวัลข้างเคียงรางวัลที่ 1</div>
-            <div className="mt-1 flex flex-wrap gap-2">
-              {data.nearFirstPrize.map((n, i) => <NumberPill key={i}>{n}</NumberPill>)}
+      {/* Single glossy hero card */}
+      <div className="relative overflow-hidden rounded-2xl shadow-xl border border-white/20 dark:border-white/10
+                      bg-gradient-to-br from-orange-500 via-amber-400 to-rose-400">
+        {/* Decorative overlays */}
+        <div className="absolute inset-0 opacity-25 mix-blend-overlay bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.6),transparent_60%)]" />
+        <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-white/20 blur-2xl" />
+
+        <div className="relative p-6 sm:p-8">
+          {/* Header row */}
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+            <div>
+              <div className="text-white/90 font-sarabun text-sm">
+                {loading ? 'กำลังโหลด…' : (error ? <span className="text-white">{error}</span> : (data?.date || ''))}
+              </div>
+              <h3 className="mt-1 text-3xl sm:text-4xl font-extrabold font-kanit text-white drop-shadow">
+                ผลสลากกินแบ่งรัฐบาล
+              </h3>
+              <div className="mt-1 text-white/90 font-sarabun">รางวัลที่ 1</div>
+            </div>
+            <div className="text-4xl sm:text-6xl font-black font-mono tracking-widest text-white drop-shadow-[0_6px_20px_rgba(0,0,0,0.25)]">
+              {first || '— — — — — —'}
             </div>
           </div>
-        )}
-      </div>
 
-      {/* Quick cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-        <div className="rounded-lg border border-orange-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-          <div className="text-sm font-sarabun text-gray-600 dark:text-gray-300">เลขหน้า 3 ตัว</div>
-          <div className="mt-2 flex flex-wrap gap-2">{front3.length ? front3.map((n, i) => <NumberPill key={i}>{n}</NumberPill>) : <span className="text-gray-400">-</span>}</div>
-        </div>
-        <div className="rounded-lg border border-orange-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-          <div className="text-sm font-sarabun text-gray-600 dark:text-gray-300">เลขท้าย 3 ตัว</div>
-          <div className="mt-2 flex flex-wrap gap-2">{last3.length ? last3.map((n, i) => <NumberPill key={i}>{n}</NumberPill>) : <span className="text-gray-400">-</span>}</div>
-        </div>
-        <div className="rounded-lg border border-orange-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-          <div className="text-sm font-sarabun text-gray-600 dark:text-gray-300">เลขท้าย 2 ตัว</div>
-          <div className="mt-2 flex flex-wrap gap-2">{last2.length ? last2.map((n, i) => <NumberPill key={i}>{n}</NumberPill>) : <span className="text-gray-400">-</span>}</div>
+          {/* Divider glass panel */}
+          <div className="mt-6 rounded-xl bg-white/20 backdrop-blur-md border border-white/30 p-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Front 3 */}
+              <div>
+                <div className="text-white/90 font-sarabun">เลขหน้า 3 ตัว</div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {front3.length ? front3.map((n, i) => <NumberPill key={i}>{n}</NumberPill>) : <span className="text-white/70">-</span>}
+                </div>
+              </div>
+              {/* Last 3 */}
+              <div>
+                <div className="text-white/90 font-sarabun">เลขท้าย 3 ตัว</div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {last3.length ? last3.map((n, i) => <NumberPill key={i}>{n}</NumberPill>) : <span className="text-white/70">-</span>}
+                </div>
+              </div>
+              {/* Last 2 */}
+              <div>
+                <div className="text-white/90 font-sarabun">เลขท้าย 2 ตัว</div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {last2Arr.length ? last2Arr.map((n, i) => <NumberPill key={i}>{n}</NumberPill>) : <span className="text-white/70">-</span>}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {usingFallback && !error && (
+            <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full text-xs font-sarabun
+                            bg-white/30 border border-white/40 text-white shadow">
+              ใช้ข้อมูลสำรองจาก Rayriffy API
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Detailed table (collapsible long lists) */}
-      <div className="overflow-x-auto rounded-lg border border-orange-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-        <table className="min-w-full text-sm">
-          <tbody>
-            <PrizeRow label="รางวัลที่ 1" values={first ? [first] : []} />
-            <PrizeRow label="รางวัลข้างเคียงรางวัลที่ 1" values={data?.nearFirstPrize} />
-            <PrizeRow label="เลขหน้า 3 ตัว" values={front3} />
-            <PrizeRow label="เลขท้าย 3 ตัว" values={last3} />
-            <PrizeRow label="เลขท้าย 2 ตัว" values={last2} />
-            {/* Long sections: show first few when collapsed */}
-            {longSections.map((sec) => {
-              const values = (sec.values || []) as string[];
-              const short = values.slice(0, 10);
-              const showVals = showMore ? values : short;
-              return <PrizeRow key={sec.label} label={sec.label} values={showVals} />
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Toggle for more */}
-      {(longSections.some(s => (s.values?.length || 0) > 10)) && (
-        <div className="mt-3">
-          <button className="text-sm font-sarabun text-orange-700 hover:underline" onClick={() => setShowMore(!showMore)}>
-            {showMore ? 'แสดงน้อยลง' : 'แสดงรางวัลทั้งหมด'}
-          </button>
-        </div>
-      )}
 
       {data?.source && (
-        <div className="mt-3 text-xs text-gray-500 font-sarabun">
+        <div className="mt-3 text-xs text-gray-600 dark:text-gray-400 font-sarabun">
           แหล่งข้อมูล: <a className="underline" href={data.source} target="_blank" rel="noreferrer">{usingFallback ? 'Rayriffy API' : 'กองสลาก (GLO)'}</a>
           {data.fetchedAt && <span> • อัปเดตเมื่อ {new Date(data.fetchedAt).toLocaleString('th-TH')}</span>}
         </div>

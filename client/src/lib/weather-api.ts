@@ -14,7 +14,7 @@ interface WeatherData {
   rainStatus: string; // สถานะฝน
 }
 
-// ---------- Daily forecast (real 5-day) from OpenWeather (3h steps grouped by day) ----------
+// ---------- Daily forecast (5-day) from TMD via server proxy ----------
 export interface DailyForecastDay {
   date: string; // YYYY-MM-DD
   day: string;  // Mon/Tue in TH
@@ -25,73 +25,49 @@ export interface DailyForecastDay {
   rainChance: number; // approx probability in %
 }
 
-export async function getDailyForecast(days: number = 5): Promise<DailyForecastDay[]> {
+export async function getDailyForecast(days: number = 5, opts?: { lat?: number; lon?: number }): Promise<DailyForecastDay[]> {
   try {
-    const response = await axios.get(`${BASE_URL}/forecast`, {
-      params: {
-        q: `${CITY},${COUNTRY_CODE}`,
-        appid: API_KEY,
-        units: 'metric',
-        lang: 'en'
-      }
-    });
+    const lat = opts?.lat ?? UDON_LAT;
+    const lon = opts?.lon ?? UDON_LON;
+    const { data } = await axios.get(`/api/tmd/forecast/daily`, { params: { lat, lon } });
 
-    const list: any[] = response.data?.list || [];
-    const byDate: Record<string, any[]> = {};
-    for (const item of list) {
-      const dt = new Date(item.dt * 1000);
-      const key = dt.toISOString().slice(0, 10);
-      if (!byDate[key]) byDate[key] = [];
-      byDate[key].push(item);
-    }
+    // Defensive parsing across potential shapes
+    const candidates: any[] =
+      data?.daily || data?.data || data?.items || data?.forecasts || data?.Forecasts || [];
 
-    // Build daily metrics for the next `days` including today
-    const results: DailyForecastDay[] = [];
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const dates = Object.keys(byDate)
-      .filter(d => d >= todayStr)
-      .sort()
-      .slice(0, days);
-
-    for (const d of dates) {
-      const items = byDate[d];
-      let hi = -Infinity, lo = Infinity;
-      let humidSum = 0, count = 0;
-      let desc = '';
-      // use midday item for condition when available
-      let chosen = items.reduce((best: any, cur: any) => {
-        const hour = new Date(cur.dt * 1000).getHours();
-        const score = -Math.abs(12 - hour); // prefer around noon
-        return !best || score > (best._score ?? -99) ? Object.assign(cur, { _score: score }) : best;
-      }, null as any);
-      for (const it of items) {
-        const main = it.main || {};
-        if (typeof main.temp_max === 'number') hi = Math.max(hi, Math.round(main.temp_max));
-        if (typeof main.temp_min === 'number') lo = Math.min(lo, Math.round(main.temp_min));
-        if (typeof main.humidity === 'number') { humidSum += main.humidity; count++; }
-      }
-      if (!isFinite(hi)) hi = Math.round(items[0]?.main?.temp_max ?? 0);
-      if (!isFinite(lo)) lo = Math.round(items[0]?.main?.temp_min ?? 0);
-      desc = chosen?.weather?.[0]?.description || items[0]?.weather?.[0]?.description || '';
-      const avgHum = count ? Math.round(humidSum / count) : 60;
+    const take = (n: number) => candidates.slice(0, n);
+    const results: DailyForecastDay[] = take(days).map((it: any) => {
+      const dateStr = it.date || it.time || it.datetime || it.dt || new Date().toISOString();
+      const d = typeof dateStr === 'number' ? new Date(dateStr * 1000) : new Date(dateStr);
+      const hi = Math.round(
+        it.tmax ?? it.tempMax ?? it.temp_max ?? it.max_temp ?? it.temperatureMax ?? it.temp?.max ?? 0
+      );
+      const lo = Math.round(
+        it.tmin ?? it.tempMin ?? it.temp_min ?? it.min_temp ?? it.temperatureMin ?? it.temp?.min ?? 0
+      );
+      const desc = (it.description || it.text || it.summary || '').toString();
+      const hum = Math.round(
+        it.humidity ?? it.rh ?? it.relativeHumidity ?? 65
+      );
       const cond = getWeatherCondition(desc);
-      const rain = getRainProbability(desc, avgHum);
-
-      const dateObj = new Date(d);
-      results.push({
-        date: d,
-        day: new Intl.DateTimeFormat('th-TH', { weekday: 'short' }).format(dateObj),
+      const rainProb = Math.round(
+        it.pop ?? it.rainProbability ?? it.precipitation_probability ?? it.rainChance ?? 0
+      );
+      return {
+        date: d.toISOString().slice(0, 10),
+        day: new Intl.DateTimeFormat('th-TH', { weekday: 'short' }).format(d),
         icon: cond.icon,
         conditionThai: cond.thai,
-        high: hi,
-        low: lo,
-        rainChance: rain.chance,
-      });
-    }
+        high: isFinite(hi) ? hi : 0,
+        low: isFinite(lo) ? lo : 0,
+        rainChance: Math.max(0, Math.min(100, rainProb || getRainProbability(desc, hum).chance)),
+      };
+    });
 
-    return results;
+    if (results.length) return results;
+    throw new Error('No daily forecast items parsed');
   } catch (error) {
-    console.error('Error fetching daily forecast:', error);
+    console.error('Error fetching daily forecast (TMD):', error);
     // Fallback simple sequence
     const today = new Date();
     return Array.from({ length: days }).map((_, i) => {
@@ -116,10 +92,8 @@ interface ForecastData {
   tomorrow: WeatherData;
 }
 
-// OpenWeatherMap API configuration
-const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY || '549bd92b3ea0b8be7984b49f5926988c';
-const BASE_URL = 'https://api.openweathermap.org/data/2.5';
-const CITY = 'Udon Thani';
+// Default city
+const CITY = 'อุดรธานี';
 const COUNTRY_CODE = 'TH';
 // Udon Thani coordinates (approx.) for Open-Meteo
 const UDON_LAT = 17.4138;
@@ -219,20 +193,32 @@ function convertToWeatherData(data: any, type: 'current' | 'forecast' = 'current
   };
 }
 
-export async function getCurrentWeather(): Promise<WeatherData> {
+export async function getCurrentWeather(opts?: { lat?: number; lon?: number }): Promise<WeatherData> {
   try {
-    const response = await axios.get(`${BASE_URL}/weather`, {
-      params: {
-        q: `${CITY},${COUNTRY_CODE}`,
-        appid: API_KEY,
-        units: 'metric',
-        lang: 'en'
-      }
-    });
-
-    return convertToWeatherData(response.data);
+    const lat = opts?.lat ?? UDON_LAT;
+    const lon = opts?.lon ?? UDON_LON;
+    const { data } = await axios.get(`/api/tmd/forecast/hourly`, { params: { lat, lon } });
+    // Try to get the first upcoming hour slot
+    const list: any[] = data?.hourly || data?.data || data?.items || data?.forecasts || [];
+    const item = list[0] || {};
+    // Build a compatible shape for convertToWeatherData
+    const shaped = {
+      main: {
+        temp: item.temp ?? item.temperature ?? item.t ?? item.t2m ?? 0,
+        temp_max: item.tempMax ?? item.tmax ?? item.temperatureMax ?? item.temp ?? 0,
+        temp_min: item.tempMin ?? item.tmin ?? item.temperatureMin ?? item.temp ?? 0,
+        humidity: item.humidity ?? item.rh ?? item.relativeHumidity ?? 65,
+      },
+      wind: {
+        speed: (item.windSpeed ?? item.ws ?? item.wind_speed ?? 0) / 3.6, // km/h -> m/s for convert
+      },
+      weather: [
+        { description: item.description || item.text || item.summary || '' }
+      ]
+    };
+    return convertToWeatherData(shaped);
   } catch (error) {
-    console.error('Error fetching current weather:', error);
+    console.error('Error fetching current weather (TMD):', error);
     // Return mock data if API fails
     return {
       temp: 32,
@@ -250,37 +236,41 @@ export async function getCurrentWeather(): Promise<WeatherData> {
   }
 }
 
-export async function getWeatherForecast(): Promise<ForecastData> {
+export async function getWeatherForecast(opts?: { lat?: number; lon?: number }): Promise<ForecastData> {
   try {
-    // Get current weather
-    const currentResponse = await axios.get(`${BASE_URL}/weather`, {
-      params: {
-        q: `${CITY},${COUNTRY_CODE}`,
-        appid: API_KEY,
-        units: 'metric',
-        lang: 'en'
-      }
-    });
+    // Use TMD hourly for "today" and TMD daily for tomorrow; synthesize yesterday.
+    const lat = opts?.lat ?? UDON_LAT;
+    const lon = opts?.lon ?? UDON_LON;
+    const [{ data: hourly }, { data: daily }] = await Promise.all([
+      axios.get(`/api/tmd/forecast/hourly`, { params: { lat, lon } }),
+      axios.get(`/api/tmd/forecast/daily`, { params: { lat, lon } }),
+    ]);
 
-    // Get 5-day forecast
-    const forecastResponse = await axios.get(`${BASE_URL}/forecast`, {
-      params: {
-        q: `${CITY},${COUNTRY_CODE}`,
-        appid: API_KEY,
-        units: 'metric',
-        lang: 'en'
-      }
-    });
+    const first = (hourly?.hourly || hourly?.data || hourly?.items || hourly?.forecasts || [])[0] || {};
+    const shapedToday = {
+      main: {
+        temp: first.temp ?? first.temperature ?? first.t ?? first.t2m ?? 0,
+        temp_max: first.tempMax ?? first.tmax ?? first.temperatureMax ?? first.temp ?? 0,
+        temp_min: first.tempMin ?? first.tmin ?? first.temperatureMin ?? first.temp ?? 0,
+        humidity: first.humidity ?? first.rh ?? first.relativeHumidity ?? 65,
+      },
+      wind: { speed: (first.windSpeed ?? first.ws ?? first.wind_speed ?? 0) / 3.6 },
+      weather: [{ description: first.description || first.text || first.summary || '' }],
+    };
+    const today = convertToWeatherData(shapedToday);
 
-    const today = convertToWeatherData(currentResponse.data);
-
-    // Get tomorrow's data (24 hours from now)
-    const tomorrowData = forecastResponse.data.list.find((item: any) => {
-      const itemDate = new Date(item.dt * 1000);
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      return itemDate.getDate() === tomorrow.getDate();
-    });
+    const dailyList: any[] = daily?.daily || daily?.data || daily?.items || daily?.forecasts || [];
+    const tmr = dailyList[1] || dailyList[0] || {};
+    const shapedTomorrow = {
+      main: {
+        temp: tmr.temp ?? tmr.t ?? tmr.t2m ?? tmr.tempMean ?? tmr.tempAvg ?? 0,
+        temp_max: tmr.tmax ?? tmr.tempMax ?? tmr.max_temp ?? 0,
+        temp_min: tmr.tmin ?? tmr.tempMin ?? tmr.min_temp ?? 0,
+        humidity: tmr.humidity ?? tmr.rh ?? tmr.relativeHumidity ?? 65,
+      },
+      wind: { speed: (tmr.windSpeed ?? tmr.ws ?? tmr.wind_speed ?? 0) / 3.6 },
+      weather: [{ description: tmr.description || tmr.text || tmr.summary || '' }],
+    };
 
     // Get yesterday's data (simulate based on today's data)
     const yesterday: WeatherData = {
@@ -292,18 +282,7 @@ export async function getWeatherForecast(): Promise<ForecastData> {
       wind: Math.max(5, today.wind + Math.floor(Math.random() * 6) - 3)
     };
 
-    const tomorrow = tomorrowData
-      ? convertToWeatherData(tomorrowData, 'forecast')
-      : {
-          ...today,
-          temp: today.temp + Math.floor(Math.random() * 4) - 2,
-          high: today.high + Math.floor(Math.random() * 3) - 1,
-          low: today.low + Math.floor(Math.random() * 2) - 1,
-          conditionThai: 'เมฆบางส่วน',
-          icon: '🌤️',
-          humidity: Math.min(90, today.humidity + Math.floor(Math.random() * 10) - 5),
-          wind: Math.max(5, today.wind + Math.floor(Math.random() * 8) - 4)
-        };
+    const tomorrow = convertToWeatherData(shapedTomorrow, 'forecast');
 
     return { yesterday, today, tomorrow };
   } catch (error) {
@@ -365,30 +344,25 @@ export interface HourlyWeather {
   wind: number; // km/h
 }
 
-export async function getHourlyForecast(limitHours: number = 24): Promise<HourlyWeather[]> {
+export async function getHourlyForecast(limitHours: number = 24, opts?: { lat?: number; lon?: number }): Promise<HourlyWeather[]> {
   try {
-    const response = await axios.get(`${BASE_URL}/forecast`, {
-      params: {
-        q: `${CITY},${COUNTRY_CODE}`,
-        appid: API_KEY,
-        units: 'metric',
-        lang: 'en'
-      }
-    });
-
-    const list: any[] = response.data.list || [];
-    const maxItems = Math.max(1, Math.ceil(limitHours / 3));
+    const lat = opts?.lat ?? UDON_LAT;
+    const lon = opts?.lon ?? UDON_LON;
+    const { data } = await axios.get(`/api/tmd/forecast/hourly`, { params: { lat, lon } });
+    const list: any[] = data?.hourly || data?.data || data?.items || data?.forecasts || [];
+    const maxItems = Math.max(1, limitHours); // assume 1-hourly
     const sliced = list.slice(0, maxItems);
 
-    return sliced.map((item: any) => {
-      const dt = new Date(item.dt * 1000);
+    return sliced.map((item: any, idx: number) => {
+      const dtStr = item.time || item.datetime || item.date || '';
+      const dt = dtStr ? new Date(dtStr) : new Date(Date.now() + idx * 3600_000);
       const hour = dt.getHours();
-      const description = item.weather?.[0]?.description || '';
+      const description = item.description || item.text || item.summary || '';
       const { thai, icon } = getWeatherCondition(description);
-      const humidity = item.main?.humidity ?? 0;
-      const wind = Math.round((item.wind?.speed || 0) * 3.6);
-      const temp = Math.round(item.main?.temp ?? item.temp?.day ?? 0);
-      const rain = getRainProbability(description, humidity);
+      const humidity = Math.round(item.humidity ?? item.rh ?? 0);
+      const wind = Math.round(item.windSpeed ?? item.ws ?? 0);
+      const temp = Math.round(item.temp ?? item.temperature ?? item.t ?? item.t2m ?? 0);
+      const rainChance = Math.round(item.pop ?? item.rainProbability ?? item.precipitation_probability ?? 0);
 
       const hh = String(hour).padStart(2, '0');
       return {
@@ -397,7 +371,7 @@ export async function getHourlyForecast(limitHours: number = 24): Promise<Hourly
         temp,
         icon,
         conditionThai: thai,
-        rainChance: rain.chance,
+        rainChance: Math.max(0, Math.min(100, rainChance || getRainProbability(description, humidity).chance)),
         humidity,
         wind,
       } as HourlyWeather;

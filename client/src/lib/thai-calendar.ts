@@ -3,6 +3,7 @@
 // If unavailable, functions will gracefully fallback.
 
 import { getThaiHolidays, type ThaiHoliday } from "@/data/thai-holidays";
+import { getWanPhraFallback } from "@/data/wanphra";
 
 export interface WanPhraDate {
   date: string; // YYYY-MM-DD (Gregorian)
@@ -15,6 +16,18 @@ function toISO(y: number, m: number, d: number) { return `${y}-${pad(m)}-${pad(d
 // Attempt to compute Wan Phra dates using thai-lunar-date if installed
 export async function getWanPhraDates(year: number, month: number): Promise<WanPhraDate[]> {
   try {
+    // 1) Try server ICS source first (covers all years when calendar is maintained)
+    try {
+      const resp = await fetch(`/api/wanphra?year=${year}&month=${month}`);
+      if (resp.ok) {
+        const items = await resp.json();
+        if (Array.isArray(items) && items.length > 0) {
+          return items.map((x: any) => ({ date: String(x.date), label: String(x.label || x.summary || '') }));
+        }
+      }
+    } catch {}
+
+    // 2) Try local algorithmic library if available
     // Dynamic import of optional dependency. Use computed specifier with Vite ignore
     // so Rollup doesn't try to resolve it at build time. If not present at runtime,
     // this will throw and be caught below.
@@ -36,8 +49,9 @@ export async function getWanPhraDates(year: number, month: number): Promise<WanP
     }
     return results;
   } catch (e) {
-    // Fallback: return empty; UI will handle and show guidance
-    return [];
+    // 3) Fallback: use precomputed dataset if available
+    const fb = getWanPhraFallback(year, month);
+    return fb.map(x => ({ date: x.date, label: x.label }));
   }
 }
 

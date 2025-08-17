@@ -148,12 +148,12 @@ export default function AuditLogViewer() {
         {/* Filters */}
         <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
           <div className="md:col-span-1">
-            <Select value={method} onValueChange={(v) => { setPage(1); setMethod(v); }}>
+            <Select value={method} onValueChange={(v) => { setPage(1); setMethod(v === 'ALL' ? '' : v); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Method" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All</SelectItem>
+                <SelectItem value="ALL">All</SelectItem>
                 <SelectItem value="POST">POST</SelectItem>
                 <SelectItem value="PUT">PUT</SelectItem>
                 <SelectItem value="PATCH">PATCH</SelectItem>

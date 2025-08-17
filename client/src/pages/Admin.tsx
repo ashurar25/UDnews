@@ -49,7 +49,6 @@ const SystemSettings = lazy(() => import('@/components/SystemSettings').catch(()
 const DatabaseManager = lazy(() => import('@/components/DatabaseManager').catch(() => ({ default: () => <PlaceholderComponent title="จัดการฐานข้อมูล" /> })));
 const DonationManager = lazy(() => import('@/components/DonationManager').catch(() => ({ default: () => <PlaceholderComponent title="การบริจาค" /> })));
 const AuditLogViewer = lazy(() => import('@/components/AuditLogViewer').catch(() => ({ default: () => <PlaceholderComponent title="บันทึกกิจกรรม" /> })));
-const DailySummaryAdmin = lazy(() => import('@/components/DailySummaryAdmin').catch(() => ({ default: () => <PlaceholderComponent title="สรุปข่าวรายวัน (AI)" /> })));
 
 // Placeholder component for components that don't exist yet
 const PlaceholderComponent = ({ title }: { title: string }) => (
@@ -253,7 +252,6 @@ const menuItems = [
       { id: 'settings', label: 'การตั้งค่าระบบ', icon: Settings },
       { id: 'database', label: 'จัดการฐานข้อมูล', icon: Database },
       { id: 'auditLogs', label: 'บันทึกกิจกรรม', icon: Clock },
-      { id: 'aiDailySummary', label: 'สรุปข่าวรายวัน (AI)', icon: Monitor },
     ]
   }
 ];
@@ -495,15 +493,7 @@ function AdminDashboard() {
           </div>
         );
 
-      case 'aiDailySummary':
-        return (
-          <div className="space-y-6">
-            <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">สรุปข่าวรายวัน (AI)</h3>
-            <Suspense fallback={<LoadingSpinner />}>
-              <DailySummaryAdmin />
-            </Suspense>
-          </div>
-        );
+      
 
       default:
         return (

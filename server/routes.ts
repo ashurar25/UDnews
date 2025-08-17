@@ -45,6 +45,7 @@ import type { InsertDonation } from "@shared/schema";
 import { SitemapGenerator } from './sitemap-generator';
 import { notificationService } from './notification-service';
 import lotteryRoutes from './lottery-api';
+import { setTimeout as delay } from 'timers/promises';
 
 // Simple HTML escape for meta tag content
 function escapeHtml(input: string): string {
@@ -59,6 +60,10 @@ function escapeHtml(input: string): string {
 // Cache configuration for faster news loading
 const newsCache = new NodeCache({ stdTTL: 300, checkperiod: 60 }); // 5 minutes
 const individualNewsCache = new NodeCache({ stdTTL: 1800, checkperiod: 120 }); // 30 minutes
+// Short-lived cache for TMD forecast proxy (reduce upstream hits)
+const tmdForecastCache = new NodeCache({ stdTTL: 120, checkperiod: 60 }); // 2 minutes
+// Cache for Wan Phra ICS
+const wanPhraCache = new NodeCache({ stdTTL: 12 * 60 * 60, checkperiod: 60 * 60 }); // 12 hours
 
 // Rate limiting configuration
 const generalLimiter = rateLimit({
@@ -143,6 +148,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // best-effort only
       }
     });
+
+  // Wan Phra API from Google Calendar ICS (public)
+  app.get('/api/wanphra', async (req: Request, res: Response) => {
+    try {
+      const year = parseInt(String(req.query.year || ''));
+      const month = parseInt(String(req.query.month || ''));
+      if (!year || !month || month < 1 || month > 12) return res.status(400).json({ message: 'year and month are required' });
+
+      const icsEnv = process.env.WANPHRA_ICS_URL;
+      const calId = process.env.WANPHRA_GOOGLE_CAL_ID || 'n7kthnfuc8uldm955sfkpjt244@group.calendar.google.com';
+      const icsUrl = icsEnv || `https://www.google.com/calendar/ical/${encodeURIComponent(calId)}/public/basic.ics`;
+
+      const cacheKey = `wanphra:ics:${icsUrl}`;
+      let icsText = wanPhraCache.get<string>(cacheKey);
+      if (!icsText) {
+        const resp = await fetch(icsUrl, { headers: { 'Accept': 'text/calendar' } as any });
+        if (!resp.ok) return res.status(502).json({ message: 'Failed to fetch ICS' });
+        icsText = await resp.text();
+        wanPhraCache.set(cacheKey, icsText);
+      }
+
+      // Unfold lines per RFC 5545 (CRLF followed by space/tab indicates continuation)
+      const unfolded = icsText.replace(/\r?\n[ \t]/g, '');
+
+      // Minimal ICS parse: split VEVENTs
+      const events: Array<{ date: string; summary: string }> = [];
+      const chunks = unfolded.split(/BEGIN:VEVENT/).slice(1);
+      for (const ch of chunks) {
+        const endIdx = ch.indexOf('END:VEVENT');
+        const body = endIdx >= 0 ? ch.slice(0, endIdx) : ch;
+        const dtstartMatch = body.match(/DTSTART(?:;[^:]+)?:([0-9]{8})/);
+        const summaryMatch = body.match(/SUMMARY(?:;[^:]+)?:([^\r\n]+)/);
+        if (dtstartMatch) {
+          const y = dtstartMatch[1].slice(0,4);
+          const m = dtstartMatch[1].slice(4,6);
+          const d = dtstartMatch[1].slice(6,8);
+          const date = `${y}-${m}-${d}`;
+          const summary = summaryMatch ? summaryMatch[1].trim() : '';
+          events.push({ date, summary });
+        }
+      }
+
+      // Filter for requested month
+      const mm = String(month).padStart(2, '0');
+      const yy = String(year);
+      const items = events.filter(e => e.date.startsWith(`${yy}-${mm}-`))
+        .map(e => ({ date: e.date, label: e.summary }));
+
+      res.setHeader('Cache-Control', 'public, max-age=3600, stale-while-revalidate=3600');
+      return res.json(items);
+    } catch (e) {
+      console.error('wanphra endpoint error', e);
+      return res.status(500).json({ message: 'Failed to load Wan Phra dates' });
+    }
+  });
     next();
   });
 
@@ -239,6 +299,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(200).send(html);
     } catch (err) {
       return res.status(500).send('Internal Server Error');
+    }
+  });
+
+  // TMD Image Proxy (radar/satellite/meteogram) - strict allowlist
+  app.get('/api/tmd/image-proxy', async (req, res) => {
+    try {
+      const src = (req.query.src as string) || '';
+      if (!src) return res.status(400).json({ message: 'src is required' });
+
+      let u: URL;
+      try { u = new URL(src); } catch { return res.status(400).json({ message: 'invalid url' }); }
+
+      const allowedHosts = new Set(['data.tmd.go.th', 'weather.tmd.go.th']);
+      if (!allowedHosts.has(u.hostname)) {
+        return res.status(403).json({ message: 'host not allowed' });
+      }
+
+      const allowedPrefixes = [
+        '/nwpapiv1/meteogram',
+        '/nwpapi/meteogram',
+        '/radar',
+        '/satellite',
+        '/WeatherMap',
+        '/WeatherForecast',
+      ];
+      if (!allowedPrefixes.some((p) => u.pathname.startsWith(p))) {
+        return res.status(403).json({ message: 'path not allowed' });
+      }
+
+      const headers: Record<string, string> = { 'Accept': '*/*' };
+      const needsAuth = u.hostname === 'data.tmd.go.th' && u.pathname.startsWith('/nwpapiv1');
+      if (needsAuth) {
+        const token = process.env.TMD_API_KEY;
+        if (!token) return res.status(503).json({ message: 'TMD API key not configured' });
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const upstreamRes = await fetch(u.toString(), { headers } as any);
+      const contentType = upstreamRes.headers.get('content-type') || 'application/octet-stream';
+      res.status(upstreamRes.status);
+      res.setHeader('Content-Type', contentType);
+      // Light caching for images/maps to improve UX
+      const isImage = /image\//i.test(contentType);
+      if (isImage) {
+        res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300, stale-while-revalidate=60');
+      } else {
+        res.setHeader('Cache-Control', 'public, max-age=120');
+      }
+      const etag = upstreamRes.headers.get('etag');
+      const lastMod = upstreamRes.headers.get('last-modified');
+      if (etag) res.setHeader('ETag', etag);
+      if (lastMod) res.setHeader('Last-Modified', lastMod);
+      const rl = upstreamRes.headers.get('X-RateLimit-Remaining');
+      const rlL = upstreamRes.headers.get('X-RateLimit-Limit');
+      if (rl) res.setHeader('X-RateLimit-Remaining', rl);
+      if (rlL) res.setHeader('X-RateLimit-Limit', rlL);
+
+      const buffer = Buffer.from(await upstreamRes.arrayBuffer());
+      res.send(buffer);
+    } catch (err) {
+      console.error('Error proxying TMD image:', err);
+      res.status(500).json({ message: 'Failed to proxy TMD image' });
     }
   });
 
@@ -2102,7 +2224,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/disaster-alerts/active", async (req, res) => {
     try {
       const { disasterAlertService } = await import("./disaster-alert-service");
-      const activeAlerts = disasterAlertService.getActiveAlerts();
+      const province = (req.query.province as string | undefined)?.trim();
+      let activeAlerts = disasterAlertService.getActiveAlerts();
+      if (province && province.length > 0) {
+        activeAlerts = activeAlerts.filter((a) =>
+          typeof a.area === 'string' && a.area.includes(province)
+        );
+      }
       res.json(activeAlerts);
     } catch (error) {
       console.error("Error fetching disaster alerts:", error);
@@ -2133,10 +2261,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { disasterAlertService } = await import("./disaster-alert-service");
       const alertId = req.params.id;
       disasterAlertService.deactivateAlert(alertId);
-      res.json({ message: "Alert dismissed" });
+      res.json({ success: true });
     } catch (error) {
-      console.error("Error dismissing alert:", error);
-      res.status(500).json({ message: "Failed to dismiss alert" });
+      console.error("Error dismissing disaster alert:", error);
+      res.status(500).json({ message: "Failed to dismiss disaster alert" });
+    }
+  });
+
+  // TMD Forecast Proxy (protect API key and handle CORS/cache)
+  app.get('/api/tmd/forecast/daily', async (req, res) => {
+    try {
+      const lat = (req.query.lat as string) || process.env.TMD_DEFAULT_LAT || '17.413';
+      const lon = (req.query.lon as string) || process.env.TMD_DEFAULT_LON || '102.787';
+      const token = process.env.TMD_API_KEY;
+      if (!token) return res.status(503).json({ message: 'TMD API key not configured' });
+
+      const latN = Number(lat); const lonN = Number(lon);
+      const normLat = isFinite(latN) ? latN.toFixed(3) : String(lat);
+      const normLon = isFinite(lonN) ? lonN.toFixed(3) : String(lon);
+      const cacheKey = `tmd:daily:${normLat},${normLon}`;
+
+      const cached = tmdForecastCache.get<any>(cacheKey);
+      if (cached) {
+        res.status(200);
+        res.setHeader('Content-Type', cached.contentType || 'application/json');
+        res.setHeader('Cache-Control', 'public, max-age=120, stale-while-revalidate=60');
+        if (cached.etag) res.setHeader('ETag', cached.etag);
+        if (cached.lastModified) res.setHeader('Last-Modified', cached.lastModified);
+        return res.send(cached.body);
+      }
+
+      const upstream = `https://data.tmd.go.th/nwpapiv1/forecast/daily?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
+      const r = await fetch(upstream, {
+        headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+        cache: 'no-store' as any,
+      } as any);
+      const text = await r.text();
+      res.status(r.status);
+      // forward rate-limit headers if present
+      const rl = r.headers.get('X-RateLimit-Remaining');
+      const rlL = r.headers.get('X-RateLimit-Limit');
+      if (rl) res.setHeader('X-RateLimit-Remaining', rl);
+      if (rlL) res.setHeader('X-RateLimit-Limit', rlL);
+      const ct = r.headers.get('content-type') || 'application/json';
+      const etag = r.headers.get('etag');
+      const lastMod = r.headers.get('last-modified');
+      res.setHeader('Content-Type', ct);
+      res.setHeader('Cache-Control', 'public, max-age=120, stale-while-revalidate=60');
+      if (etag) res.setHeader('ETag', etag);
+      if (lastMod) res.setHeader('Last-Modified', lastMod);
+      if (r.ok) {
+        tmdForecastCache.set(cacheKey, { body: text, contentType: ct, etag, lastModified: lastMod });
+      }
+      res.send(text);
+    } catch (err) {
+      console.error('Error proxying TMD daily forecast:', err);
+      res.status(500).json({ message: 'Failed to fetch TMD daily forecast' });
+    }
+  });
+
+  app.get('/api/tmd/forecast/hourly', async (req, res) => {
+    try {
+      const lat = (req.query.lat as string) || process.env.TMD_DEFAULT_LAT || '17.413';
+      const lon = (req.query.lon as string) || process.env.TMD_DEFAULT_LON || '102.787';
+      const token = process.env.TMD_API_KEY;
+      if (!token) return res.status(503).json({ message: 'TMD API key not configured' });
+
+      const latN = Number(lat); const lonN = Number(lon);
+      const normLat = isFinite(latN) ? latN.toFixed(3) : String(lat);
+      const normLon = isFinite(lonN) ? lonN.toFixed(3) : String(lon);
+      const cacheKey = `tmd:hourly:${normLat},${normLon}`;
+
+      const cached = tmdForecastCache.get<any>(cacheKey);
+      if (cached) {
+        res.status(200);
+        res.setHeader('Content-Type', cached.contentType || 'application/json');
+        res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=60');
+        if (cached.etag) res.setHeader('ETag', cached.etag);
+        if (cached.lastModified) res.setHeader('Last-Modified', cached.lastModified);
+        return res.send(cached.body);
+      }
+
+      const upstream = `https://data.tmd.go.th/nwpapiv1/forecast/hourly?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
+      const r = await fetch(upstream, {
+        headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+        cache: 'no-store' as any,
+      } as any);
+      const text = await r.text();
+      res.status(r.status);
+      const rl = r.headers.get('X-RateLimit-Remaining');
+      const rlL = r.headers.get('X-RateLimit-Limit');
+      if (rl) res.setHeader('X-RateLimit-Remaining', rl);
+      if (rlL) res.setHeader('X-RateLimit-Limit', rlL);
+      const ct = r.headers.get('content-type') || 'application/json';
+      const etag = r.headers.get('etag');
+      const lastMod = r.headers.get('last-modified');
+      res.setHeader('Content-Type', ct);
+      res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=60');
+      if (etag) res.setHeader('ETag', etag);
+      if (lastMod) res.setHeader('Last-Modified', lastMod);
+      if (r.ok) {
+        tmdForecastCache.set(cacheKey, { body: text, contentType: ct, etag, lastModified: lastMod });
+      }
+      res.send(text);
+    } catch (err) {
+      console.error('Error proxying TMD hourly forecast:', err);
+      res.status(500).json({ message: 'Failed to fetch TMD hourly forecast' });
     }
   });
 
