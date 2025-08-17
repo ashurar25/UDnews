@@ -72,7 +72,9 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(import.meta.dirname, "../dist/public");
+  // In production (bundled), this file lives in dist/, so public assets are in dist/public
+  // Using ./public works in the bundled output.
+  const distPath = path.resolve(import.meta.dirname, "./public");
 
   if (!fs.existsSync(distPath)) {
     throw new Error(
