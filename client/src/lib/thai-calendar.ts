@@ -15,8 +15,11 @@ function toISO(y: number, m: number, d: number) { return `${y}-${pad(m)}-${pad(d
 // Attempt to compute Wan Phra dates using thai-lunar-date if installed
 export async function getWanPhraDates(year: number, month: number): Promise<WanPhraDate[]> {
   try {
-    // Dynamic import to avoid build-time error if package is missing
-    const mod: any = await import('thai-lunar-date');
+    // Dynamic import of optional dependency. Use computed specifier with Vite ignore
+    // so Rollup doesn't try to resolve it at build time. If not present at runtime,
+    // this will throw and be caught below.
+    const pkg = 'thai-lunar-date';
+    const mod: any = await import(/* @vite-ignore */ pkg);
     const Lunar = mod?.ThaiLunarDate || mod?.default || mod;
     if (!Lunar) throw new Error('thai-lunar-date not available');
 
