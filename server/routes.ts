@@ -34,6 +34,7 @@ import { storage } from "./storage";
 import { rssService } from "./rss-service";
 import { getCachedDailySummary, generateDailySummary } from './ai-summarizer';
 import { getTmdForecast, getWeatherRadarImage } from './weather-service';
+import { systemHealthService } from './services/system-health.service';
 import { authenticateToken as authMiddleware, generateToken, authorizeRoles } from "./middleware/auth";
 import rateLimit from "express-rate-limit";
 import path from 'path';
@@ -1322,6 +1323,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false, 
         message: 'Server error' 
+      });
+    }
+  });
+
+  // System health endpoint (admin only)
+  app.get("/api/admin/system/health", authMiddleware, authorizeRoles('admin'), async (req, res) => {
+    try {
+      const healthData = await systemHealthService.getSystemHealth();
+      res.json(healthData);
+    } catch (error: unknown) {
+      console.error('Error getting system health:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      res.status(500).json({ 
+        status: 'error',
+        message: 'Failed to retrieve system health data',
+        error: process.env.NODE_ENV === 'development' ? errorMessage : undefined
       });
     }
   });

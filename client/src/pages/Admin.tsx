@@ -31,24 +31,42 @@ import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useToast } from '@/hooks/use-toast';
 import MetaHead from '@/components/MetaHead';
+import { Activity } from 'lucide-react';
+
+// Helper function to create lazy-loaded components with error boundaries
+const lazyWithRetry = (componentImport: () => Promise<any>, title: string) =>
+  lazy(async () => {
+    try {
+      const module = await componentImport();
+      // Handle both default and named exports
+      const component = module.default || module;
+      return { default: component };
+    } catch (error) {
+      console.error(`Failed to load component: ${title}`, error);
+      return { 
+        default: () => <PlaceholderComponent title={title} /> 
+      };
+    }
+  });
 
 // Import actual components with error handling
-const NewsManager = lazy(() => import('@/components/NewsManager').catch(() => ({ default: () => <PlaceholderComponent title="จัดการข่าว" /> })));
-const AnalyticsDashboard = lazy(() => import('@/components/AnalyticsDashboard').catch(() => ({ default: () => <PlaceholderComponent title="สถิติและการวิเคราะห์" /> })));
-const RSSManager = lazy(() => import('@/components/RSSManager').catch(() => ({ default: () => <PlaceholderComponent title="จัดการ RSS Feeds" /> })));
-const SponsorManager = lazy(() => import('@/components/SponsorManager').catch(() => ({ default: () => <PlaceholderComponent title="จัดการแบนเนอร์สปอนเซอร์" /> })));
-const MediaManager = lazy(() => import('@/components/MediaManager').catch(() => ({ default: () => <PlaceholderComponent title="จัดการไฟล์มีเดีย" /> })));
-const CategoryManager = lazy(() => import('@/components/CategoryManager').catch(() => ({ default: () => <PlaceholderComponent title="จัดการหมวดหมู่" /> })));
-const UserManager = lazy(() => import('@/components/UserManager').catch(() => ({ default: () => <PlaceholderComponent title="จัดการผู้ใช้" /> })));
-const ContactMessagesManager = lazy(() => import('@/components/ContactMessagesManager').catch(() => ({ default: () => <PlaceholderComponent title="ข้อความติดต่อ" /> })));
-const CommentManager = lazy(() => import('@/components/CommentManager').catch(() => ({ default: () => <PlaceholderComponent title="ความคิดเห็น" /> })));
-const NewsletterManager = lazy(() => import('@/components/NewsletterManager').catch(() => ({ default: () => <PlaceholderComponent title="จดหมายข่าว" /> })));
-const PushNotificationManager = lazy(() => import('@/components/PushNotificationManager').catch(() => ({ default: () => <PlaceholderComponent title="การแจ้งเตือน" /> })));
-const ThemeSettings = lazy(() => import('@/components/ThemeSettings').catch(() => ({ default: () => <PlaceholderComponent title="ธีมและการแสดงผล" /> })));
-const SystemSettings = lazy(() => import('@/components/SystemSettings').catch(() => ({ default: () => <PlaceholderComponent title="การตั้งค่าระบบ" /> })));
-const DatabaseManager = lazy(() => import('@/components/DatabaseManager').catch(() => ({ default: () => <PlaceholderComponent title="จัดการฐานข้อมูล" /> })));
-const DonationManager = lazy(() => import('@/components/DonationManager').catch(() => ({ default: () => <PlaceholderComponent title="การบริจาค" /> })));
-const AuditLogViewer = lazy(() => import('@/components/AuditLogViewer').catch(() => ({ default: () => <PlaceholderComponent title="บันทึกกิจกรรม" /> })));
+const NewsManager = lazyWithRetry(() => import('@/components/NewsManager'), 'จัดการข่าว');
+const AnalyticsDashboard = lazyWithRetry(() => import('@/components/AnalyticsDashboard'), 'สถิติและการวิเคราะห์');
+const RSSManager = lazyWithRetry(() => import('@/components/RSSManager'), 'จัดการ RSS Feeds');
+const SponsorManager = lazyWithRetry(() => import('@/components/SponsorManager'), 'จัดการแบนเนอร์สปอนเซอร์');
+const MediaManager = lazyWithRetry(() => import('@/components/MediaManager'), 'จัดการไฟล์มีเดีย');
+const CategoryManager = lazyWithRetry(() => import('@/components/CategoryManager'), 'จัดการหมวดหมู่');
+const UserManager = lazyWithRetry(() => import('@/components/UserManager'), 'จัดการผู้ใช้');
+const ContactMessagesManager = lazyWithRetry(() => import('@/components/ContactMessagesManager'), 'ข้อความติดต่อ');
+const CommentManager = lazyWithRetry(() => import('@/components/CommentManager'), 'ความคิดเห็น');
+const NewsletterManager = lazyWithRetry(() => import('@/components/NewsletterManager'), 'จดหมายข่าว');
+const PushNotificationManager = lazyWithRetry(() => import('@/components/PushNotificationManager'), 'การแจ้งเตือน');
+const ThemeSettings = lazyWithRetry(() => import('@/components/ThemeSettings'), 'ธีมและการแสดงผล');
+const SystemSettings = lazyWithRetry(() => import('@/components/SystemSettings'), 'การตั้งค่าระบบ');
+const DatabaseManager = lazyWithRetry(() => import('@/components/DatabaseManager'), 'จัดการฐานข้อมูล');
+const DonationManager = lazyWithRetry(() => import('@/components/DonationManager'), 'การบริจาค');
+const SystemHealth = lazyWithRetry(() => import('@/components/SystemHealth'), 'สถานะระบบ');
+const AuditLogViewer = lazyWithRetry(() => import('@/components/AuditLogViewer'), 'บันทึกกิจกรรม');
 
 // Placeholder component for components that don't exist yet
 const PlaceholderComponent = ({ title }: { title: string }) => (
@@ -222,6 +240,7 @@ const menuItems = [
     items: [
       { id: 'overview', label: 'ภาพรวมระบบ', icon: Home },
       { id: 'analytics', label: 'สถิติและการวิเคราะห์', icon: BarChart3 },
+      { id: 'system-health', label: 'สถานะระบบ', icon: Activity },
     ]
   },
   {
@@ -339,6 +358,16 @@ function AdminDashboard() {
             <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">สถิติและการวิเคราะห์</h3>
             <Suspense fallback={<LoadingSpinner />}>
               <AnalyticsDashboard />
+            </Suspense>
+          </div>
+        );
+
+      case 'system-health':
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">สถานะระบบ</h3>
+            <Suspense fallback={<LoadingSpinner />}>
+              <SystemHealth />
             </Suspense>
           </div>
         );
@@ -493,6 +522,15 @@ function AdminDashboard() {
           </div>
         );
 
+      case 'system-health':
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">สถานะระบบ</h3>
+            <Suspense fallback={<LoadingSpinner />}>
+              <SystemHealth />
+            </Suspense>
+          </div>
+        );
       
 
       default:

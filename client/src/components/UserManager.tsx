@@ -88,9 +88,45 @@ export default function UserManager() {
     }
   };
 
+  const validateEmail = (email: string) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
+  const checkEmailExists = async (email: string, excludeId: string = '') => {
+    try {
+      const users = await api.get<User[]>('/api/users');
+      return users.some(user => user.email === email && user.id !== excludeId);
+    } catch (error) {
+      console.error('Error checking email:', error);
+      return false;
+    }
+  };
+
   const handleEditUser = async () => {
     if (!editingUser) return;
     
+    // Validate email format
+    if (!validateEmail(formData.email)) {
+      toast({
+        title: 'รูปแบบอีเมลไม่ถูกต้อง',
+        description: 'กรุณากรอกอีเมลให้ถูกต้อง',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Check if email already exists
+    const emailExists = await checkEmailExists(formData.email, editingUser.id);
+    if (emailExists) {
+      toast({
+        title: 'อีเมลนี้มีอยู่ในระบบแล้ว',
+        description: 'กรุณาใช้อีเมลอื่น',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     try {
       // Update user details
       await api.put(`/api/users/${editingUser.id}`, {

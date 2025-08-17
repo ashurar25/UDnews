@@ -121,6 +121,62 @@ export default function NewsManager() {
     },
   });
 
+  const validateNewsContent = (content: string) => {
+    // Remove HTML tags for accurate length check
+    const textContent = content.replace(/<[^>]*>/g, '').trim();
+    return {
+      isValid: textContent.length >= 50, // Minimum 50 characters
+      length: textContent.length
+    };
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate content length
+    const contentValidation = validateNewsContent(formData.content);
+    if (!contentValidation.isValid) {
+      toast({
+        title: 'เนื้อหาข่าวสั้นเกินไป',
+        description: `เนื้อหาข่าวต้องมีความยาวอย่างน้อย 50 ตัวอักษร (ปัจจุบัน ${contentValidation.length} ตัวอักษร)`,
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Validate title length
+    if (formData.title.length < 10) {
+      toast({
+        title: 'หัวข้อข่าวสั้นเกินไป',
+        description: 'หัวข้อข่าวต้องมีความยาวอย่างน้อย 10 ตัวอักษร',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      if (editingNews) {
+        await updateNewsMutation.mutateAsync({
+          id: editingNews.id,
+          data: formData
+        });
+      } else {
+        await createNewsMutation.mutateAsync(formData);
+      }
+      
+      // Reset form after successful submission
+      resetForm();
+      setIsFormOpen(false);
+    } catch (error) {
+      console.error('Error saving news:', error);
+      toast({
+        title: 'เกิดข้อผิดพลาด',
+        description: 'ไม่สามารถบันทึกข่าวได้ กรุณาลองใหม่อีกครั้ง',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       title: "",
@@ -131,16 +187,6 @@ export default function NewsManager() {
       author: ""
     });
     setEditingNews(null);
-    setIsFormOpen(false);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingNews) {
-      updateNewsMutation.mutate({ id: editingNews.id, data: formData });
-    } else {
-      createNewsMutation.mutate(formData);
-    }
   };
 
   const handleEdit = (newsItem: News) => {

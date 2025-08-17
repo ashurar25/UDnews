@@ -1,11 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format, subDays } from 'date-fns';
+import { th } from 'date-fns/locale';
+import { CalendarIcon, Filter, Search, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+interface DateRange {
+  from?: Date;
+  to?: Date;
+}
 
 interface AuditLogItem {
   id: number;
@@ -27,32 +39,79 @@ interface AuditLogResponse {
   items: AuditLogItem[];
 }
 
-function useAuditLogs(params: Record<string, any>) {
-  const qs = new URLSearchParams();
-  Object.entries(params).forEach(([k, v]) => {
-    if (v !== undefined && v !== null && v !== '') qs.append(k, String(v));
-  });
+interface UseAuditLogsParams {
+  method?: string;
+  path?: string;
+  userId?: string;
+  statusCode?: string;
+  from?: string;
+  to?: string;
+  page: number;
+  pageSize: number;
+}
+
+function useAuditLogs(params: UseAuditLogsParams) {
   return useQuery<AuditLogResponse>({
-    queryKey: ['audit-logs', params],
-    queryFn: () => api.get(`/api/audit-logs?${qs.toString()}`),
+    queryKey: ['auditLogs', params],
+    queryFn: async () => {
+      const queryParams = new URLSearchParams();
+      
+      if (params.method) queryParams.append('method', params.method);
+      if (params.path) queryParams.append('path', params.path);
+      if (params.userId) queryParams.append('userId', params.userId);
+      if (params.statusCode) queryParams.append('statusCode', params.statusCode);
+      if (params.from) queryParams.append('from', params.from);
+      if (params.to) queryParams.append('to', params.to);
+      queryParams.append('page', params.page.toString());
+      queryParams.append('pageSize', params.pageSize.toString());
+      
+      const response = await api.get(`/api/audit-logs?${queryParams.toString()}`);
+      return response.data;
+    }
   });
 }
 
 export default function AuditLogViewer() {
-  const [method, setMethod] = React.useState<string>('');
-  const [pathQ, setPathQ] = React.useState<string>('');
-  const [userId, setUserId] = React.useState<string>('');
-  const [statusCode, setStatusCode] = React.useState<string>('');
-  const [from, setFrom] = React.useState<string>('');
-  const [to, setTo] = React.useState<string>('');
-  const [page, setPage] = React.useState<number>(1);
-  const [pageSize, setPageSize] = React.useState<number>(50);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [method, setMethod] = useState('');
+  const [pathQ, setPathQ] = useState('');
+  const [userId, setUserId] = useState('');
+  const [statusCode, setStatusCode] = useState('');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
 
-  const query = useAuditLogs({ method, path: pathQ, userId, statusCode, from, to, page, pageSize });
+  // Handle date range selection
+  const handleDateSelect = (range: DateRange | undefined) => {
+    setDateRange(range);
+    setPage(1);
+    if (range?.from && range?.to) {
+      setFrom(format(range.from, 'yyyy-MM-dd'));
+      setTo(format(range.to, 'yyyy-MM-dd'));
+    } else {
+      setFrom('');
+      setTo('');
+    }
+  };
+
+  const query = useAuditLogs({
+    method,
+    path: pathQ,
+    userId,
+    statusCode,
+    from,
+    to,
+    page,
+    pageSize
+  });
+
   const data = query.data as AuditLogResponse | undefined;
   const { isLoading, isError, refetch } = query as any;
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const isFilterActive = method || pathQ || userId || statusCode || from || to;
 
   // Load filters from URL once
   React.useEffect(() => {
@@ -133,23 +192,67 @@ export default function AuditLogViewer() {
     setStatusCode('');
     setFrom('');
     setTo('');
-    setPage(1);
+    setDateRange(undefined);
   };
 
+  const isFilterActive = method || pathQ || userId || statusCode || from || to;
+
   return (
-    <Card className="bg-white rounded-xl shadow-lg border border-orange-100">
-      <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 rounded-t-xl">
-        <CardTitle className="flex items-center gap-2 font-kanit text-orange-700">
-          บันทึกกิจกรรม (Audit Logs)
-        </CardTitle>
+    <Card className="w-full">
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle>Audit Logs</CardTitle>
+            <CardDescription>View and filter system audit logs</CardDescription>
+          </div>
+          <Button
+            variant={showFilters ? "secondary" : "outline"}
+            size="sm"
+            className="gap-2"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter className="h-4 w-4" />
+            {showFilters ? 'Hide Filters' : 'Show Filters'}
+            {isFilterActive && (
+              <span className="flex h-2 w-2 rounded-full bg-primary"></span>
+            )}
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="p-4 space-y-4">
         <div className="text-sm text-gray-600">รวม {total.toLocaleString()} รายการ</div>
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
-          <div className="md:col-span-1">
-            <Select value={method} onValueChange={(v) => { setPage(1); setMethod(v === 'ALL' ? '' : v); }}>
-              <SelectTrigger>
+        {showFilters && (
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+            <div className="md:col-span-1">
+              <Select value={method} onValueChange={(v) => { setPage(1); setMethod(v === 'ALL' ? '' : v); }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All</SelectItem>
+                  <SelectItem value="POST">POST</SelectItem>
+                  <SelectItem value="PUT">PUT</SelectItem>
+                  <SelectItem value="PATCH">PATCH</SelectItem>
+                  <SelectItem value="DELETE">DELETE</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="md:col-span-2">
+              <Input placeholder="Path contains..." value={pathQ} onChange={(e) => { setPage(1); setPathQ(e.target.value); }} />
+            </div>
+            <div>
+              <Input type="number" placeholder="User ID" value={userId} onChange={(e) => { setPage(1); setUserId(e.target.value); }} />
+            </div>
+            <div>
+              <Input type="number" placeholder="Status" value={statusCode} onChange={(e) => { setPage(1); setStatusCode(e.target.value); }} />
+            </div>
+            <div className="flex gap-2">
+              <Calendar
+                dateRange={dateRange}
+                onChange={handleDateSelect}
+              />
+            </div>
                 <SelectValue placeholder="Method" />
               </SelectTrigger>
               <SelectContent>
