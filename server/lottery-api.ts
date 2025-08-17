@@ -111,6 +111,35 @@ router.get('/latest', async (_req, res) => {
   }
 });
 
+// Official Lottery.co.th RSS feed (latest only)
+// Endpoint: GET /api/lottery/thai/rss/lotteryco
+// Returns: { latest: { title, link, pubDate, isoDate, summary } }
+router.get('/thai/rss/lotteryco', async (_req, res) => {
+  const key = cacheKey('lotteryco-rss-latest');
+  const cached = cache.get<any>(key);
+  if (cached) return res.json(cached);
+
+  try {
+    const feedUrl = 'https://www.lottery.co.th/lotto/feed';
+    const feed = await parser.parseURL(feedUrl);
+    const item = (feed.items || [])[0];
+    const latest = item
+      ? {
+          title: item.title || '',
+          link: item.link || '',
+          pubDate: item.pubDate || '',
+          isoDate: (item as any).isoDate || '',
+          summary: (item as any).contentSnippet || (item as any).content || '',
+        }
+      : { title: '', link: '', pubDate: '', isoDate: '', summary: '' };
+    const payload = { latest };
+    cache.set(key, payload, 300);
+    res.json(payload);
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message || 'Failed to fetch Lottery.co.th RSS' });
+  }
+});
+
 // Latest draw (normalized)
 router.get('/thai/latest', async (req, res) => {
   try {

@@ -25,6 +25,15 @@ const app = express();
 // Trust proxy if behind a reverse proxy/CDN
 app.set('trust proxy', 1);
 
+// Force HTTPS behind Render/Proxy using x-forwarded-proto
+app.use((req, res, next) => {
+  const xfProto = req.headers['x-forwarded-proto'];
+  if (xfProto !== 'https') {
+    return res.redirect(301, `https://${req.headers.host}${req.url}`);
+  }
+  next();
+});
+
 // Robust CORS (configure with FRONTEND_ORIGINS="https://udnewsupdate.sbs,http://localhost:5173")
 app.use((req, res, next) => {
   const requestOrigin = req.headers.origin as string | undefined;

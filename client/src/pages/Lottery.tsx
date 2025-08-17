@@ -2,7 +2,7 @@ import React from 'react';
 import LotteryResults from '@/components/LotteryResults';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Trophy, CalendarDays, Sparkles } from 'lucide-react';
+import { ArrowLeft, Trophy, CalendarDays, Sparkles, ExternalLink, Share2 } from 'lucide-react';
 
 export default function Lottery() {
 
@@ -16,6 +16,140 @@ export default function Lottery() {
     document.title = 'ผลสลากกินแบ่งรัฐบาล - UD News Update';
     return () => { document.title = prev; };
   }, []);
+
+  // Latest announcement from lottery.co.th RSS
+  const [latestPost, setLatestPost] = React.useState<{ title: string; link: string; pubDate: string; isoDate: string; summary: string } | null>(null);
+  const [loadingPost, setLoadingPost] = React.useState(true);
+  const [errorPost, setErrorPost] = React.useState<string | null>(null);
+  const [draw, setDraw] = React.useState<{
+    date?: string;
+    drawDate?: string;
+    governmentId?: string;
+    prizes?: {
+      first?: string[];
+      last2?: string[];
+      first3?: string[];
+      last3?: string[];
+      nearFirst?: string[];
+    };
+  } | null>(null);
+  const [loadingDraw, setLoadingDraw] = React.useState(true);
+  const [errorDraw, setErrorDraw] = React.useState<string | null>(null);
+
+  function formatThaiDate(iso: string | undefined) {
+    if (!iso) return '';
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString('th-TH', {
+        year: 'numeric', month: 'short', day: 'numeric',
+      });
+    } catch {
+      return '';
+    }
+  }
+
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoadingPost(true);
+        const r = await fetch('/api/lottery/thai/rss/lotteryco', { headers: { Accept: 'application/json' } });
+        if (!r.ok) throw new Error('fetch failed');
+        const data = await r.json();
+        if (!mounted) return;
+        setLatestPost(data?.latest || null);
+        setErrorPost(null);
+      } catch (e: any) {
+        if (!mounted) return;
+        setErrorPost('ไม่สามารถโหลดประกาศงวดล่าสุด');
+      } finally {
+        if (mounted) setLoadingPost(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  // Fetch normalized latest draw numbers
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoadingDraw(true);
+        const r = await fetch('/api/lottery/thai/latest', { headers: { Accept: 'application/json' } });
+        if (!r.ok) throw new Error('fetch failed');
+        const data = await r.json();
+        if (!mounted) return;
+        setDraw(data || null);
+        setErrorDraw(null);
+      } catch (e: any) {
+        if (!mounted) return;
+        setErrorDraw('โหลดเลขรางวัลล่าสุดไม่ได้');
+      } finally {
+        if (mounted) setLoadingDraw(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  // Inject JSON-LD for SEO (Lottery announcement)
+  React.useEffect(() => {
+    const setMeta = (name: string, content: string, isProperty = false) => {
+      const selector = isProperty ? `meta[property="${name}"]` : `meta[name="${name}"]`;
+      let tag = document.head.querySelector<HTMLMetaElement>(selector);
+      if (!tag) {
+        tag = document.createElement('meta');
+        if (isProperty) tag.setAttribute('property', name); else tag.setAttribute('name', name);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute('content', content);
+    };
+
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    const headline = latestPost?.title || 'ผลสลากกินแบ่งรัฐบาล งวดล่าสุด';
+    const url = latestPost?.link || (typeof window !== 'undefined' ? window.location.href : '');
+    const datePublished = latestPost?.isoDate || new Date().toISOString();
+    const description = (latestPost?.summary || '').replace(/<[^>]+>/g, '').slice(0, 240);
+    const ogImage = (typeof window !== 'undefined' ? `${window.location.origin}/logo.jpg` : '/logo.jpg');
+    // Open Graph / Twitter
+    if (typeof document !== 'undefined') {
+      setMeta('og:title', headline, true);
+      setMeta('og:description', description, true);
+      setMeta('og:url', url || (typeof window !== 'undefined' ? window.location.href : ''), true);
+      setMeta('og:type', 'article', true);
+      setMeta('og:image', ogImage, true);
+      setMeta('twitter:card', 'summary_large_image');
+      setMeta('twitter:title', headline);
+      setMeta('twitter:description', description);
+      setMeta('twitter:image', ogImage);
+    }
+    const jsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline,
+      description,
+      url,
+      image: [ogImage],
+      datePublished,
+      dateModified: datePublished,
+      mainEntityOfPage: url,
+      author: {
+        '@type': 'Organization',
+        name: 'UD News Update'
+      },
+      publisher: {
+        '@type': 'Organization',
+        name: 'UD News Update',
+        logo: {
+          '@type': 'ImageObject',
+          url: ogImage
+        }
+      }
+    } as any;
+    script.textContent = JSON.stringify(jsonLd);
+    document.head.appendChild(script);
+    return () => { document.head.removeChild(script); };
+  }, [latestPost]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 via-amber-50 to-white dark:from-gray-900 dark:via-gray-950 dark:to-black">
@@ -67,6 +201,105 @@ export default function Lottery() {
           </div>
         </div>
 
+        {/* Latest Lottery Announcement (from lottery.co.th RSS) */}
+        <div className="mb-8">
+          <div className="relative overflow-hidden rounded-2xl border border-amber-200/70 bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 shadow-lg dark:from-orange-950/40 dark:via-gray-900/40 dark:to-gray-900/40 dark:border-gray-700">
+            <div className="absolute -top-24 -right-24 h-80 w-80 rounded-full bg-orange-300/20 blur-3xl dark:bg-orange-500/10" />
+            <div className="absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-amber-300/20 blur-3xl dark:bg-amber-500/10" />
+            <div className="relative p-5 md:p-6">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="inline-flex items-center gap-2 rounded-full bg-orange-600 text-white px-3 py-1 text-xs font-sarabun shadow">
+                  <Sparkles className="h-3.5 w-3.5" /> ประกาศผลสลาก งวดล่าสุด
+                </div>
+                {latestPost?.isoDate && (
+                  <div className="text-xs md:text-sm text-orange-900/80 dark:text-orange-200 font-sarabun">
+                    อัปเดต: {formatThaiDate(latestPost.isoDate)}
+                  </div>
+                )}
+              </div>
+
+              {/* Content */}
+              {loadingPost ? (
+                <div className="mt-4 animate-pulse space-y-2">
+                  <div className="h-6 w-3/4 rounded bg-orange-200/50 dark:bg-gray-700" />
+                  <div className="h-4 w-1/2 rounded bg-orange-200/40 dark:bg-gray-700" />
+                </div>
+              ) : errorPost ? (
+                <div className="mt-4 text-sm text-red-600 dark:text-red-400 font-sarabun">{errorPost}</div>
+              ) : latestPost ? (
+                <div className="mt-4">
+                  <h3 className="text-2xl md:text-3xl font-bold font-kanit text-orange-900 dark:text-orange-100 drop-shadow-sm">
+                    {latestPost.title || 'ผลสลากงวดล่าสุด'}
+                  </h3>
+                  {latestPost.summary && (
+                    <p className="mt-2 text-sm md:text-base text-gray-700 dark:text-gray-300 font-sarabun line-clamp-3">
+                      {latestPost.summary.replace(/<[^>]+>/g, '')}
+                    </p>
+                  )}
+
+                  {/* Key numbers preview */}
+                  <div className="mt-4">
+                    {loadingDraw ? (
+                      <div className="animate-pulse grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <div className="h-10 rounded bg-orange-200/50 dark:bg-gray-700" />
+                        <div className="h-10 rounded bg-orange-200/50 dark:bg-gray-700" />
+                        <div className="h-10 rounded bg-orange-200/50 dark:bg-gray-700" />
+                        <div className="h-10 rounded bg-orange-200/50 dark:bg-gray-700" />
+                      </div>
+                    ) : errorDraw ? (
+                      <div className="text-xs text-red-600 dark:text-red-400 font-sarabun">{errorDraw}</div>
+                    ) : draw?.prizes ? (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <div className="rounded-lg bg-white/80 dark:bg-gray-800/60 border border-amber-200/70 dark:border-gray-700 px-3 py-2 shadow-sm">
+                          <div className="text-[11px] text-gray-600 dark:text-gray-300 font-sarabun">รางวัลที่ 1</div>
+                          <div className="text-lg md:text-xl font-kanit text-orange-800 dark:text-orange-200 tracking-wider">{draw.prizes.first?.[0] || '— — — — — —'}</div>
+                        </div>
+                        <div className="rounded-lg bg-white/80 dark:bg-gray-800/60 border border-amber-200/70 dark:border-gray-700 px-3 py-2 shadow-sm">
+                          <div className="text-[11px] text-gray-600 dark:text-gray-300 font-sarabun">เลขท้าย 2 ตัว</div>
+                          <div className="text-lg md:text-xl font-kanit text-orange-800 dark:text-orange-200 tracking-wider">{draw.prizes.last2?.[0] || '— —'}</div>
+                        </div>
+                        <div className="rounded-lg bg-white/80 dark:bg-gray-800/60 border border-amber-200/70 dark:border-gray-700 px-3 py-2 shadow-sm">
+                          <div className="text-[11px] text-gray-600 dark:text-gray-300 font-sarabun">เลขหน้า 3 ตัว</div>
+                          <div className="text-lg md:text-xl font-kanit text-orange-800 dark:text-orange-200 tracking-wider">{draw.prizes.first3?.[0] || '— — —'}</div>
+                        </div>
+                        <div className="rounded-lg bg-white/80 dark:bg-gray-800/60 border border-amber-200/70 dark:border-gray-700 px-3 py-2 shadow-sm">
+                          <div className="text-[11px] text-gray-600 dark:text-gray-300 font-sarabun">เลขท้าย 3 ตัว</div>
+                          <div className="text-lg md:text-xl font-kanit text-orange-800 dark:text-orange-200 tracking-wider">{draw.prizes.last3?.[0] || '— — —'}</div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <a
+                      href={latestPost.link || 'https://www.lottery.co.th'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 text-white shadow hover:bg-orange-700 transition-colors"
+                    >
+                      อ่านรายละเอียด <ExternalLink className="h-4 w-4" />
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const text = `${latestPost.title}\nอ่านต่อ: ${latestPost.link}`;
+                        if (navigator.share) {
+                          navigator.share({ title: latestPost.title, text, url: latestPost.link }).catch(() => {});
+                        } else {
+                          navigator.clipboard.writeText(text).catch(() => {});
+                          alert('คัดลอกข้อความสำหรับแชร์แล้ว');
+                        }
+                      }}
+                      className="inline-flex items-center gap-2 rounded-lg border border-orange-300 bg-white/70 px-4 py-2 text-orange-800 shadow hover:bg-white transition-colors dark:bg-transparent dark:text-orange-200 dark:border-orange-700"
+                    >
+                      แชร์ประกาศ <Share2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+
         {/* Read-only latest results table */}
         <div className="mb-10">
           <LotteryResults />
@@ -74,23 +307,6 @@ export default function Lottery() {
 
         {/* Embedded tools from lottery.co.th */}
         <div className="space-y-6">
-          <div className="rounded-2xl border border-amber-200/70 bg-white/70 backdrop-blur-sm shadow-sm dark:bg-gray-900/60 dark:border-gray-700">
-            <div className="px-5 pt-5">
-              <h2 className="text-xl font-bold font-kanit text-orange-900 dark:text-orange-200">ตรวจหวย (โค้ดติดเว็บ)</h2>
-              <p className="mt-1 text-sm text-gray-600 font-sarabun dark:text-gray-300">ฝังผลสลากและเครื่องมือจาก lottery.co.th</p>
-            </div>
-            <div className="mt-4 overflow-hidden rounded-b-2xl">
-              <iframe
-                title="ตรวจหวย โค้ดติดเว็บ"
-                src="https://www.lottery.co.th/share"
-                width="100%"
-                height="650"
-                frameBorder="0"
-                className="w-full"
-              />
-            </div>
-          </div>
-
           <div className="rounded-2xl border border-amber-200/70 bg-white/70 backdrop-blur-sm shadow-sm dark:bg-gray-900/60 dark:border-gray-700">
             <div className="px-5 pt-5">
               <h2 className="text-xl font-bold font-kanit text-orange-900 dark:text-orange-200">ผลสลากรางวัลหลัก</h2>
