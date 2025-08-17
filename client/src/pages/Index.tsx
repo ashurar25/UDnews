@@ -18,7 +18,6 @@ import NewsletterSignup from "@/components/NewsletterSignup";
 import DisasterAlertWidget from "@/components/DisasterAlertWidget";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import DailySummaryWidget from "@/components/DailySummaryWidget";
 
 // Component wrapper ที่แสดง DisasterAlertWidget เมื่อมีการเตือนเท่านั้น
 const ConditionalDisasterAlertWidget = () => {
@@ -264,10 +263,7 @@ const Index = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
 
-        {/* Daily AI Summary */}
-        <section className="mb-8">
-          <DailySummaryWidget />
-        </section>
+        
 
         {/* Featured News Section */}
         <section className="mb-12">

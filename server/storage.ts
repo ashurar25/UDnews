@@ -358,6 +358,7 @@ export class DatabaseStorage implements IStorage {
         summary: newsArticles.summary,
         content: newsArticles.content,
         imageUrl: newsArticles.imageUrl,
+        imageUrls: newsArticles.imageUrls,
         sourceUrl: newsArticles.sourceUrl,
         category: newsArticles.category,
         rssFeedId: newsArticles.rssFeedId,

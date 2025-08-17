@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import NodeCache from 'node-cache';
 import Parser from 'rss-parser';
+import { getLatestLotteryResults } from './services/lottery';
 
 // Thai Government Lottery community API (Rayriffy)
 // Docs: https://api.rayriffy.com/
@@ -98,6 +99,17 @@ function checkNumberAgainstPrizes(number: string, prizes: any) {
 }
 
 const router = Router();
+
+// Official GLO homepage scrape (cached) - latest results
+router.get('/latest', async (_req, res) => {
+  try {
+    const data = await getLatestLotteryResults();
+    res.setHeader('Cache-Control', 'public, max-age=600'); // 10 minutes client cache
+    return res.json(data);
+  } catch (e: any) {
+    return res.status(500).json({ error: e?.message || 'Failed to fetch latest lottery from GLO' });
+  }
+});
 
 // Latest draw (normalized)
 router.get('/thai/latest', async (req, res) => {

@@ -1,6 +1,10 @@
 import React from 'react';
 import ThaiLotteryChecker from '@/components/ThaiLotteryChecker';
 import { api } from '@/lib/api';
+import LotteryResults from '@/components/LotteryResults';
+import { Link } from 'wouter';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 export default function Lottery() {
   const [rss, setRss] = React.useState<{ items: Array<{ title: string; link: string; pubDate?: string; isoDate?: string; summary?: string }> } | null>(null);
@@ -25,13 +29,36 @@ export default function Lottery() {
   }, []);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-900 dark:to-gray-950">
       <div className="max-w-5xl mx-auto px-4 py-6">
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold font-kanit text-orange-800">ตรวจหวยรัฐบาลไทย</h1>
-          <p className="text-gray-600 font-sarabun">เช็คผลสลากกินแบ่งรัฐบาลไทย งวดล่าสุดและตรวจเลขของคุณ</p>
+        {/* Top actions */}
+        <div className="flex items-center justify-between mb-4">
+          <Link href="/">
+            <Button variant="outline" className="font-sarabun gap-2" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+              <ArrowLeft className="h-4 w-4" /> กลับหน้าแรก
+            </Button>
+          </Link>
         </div>
-        <ThaiLotteryChecker />
+
+        {/* Heading */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold font-kanit text-orange-800 dark:text-orange-300 drop-shadow-sm">ผลสลากกินแบ่งรัฐบาล</h1>
+          <p className="text-gray-700 dark:text-gray-300 font-sarabun">แสดงผลงวดล่าสุดจากกองสลาก (อ่านอย่างเดียว)</p>
+        </div>
+
+        {/* Read-only latest results table */}
+        <div className="mb-10">
+          <LotteryResults />
+        </div>
+
+        {/* Optional: keep checker tool below */}
+        <div className="mb-6">
+          <h2 className="text-xl font-bold font-kanit text-orange-700">ตรวจเลขของคุณ</h2>
+          <p className="text-gray-600 font-sarabun">ใส่เลขสลากเพื่อเทียบกับงวดล่าสุด</p>
+        </div>
+        <div className="rounded-lg border border-orange-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+          <ThaiLotteryChecker />
+        </div>
 
         <div className="mt-10">
           <h2 className="text-xl font-bold font-kanit text-orange-700 mb-3">ข่าวหวยจากเดลินิวส์</h2>

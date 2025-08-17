@@ -7,7 +7,6 @@ import { useTheme } from "@/components/ThemeProvider";
 import { getCurrentThaiSpecialDay } from "@/lib/thai-special-days";
 import { ThemeToggle } from "./ThemeToggle";
 import PWAInstallButton from "./PWAInstallButton";
-import WeatherWidget from "./WeatherWidget";
 import IOSInstallBanner from "./IOSInstallBanner";
 import SearchBar from "./SearchBar";
 import DisasterAlertWidget from "./DisasterAlertWidget";
@@ -54,7 +53,8 @@ const Header = () => {
     { name: "การเมือง", href: "/category/politics" },
     { name: "กีฬา", href: "/category/sports" },
     { name: "บันเทิง", href: "/category/entertainment" },
-    { name: "ตรวจหวย", href: "/lottery" },
+    { name: "สรุป 10 ข่าวล่าสุด", href: "/daily-summary" },
+    { name: "ผลฉลากรัฐบาล", href: "/lottery" },
     { name: "ติดต่อเรา", href: "/contact" }
   ];
 
@@ -201,17 +201,11 @@ const Header = () => {
                 </div>
               </div>
 
-              {/* Theme and Weather Controls */}
+              {/* Theme Controls */}
               <div className="border-t border-orange-200 dark:border-gray-600 pt-4 mt-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="font-sarabun text-sm text-gray-600 dark:text-gray-400">เปลี่ยนธีม:</span>
                   <ThemeToggle />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-sarabun text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">สภาพอากาศ:</span>
-                  <div className="min-w-[180px]">
-                    <WeatherWidget />
-                  </div>
                 </div>
               </div>
 

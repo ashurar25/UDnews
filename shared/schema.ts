@@ -65,6 +65,7 @@ export const newsArticles = pgTable("news_articles", {
   content: text("content").notNull(),
   category: text("category").notNull(),
   imageUrl: text("image_url"),
+  imageUrls: text("image_urls").array(),
   sourceUrl: text("source_url"), // Original RSS item link
   rssFeedId: integer("rss_feed_id"), // Reference to RSS feed source
   isBreaking: boolean("is_breaking").notNull().default(false),
@@ -78,6 +79,7 @@ export const insertNewsSchema = createInsertSchema(newsArticles).pick({
   content: true,
   category: true,
   imageUrl: true,
+  imageUrls: true,
   sourceUrl: true,
   rssFeedId: true,
   isBreaking: true,

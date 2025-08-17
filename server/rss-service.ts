@@ -238,38 +238,46 @@ export class RSSService {
     return matrix[str2.length][str1.length];
   }
 
-  // Clean and format content
+  // Clean and format content but PRESERVE <img> and basic HTML
   private cleanContent(content: string | undefined, contentEncoded?: string): string {
-    let text = contentEncoded || content || '';
+    let html = contentEncoded || content || '';
 
     try {
-      // Parse HTML and extract text
-      const root = parse(text);
-      text = root.innerText || root.textContent || text;
+      const root = parse(html);
+      // Remove unsafe/irrelevant tags
+      root.querySelectorAll('script, style, iframe, noscript').forEach(n => n.remove());
+      // Basic sanitization on images/links
+      root.querySelectorAll('img').forEach(img => {
+        // keep src/data-src attributes; drop event handlers
+        const attrs = (img as any).attributes as Record<string, string>;
+        Object.keys(attrs || {}).forEach((attrName) => {
+          if (/^on/i.test(attrName)) img.removeAttribute(attrName);
+        });
+      });
+      html = root.toString();
     } catch (error) {
-      // If HTML parsing fails, remove basic HTML tags
-      text = text.replace(/<[^>]*>/g, ' ');
+      // If HTML parsing fails, keep as-is after minimal cleanup
     }
 
-    // Clean up whitespace and decode HTML entities
-    text = text
-      .replace(/\s+/g, ' ')
+    // Decode entities and normalize whitespace
+    html = html
       .replace(/&nbsp;/g, ' ')
       .replace(/&amp;/g, '&')
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
       .replace(/&quot;/g, '"')
       .replace(/&#039;/g, "'")
-      .replace(/&#8216;/g, "'") // left single quotation mark
+      .replace(/&#8216;/g, "'")
       .replace(/&#8217;/g, "'")
       .replace(/&#8220;/g, '"')
       .replace(/&#8221;/g, '"')
       .replace(/&#8230;/g, '...')
-      .replace(/&#8211;/g, '-') // en dash
-      .replace(/&#8212;/g, '—') // em dash
+      .replace(/&#8211;/g, '-')
+      .replace(/&#8212;/g, '—')
+      .replace(/\s+$/g, '')
       .trim();
 
-    return text;
+    return html;
   }
 
   // Generate summary from content
@@ -278,8 +286,10 @@ export class RSSService {
       return content || 'ไม่มีเนื้อหาสรุป';
     }
 
+    // Strip HTML before generating summary
+    const textOnly = content.replace(/<[^>]*>/g, ' ');
     // Split by sentences (Thai and English)
-    const sentences = content.split(/[.!?。]/).filter(s => s.trim().length > 10);
+    const sentences = textOnly.split(/[.!?。]/).filter(s => s.trim().length > 10);
 
     if (sentences.length === 0) {
       return content.substring(0, 200) + '...';
@@ -500,7 +510,7 @@ export class RSSService {
       return false; // Skip duplicate articles
     }
 
-    // First, clean the content to extract images properly
+    // First, clean the content (preserve <img>)
     const cleanedContent = this.cleanContent(item.content || item.contentSnippet, item.contentEncoded);
     
     // Extract all image URLs from the cleaned content
@@ -565,6 +575,7 @@ export class RSSService {
     
     // Process the content to ensure images are properly formatted and hosted
     let processedContent = cleanedContent;
+    let processedImageUrls: string[] = [];
     
     // If we have content images, ensure they're properly hosted
     if (contentImageUrls.length > 0) {
@@ -584,6 +595,7 @@ export class RSSService {
               img.setAttribute('class', 'max-w-full h-auto rounded-lg my-4');
               img.setAttribute('loading', 'lazy');
               img.setAttribute('alt', item.title || 'News image');
+              if (!processedImageUrls.includes(localUrl) && processedImageUrls.length < 5) processedImageUrls.push(localUrl);
             }
           }
         }
@@ -595,12 +607,26 @@ export class RSSService {
       }
     }
 
+    // If we still have no processedImageUrls, try to collect from final content
+    if (processedImageUrls.length === 0) {
+      try {
+        const root = parse(processedContent);
+        const imgs = root.querySelectorAll('img');
+        for (const img of imgs) {
+          const src = img.getAttribute('src');
+          if (src && !processedImageUrls.includes(src)) processedImageUrls.push(src);
+          if (processedImageUrls.length >= 5) break;
+        }
+      } catch {}
+    }
+
     const newsData: InsertNews = {
       title: item.title.trim(),
       summary: summary,
       content: processedContent || 'เนื้อหาจาก RSS Feed',
       category: this.determineCategory(feedCategory, item.categories),
       imageUrl: chosenImageUrl,
+      imageUrls: processedImageUrls.length > 0 ? processedImageUrls : undefined,
       sourceUrl: item.link || null,
       rssFeedId: feedId,
       isBreaking: this.isBreakingNews(item.title)

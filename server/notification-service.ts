@@ -1,9 +1,8 @@
 import nodemailer from 'nodemailer';
-import type { Transporter } from 'nodemailer';
 import webpush from 'web-push';
 
 export class NotificationService {
-  private emailTransporter: Transporter;
+  private emailTransporter: ReturnType<typeof nodemailer.createTransport>;
 
   constructor() {
     // Configure email transporter
