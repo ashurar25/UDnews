@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from '../store/location';
-import { getDailyForecast, getHourlyForecast, getWeatherForecast, DailyForecastDay, HourlyWeather } from '../lib/weather-api';
+import { getDailyForecast, getHourlyForecast, getWeatherForecast, getUdonThaniSummary, DailyForecastDay, HourlyWeather } from '../lib/weather-api';
 
 // Server cache: daily max-age=120s; hourly max-age=60s
 
@@ -27,8 +27,10 @@ export function useTMDHourlyForecast(limitHours = 24) {
 export function useTMDWeatherSummary() {
   const { province } = useLocation();
   return useQuery({
-    queryKey: ['tmd','summary', province.lat, province.lon],
-    queryFn: () => getWeatherForecast({ lat: province.lat, lon: province.lon }),
+    queryKey: ['tmd','summary', province.key, province.lat, province.lon],
+    queryFn: () => province.key === 'udon'
+      ? getUdonThaniSummary()
+      : getWeatherForecast({ lat: province.lat, lon: province.lon }),
     staleTime: 60_000,
     gcTime: 10 * 60_000,
   });

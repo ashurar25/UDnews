@@ -12,8 +12,9 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format, subDays } from 'date-fns';
 import { th } from 'date-fns/locale';
-import { CalendarIcon, Filter, Search, X, Download, RefreshCw } from 'lucide-react';
+import { CalendarIcon, Filter, Search, X, Download, RefreshCw, Eye, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 // Using react-day-picker's DateRange type instead
 
@@ -63,8 +64,9 @@ function useAuditLogs(params: UseAuditLogsParams) {
       queryParams.append('page', params.page.toString());
       queryParams.append('pageSize', params.pageSize.toString());
       
-      const response = await api.get(`/api/audit-logs?${queryParams.toString()}`);
-      return response.data;
+      // api.get already returns parsed JSON
+      const data = await api.get<AuditLogResponse>(`/api/audit-logs?${queryParams.toString()}`);
+      return data;
     }
   });
 }
@@ -83,6 +85,8 @@ export default function AuditLogViewer() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailItem, setDetailItem] = useState<AuditLogItem | null>(null);
 
   // Handle date range selection
   const handleDateSelect = (range: DateRange | undefined) => {
@@ -122,6 +126,17 @@ export default function AuditLogViewer() {
   };
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  const openDetails = (item: AuditLogItem) => {
+    setDetailItem(item);
+    setDetailOpen(true);
+  };
+
+  const copyDetails = async () => {
+    if (!detailItem) return;
+    const text = JSON.stringify(detailItem, null, 2);
+    try { await navigator.clipboard.writeText(text); } catch {}
+  };
 
   // Load filters from URL once
   React.useEffect(() => {
@@ -195,6 +210,22 @@ export default function AuditLogViewer() {
     URL.revokeObjectURL(url);
   };
 
+  const exportJson = () => {
+    const json = JSON.stringify({
+      page,
+      pageSize,
+      total,
+      items: data?.items ?? []
+    }, null, 2);
+    const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'audit-logs.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const resetFilters = () => {
     setMethod('');
     setPathQ('');
@@ -242,6 +273,7 @@ export default function AuditLogViewer() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ALL">All</SelectItem>
+                    <SelectItem value="GET">GET</SelectItem>
                     <SelectItem value="POST">POST</SelectItem>
                     <SelectItem value="PUT">PUT</SelectItem>
                     <SelectItem value="PATCH">PATCH</SelectItem>
@@ -298,6 +330,39 @@ export default function AuditLogViewer() {
                 </Popover>
               </div>
             </div>
+            {/* Quick date presets */}
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={() => {
+                const now = new Date();
+                const start = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                setDateRange({ from: start, to: now });
+                setFrom(start.toISOString());
+                setTo(now.toISOString());
+                setPage(1);
+              }}>24 ชม.</Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                const now = new Date();
+                const start = subDays(now, 7);
+                setDateRange({ from: start, to: now });
+                setFrom(start.toISOString());
+                setTo(now.toISOString());
+                setPage(1);
+              }}>7 วัน</Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                const now = new Date();
+                const start = subDays(now, 30);
+                setDateRange({ from: start, to: now });
+                setFrom(start.toISOString());
+                setTo(now.toISOString());
+                setPage(1);
+              }}>30 วัน</Button>
+              <Button variant="ghost" size="sm" onClick={() => {
+                setDateRange({ from: undefined, to: undefined });
+                setFrom('');
+                setTo('');
+                setPage(1);
+              }}>ล้างช่วงเวลา</Button>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
               <div className="md:col-span-2">
                 <Input 
@@ -324,6 +389,10 @@ export default function AuditLogViewer() {
                   <Download className="h-4 w-4 mr-1" />
                   Export CSV
                 </Button>
+                <Button variant="outline" size="sm" onClick={exportJson}>
+                  <Download className="h-4 w-4 mr-1" />
+                  Export JSON
+                </Button>
               </div>
             </div>
           </div>
@@ -337,6 +406,10 @@ export default function AuditLogViewer() {
             <Button variant="secondary" onClick={exportCsv}>
               <Download className="h-4 w-4 mr-1" />
               ส่งออก CSV
+            </Button>
+            <Button variant="secondary" onClick={exportJson}>
+              <Download className="h-4 w-4 mr-1" />
+              ส่งออก JSON
             </Button>
             <Button variant="ghost" onClick={resetFilters} disabled={!isFilterActive}>
               <X className="h-4 w-4 mr-1" />
@@ -373,17 +446,18 @@ export default function AuditLogViewer() {
                 <th className="text-left p-2">IP</th>
                 <th className="text-left p-2">ดีเลย์</th>
                 <th className="text-left p-2">User-Agent</th>
+                <th className="text-left p-2">รายละเอียด</th>
               </tr>
             </thead>
             <tbody>
               {isLoading && (
-                <tr><td className="p-4" colSpan={8}>กำลังโหลด...</td></tr>
+                <tr><td className="p-4" colSpan={9}>กำลังโหลด...</td></tr>
               )}
               {isError && !isLoading && (
-                <tr><td className="p-4 text-red-600" colSpan={8}>ไม่สามารถโหลดข้อมูลได้</td></tr>
+                <tr><td className="p-4 text-red-600" colSpan={9}>ไม่สามารถโหลดข้อมูลได้</td></tr>
               )}
               {!isLoading && !isError && (data?.items?.length ?? 0) === 0 && (
-                <tr><td className="p-4" colSpan={8}>ไม่มีข้อมูล</td></tr>
+                <tr><td className="p-4" colSpan={9}>ไม่มีข้อมูล</td></tr>
               )}
               {!isLoading && !isError && data?.items?.map((row) => (
                 <tr key={row.id} className="border-t">
@@ -395,6 +469,11 @@ export default function AuditLogViewer() {
                   <td className="p-2">{row.ipAddress ?? '-'}</td>
                   <td className="p-2">{row.latencyMs ? `${row.latencyMs} ms` : '-'}</td>
                   <td className="p-2"><div className="max-w-md truncate" title={row.userAgent || undefined}>{row.userAgent ?? '-'}</div></td>
+                  <td className="p-2">
+                    <Button variant="outline" size="sm" onClick={() => openDetails(row)} className="gap-1">
+                      <Eye className="h-4 w-4" /> ดู
+                    </Button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -409,6 +488,39 @@ export default function AuditLogViewer() {
             <Button variant="default" disabled={isLoading || page >= totalPages} onClick={() => setPage((p) => p + 1)}>ถัดไป</Button>
           </div>
         </div>
+
+        {/* Details Dialog */}
+        <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>รายละเอียดรายการบันทึก</DialogTitle>
+              <DialogDescription>ข้อมูลเชิงลึกของคำขอและการตอบกลับ</DialogDescription>
+            </DialogHeader>
+            {detailItem && (
+              <div className="space-y-2 text-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div><span className="text-gray-500">เวลา:</span> {new Date(detailItem.createdAt).toLocaleString()}</div>
+                  <div><span className="text-gray-500">ผู้ใช้:</span> {detailItem.userId ?? '-'}</div>
+                  <div><span className="text-gray-500">เมธอด:</span> {detailItem.method}</div>
+                  <div className="truncate"><span className="text-gray-500">พาธ:</span> {detailItem.path}</div>
+                  <div><span className="text-gray-500">สถานะ:</span> {detailItem.statusCode ?? '-'}</div>
+                  <div><span className="text-gray-500">IP:</span> {detailItem.ipAddress ?? '-'}</div>
+                  <div><span className="text-gray-500">ดีเลย์:</span> {detailItem.latencyMs ? `${detailItem.latencyMs} ms` : '-'}</div>
+                  <div className="truncate"><span className="text-gray-500">User-Agent:</span> {detailItem.userAgent ?? '-'}</div>
+                </div>
+                <div className="flex items-center justify-between mt-2">
+                  <div className="font-medium">Body Summary</div>
+                  <Button variant="outline" size="sm" className="gap-1" onClick={copyDetails}>
+                    <Copy className="h-4 w-4" /> คัดลอก JSON
+                  </Button>
+                </div>
+                <pre className="bg-gray-50 p-3 rounded overflow-auto max-h-80 text-xs">
+                  {typeof detailItem.bodySummary === 'string' ? detailItem.bodySummary : JSON.stringify(detailItem.bodySummary ?? {}, null, 2)}
+                </pre>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );

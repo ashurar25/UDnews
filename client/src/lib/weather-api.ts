@@ -322,13 +322,25 @@ export async function getWeatherForecast(opts?: { lat?: number; lon?: number }):
         condition: 'overcast clouds',
         conditionThai: 'เมฆมาก',
         icon: '⛅',
-        humidity: 78,
-        wind: 15,
+        humidity: 70,
+        wind: 10,
         city: CITY,
-        rainChance: 45,
+        rainChance: 40,
         rainStatus: 'อาจมีฝน'
       }
-    };
+    } as ForecastData;
+  }
+}
+
+// ---------- Udon Thani specific summary (server-scraped) ----------
+export async function getUdonThaniSummary(): Promise<ForecastData> {
+  try {
+    const { data } = await axios.get(`/api/tmd/forecast/udon-thani`);
+    if (data && data.today && data.tomorrow && data.yesterday) return data as ForecastData;
+    throw new Error('Unexpected Udon summary shape');
+  } catch (error) {
+    console.error('Error fetching Udon Thani summary:', error);
+    return await getWeatherForecast();
   }
 }
 

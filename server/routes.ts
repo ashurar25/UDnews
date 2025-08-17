@@ -34,6 +34,7 @@ import { storage } from "./storage";
 import { rssService } from "./rss-service";
 import { getCachedDailySummary, generateDailySummary } from './ai-summarizer';
 import { getTmdForecast, getWeatherRadarImage } from './weather-service';
+import { getUdonThaniWeatherSummary } from './weather-service';
 import { systemHealthService } from './services/system-health.service';
 import { authenticateToken as authMiddleware, generateToken, authorizeRoles } from "./middleware/auth";
 import rateLimit from "express-rate-limit";
@@ -2337,6 +2338,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (err) {
       console.error('Error proxying TMD daily forecast:', err);
       res.status(500).json({ message: 'Failed to fetch TMD daily forecast' });
+    }
+  });
+
+  // Udon Thani specific weather summary (scraped via server), with short-lived cache
+  app.get('/api/tmd/forecast/udon-thani', async (req, res) => {
+    try {
+      const cacheKey = 'tmd:udon:summary:v1';
+      const cached = tmdForecastCache.get<any>(cacheKey);
+      if (cached) {
+        res.status(200);
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Cache-Control', 'public, max-age=120, stale-while-revalidate=60');
+        return res.send(cached.body || cached);
+      }
+
+      const data = await getUdonThaniWeatherSummary();
+      const body = JSON.stringify(data);
+      tmdForecastCache.set(cacheKey, { body, contentType: 'application/json' });
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Cache-Control', 'public, max-age=120, stale-while-revalidate=60');
+      return res.send(body);
+    } catch (err) {
+      console.error('Error fetching Udon Thani summary:', err);
+      return res.status(500).json({ message: 'Failed to fetch Udon Thani weather summary' });
     }
   });
 

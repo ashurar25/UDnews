@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, PROVINCES } from '../store/location';
 import { useTMDWeatherSummary } from '../hooks/useTMDForecast';
 
@@ -119,6 +119,12 @@ const TMDWeatherPanel: React.FC = () => {
   const { province: selectedProv, setProvince } = useLocation();
   const provinces = PROVINCES;
 
+  // Lightbox open handler retains type info from child
+  const handleOpen = useCallback((src: string, meta?: { type?: 'radar' }) => {
+    setLightboxSrc(src);
+    setLightboxType(meta?.type ?? 'image');
+  }, []);
+
   // Live weather summary (today) to drive background
   const { data: summary } = useTMDWeatherSummary();
   const today = summary?.today;
@@ -141,6 +147,19 @@ const TMDWeatherPanel: React.FC = () => {
     }
     return isNight ? 'from-slate-800 to-indigo-900' : 'from-sky-100 to-blue-200';
   }, [today, desc, rain, isNight]);
+
+  // Decide which visual layers to render
+  const layers = useMemo(() => {
+    const d = desc;
+    const isCloudy = d.includes('cloud') || d.includes('overcast') || d.includes('broken');
+    const isRainy = rain >= 40 || d.includes('rain') || d.includes('shower') || d.includes('drizzle');
+    const isStorm = d.includes('thunder') || d.includes('storm');
+    const isFog = d.includes('mist') || d.includes('fog') || d.includes('haze') || d.includes('smoke');
+    const showStars = isNight && !isRainy && !isStorm && !isFog;
+    const showSun = !isNight && !isRainy && !isStorm && !isFog && !isCloudy;
+    const showClouds = isCloudy || isRainy || isStorm;
+    return { showStars, showSun, showClouds, isRainy, isStorm, isFog } as const;
+  }, [desc, rain, isNight]);
   // Candidate URLs (public TMD endpoints). If any path changes, the component will try alternatives.
   const radarCandidates: ImageCandidate = useMemo(() => ({
     label: 'เรดาร์ฝน (ประเทศไทย)',
@@ -189,33 +208,48 @@ const TMDWeatherPanel: React.FC = () => {
   }, [selectedProv]);
 
   return (
-    <div className={`rounded-2xl p-3 bg-gradient-to-br ${bgClass}`}>
-      <div className="space-y-4">
-      <div className="px-1">
-        <h3 className="text-lg font-kanit font-bold mb-1">สภาพอากาศ TMD</h3>
-        <p className="text-[12px] font-sarabun text-muted-foreground">ข้อมูลจากกรมอุตุนิยมวิทยา (อัปเดตอัตโนมัติ)</p>
-      </div>
-      <div className="grid grid-cols-1 gap-4">
-        <PanelCard title="เรดาร์ฝน" subtitle="อัปเดตล่าสุดจากกรมอุตุนิยมวิทยา" candidate={radarCandidates} onOpen={(src, meta) => { setLightboxSrc(src); setLightboxType(meta?.type === 'radar' ? 'radar' : 'image'); }} />
-        <PanelCard title="ภาพดาวเทียม" subtitle="กลุ่มเมฆ/การก่อตัวของฝน" candidate={satCandidates} onOpen={(src) => { setLightboxSrc(src); setLightboxType('image'); }} />
-        <div>
-          <div className="flex items-center justify-between mb-2 px-1">
-            <div className="text-sm font-kanit font-bold">พื้นที่แสดงผล Meteogram</div>
-            <div className="flex gap-2">
-              {provinces.map((p) => (
-                <button
-                  key={p.key}
-                  onClick={() => setProvince(p)}
-                  className={`text-xs font-sarabun rounded-full px-3 py-1 border transition-colors ${
-                    selectedProv.key === p.key ? 'bg-orange-500 text-white border-orange-500' : 'bg-white/60 border-white/70 hover:bg-white'
-                  }`}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <PanelCard title="Meteogram" subtitle={`แนวโน้มสภาพอากาศแบบชั่วโมง (${selectedProv.label})`} candidate={meteogramCandidates} height={260} onOpen={setLightboxSrc} />
+    <div className={`rounded-2xl p-3 bg-gradient-to-br ${bgClass} animated-weather-background`}>
+      {/* Visual background layers */}
+      {layers.showSun && <div className="weather-layer wb-sun" aria-hidden />}
+      {layers.showStars && <div className="weather-layer wb-stars" aria-hidden />}
+      {layers.showClouds && (
+        <div className="weather-layer wb-clouds" aria-hidden>
+          <div className="cloud c1" />
+          <div className="cloud c2" />
+          <div className="cloud c3" />
+        </div>
+      )}
+      {layers.isRainy && <div className="weather-layer wb-rain" aria-hidden />}
+      {layers.isStorm && <div className="weather-layer wb-thunder" aria-hidden />}
+      {layers.isFog && <div className="weather-layer wb-fog" aria-hidden />}
+
+      {/* Foreground content */}
+      <div className="space-y-4 relative z-10">
+        <div className="px-1">
+          <h3 className="text-lg font-kanit font-bold mb-1">สภาพอากาศ TMD</h3>
+          <p className="text-[12px] font-sarabun text-muted-foreground">ข้อมูลจากกรมอุตุนิยมวิทยา (อัปเดตอัตโนมัติ)</p>
+        </div>
+
+        {/* Province chips */}
+        <div className="flex flex-wrap gap-2 px-1">
+          {provinces.map((p) => (
+            <button
+              key={p.key}
+              onClick={() => setProvince(p)}
+              className={`text-xs font-sarabun rounded-full px-3 py-1 border transition-colors ${
+                selectedProv.key === p.key ? 'bg-orange-500 text-white border-orange-500' : 'bg-white/60 border-white/70 hover:bg-white'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <PanelCard title="เรดาร์ฝน (ประเทศไทย)" candidate={radarCandidates} height={260} onOpen={handleOpen} />
+          <PanelCard title="ภาพถ่ายดาวเทียม (ประเทศไทย)" candidate={satCandidates} height={260} onOpen={handleOpen} />
+          <PanelCard title="Meteogram" subtitle={`แนวโน้มสภาพอากาศแบบชั่วโมง (${selectedProv.label})`} candidate={meteogramCandidates} height={260} onOpen={handleOpen} />
         </div>
       </div>
 
@@ -232,10 +266,9 @@ const TMDWeatherPanel: React.FC = () => {
       )}
 
       {/* Radar timeline lightbox */}
-      {lightboxType === 'radar' && (
-        <RadarTimelineLightbox initialSrc={lightboxSrc!} onClose={closeLightbox} />
+      {lightboxType === 'radar' && lightboxSrc && (
+        <RadarTimelineLightbox initialSrc={lightboxSrc} onClose={closeLightbox} />
       )}
-      </div>
     </div>
   );
 };
