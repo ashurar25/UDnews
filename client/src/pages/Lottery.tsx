@@ -7,9 +7,34 @@ import MetaHead from '@/components/MetaHead';
 
 export default function Lottery() {
 
+  // Parallax refs
+  const bgOrbsRef = React.useRef<HTMLDivElement | null>(null);
+  const thaiPatternRef = React.useRef<HTMLDivElement | null>(null);
+  const sparklesRef = React.useRef<HTMLDivElement | null>(null);
+  const streaksRef = React.useRef<HTMLDivElement | null>(null);
+
   React.useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     return () => {};
+  }, []);
+
+  // Subtle parallax with reduced-motion guard
+  React.useEffect(() => {
+    const reduce = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) return;
+    const onScroll = () => {
+      const y = window.scrollY || 0;
+      const t1 = `translateY(${y * 0.06}px)`;
+      const t2 = `translateY(${y * 0.03}px)`;
+      const t3 = `translateY(${y * 0.09}px)`;
+      if (bgOrbsRef.current) bgOrbsRef.current.style.transform = t1;
+      if (thaiPatternRef.current) thaiPatternRef.current.style.transform = t2;
+      if (sparklesRef.current) sparklesRef.current.style.transform = t3;
+      if (streaksRef.current) streaksRef.current.style.transform = t2;
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   // Title and SEO handled by <MetaHead>
@@ -126,6 +151,15 @@ export default function Lottery() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 via-amber-50 to-white dark:from-gray-900 dark:via-gray-950 dark:to-black">
+      {/* Local styles for sparkles and streaks */}
+      <style>{`
+        @keyframes sparkleTwinkle { 0%,100%{opacity:.15; transform:scale(.9)} 50%{opacity:.6; transform:scale(1)} }
+        @keyframes slideGlow { 0%{transform:translateX(-30%) rotate(10deg)} 100%{transform:translateX(130%) rotate(10deg)} }
+        .sparkle { animation: sparkleTwinkle 2.4s ease-in-out infinite; }
+        .sparkle:nth-child(odd){ animation-duration: 3.1s; }
+        .streak { animation: slideGlow 5s linear infinite; }
+        @media (prefers-reduced-motion: reduce){ .sparkle, .streak { animation: none !important; } }
+      `}</style>
       <MetaHead
         title={title}
         description={desc}
@@ -139,8 +173,29 @@ export default function Lottery() {
       />
       {/* Decorative background */}
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-orange-200/50 blur-3xl dark:bg-orange-500/20" />
-        <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-amber-200/50 blur-3xl dark:bg-amber-500/20" />
+        {/* Soft orbs */}
+        <div ref={bgOrbsRef} className="absolute inset-0">
+          <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-orange-200/50 blur-3xl dark:bg-orange-500/20" />
+          <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-amber-200/50 blur-3xl dark:bg-amber-500/20" />
+        </div>
+        {/* Thai pattern layer (SVG data URL) */}
+        <div ref={thaiPatternRef} className="absolute inset-0 opacity-[0.08] dark:opacity-[0.06]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cpath d='M80 10c11 14 22 28 40 30-18 2-29 16-40 30-11-14-22-28-40-30 18-2 29-16 40-30z' fill='%23f59e0b' fill-opacity='0.25'/%3E%3Cpath d='M80 50c8 10 16 20 30 22-14 2-22 12-30 22-8-10-16-20-30-22 14-2 22-12 30-22z' fill='%23fb923c' fill-opacity='0.18'/%3E%3C/svg%3E")`,
+          backgroundSize: '160px 160px', backgroundRepeat: 'repeat'
+        }} />
+        {/* Sparkles layer */}
+        <div ref={sparklesRef} className="absolute inset-0">
+          {Array.from({ length: 18 }).map((_, i) => (
+            <span key={i} className="sparkle absolute rounded-full bg-amber-300/60 dark:bg-amber-200/30 blur-[1.5px]" style={{
+              top: `${(i * 37) % 100}%`, left: `${(i * 53) % 100}%`, width: `${4 + (i % 4)}px`, height: `${4 + (i % 4)}px` }} />
+          ))}
+        </div>
+        {/* Light streaks */}
+        <div ref={streaksRef} className="absolute inset-0">
+          <div className="streak absolute top-24 -left-1/3 h-1 w-2/3 bg-gradient-to-r from-transparent via-white/60 to-transparent blur-sm opacity-60 dark:via-white/20" />
+          <div className="streak absolute top-1/2 -left-1/3 h-1.5 w-2/3 bg-gradient-to-r from-transparent via-amber-400/70 to-transparent blur-sm opacity-70" style={{ animationDuration: '7s' }} />
+          <div className="streak absolute bottom-20 -left-1/3 h-px w-2/3 bg-gradient-to-r from-transparent via-orange-300/70 to-transparent blur-[1px] opacity-70" style={{ animationDuration: '6s' }} />
+        </div>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-6">
@@ -153,25 +208,42 @@ export default function Lottery() {
           </Link>
         </div>
 
+        {/* Sticky grand header */}
+        <div className="sticky top-0 z-30">
+          <div className="relative overflow-hidden rounded-xl border border-amber-300/60 bg-gradient-to-br from-orange-600 via-amber-500 to-rose-500 px-4 py-3 shadow-lg
+                          backdrop-blur supports-[backdrop-filter]:bg-orange-600/80">
+            <div className="absolute inset-0 opacity-25 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.6),transparent_60%)]" />
+            <div className="relative flex items-center gap-3 text-white">
+              <img src="/logo.jpg" alt="UD News Update" className="h-10 w-10 rounded-lg object-cover ring-2 ring-white/70" loading="eager" />
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-sarabun/7 opacity-90">UD News Update</div>
+                <div className="text-xl md:text-2xl font-extrabold font-kanit drop-shadow">ผลสลากกินแบ่งรัฐบาล</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Shareable Hero Header */}
         <div className="relative mb-8 overflow-hidden rounded-2xl border border-amber-200/70 bg-gradient-to-br from-white via-amber-50 to-orange-100 shadow-lg dark:from-gray-900 dark:via-gray-900/60 dark:to-gray-800 dark:border-gray-700">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-amber-200/50 via-transparent to-transparent dark:from-orange-500/10" />
-          <div className="relative flex flex-col md:flex-row items-center gap-5 p-5 md:p-6">
+          <div className="relative flex flex-col md:flex-row items-center gap-6 p-6 md:p-8">
+            {/* Foreground streak accent */}
+            <div className="pointer-events-none absolute -right-10 top-8 h-24 w-1/2 rotate-12 bg-gradient-to-r from-transparent via-amber-300/60 to-transparent blur-md opacity-60" />
             <img
               src="/logo.jpg"
               alt="UD News Update"
-              className="h-16 w-16 md:h-20 md:w-20 rounded-xl object-cover shadow-md ring-2 ring-white/70 dark:ring-gray-700"
+              className="h-24 w-24 md:h-28 md:w-28 rounded-2xl object-cover shadow-xl ring-2 ring-white/70 dark:ring-gray-700"
               loading="eager"
             />
             <div className="flex-1 text-center md:text-left">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 text-orange-800 text-xs font-sarabun shadow-sm dark:bg-orange-900/40 dark:text-orange-200">
                 <Sparkles className="h-3.5 w-3.5" /> ผลฉลากรัฐบาลงวดล่าสุด
               </div>
-              <h1 className="mt-2 text-3xl md:text-4xl font-bold font-kanit text-orange-900 drop-shadow-sm dark:text-orange-200">
-                อัพเดทข่าวอุดร · ผลสลากกินแบ่งรัฐบาล
+              <h1 className="mt-2 text-4xl md:text-5xl font-bold font-kanit text-orange-900 dark:text-orange-200 drop-shadow-sm">
+                ผลสลากกินแบ่งรัฐบาล
               </h1>
               <p className="mt-1 text-sm md:text-base text-gray-700 font-sarabun dark:text-gray-300">
-                แสดงข้อมูลอย่างเป็นทางการจากกองสลาก — อ่านอย่างเดียว พร้อมลิงก์ข่าวหวยเดลินิวส์
+                อัพเดทข่าวอุดร · แสดงข้อมูลอย่างเป็นทางการจากกองสลาก — อ่านอย่างเดียว พร้อมลิงก์ข่าวหวยเดลินิวส์
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-gray-700 dark:text-gray-400">
                 <span className="inline-flex items-center gap-1 font-sarabun">
@@ -286,7 +358,7 @@ export default function Lottery() {
 
         {/* Read-only latest results table */}
         <div className="mb-10">
-          <LotteryResults />
+          <LotteryResults hideHeaderTitle={true} />
         </div>
 
         {/* Embedded tools from lottery.co.th */}

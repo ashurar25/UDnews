@@ -311,7 +311,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let u: URL;
       try { u = new URL(src); } catch { return res.status(400).json({ message: 'invalid url' }); }
 
-      const allowedHosts = new Set(['data.tmd.go.th', 'weather.tmd.go.th']);
+      const allowedHosts = new Set(['data.tmd.go.th', 'weather.tmd.go.th', 'radar.tmd.go.th']);
       if (!allowedHosts.has(u.hostname)) {
         return res.status(403).json({ message: 'host not allowed' });
       }
@@ -323,6 +323,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         '/satellite',
         '/WeatherMap',
         '/WeatherForecast',
+        // For radar timeline frames on radar.tmd.go.th
+        '/composite',
       ];
       if (!allowedPrefixes.some((p) => u.pathname.startsWith(p))) {
         return res.status(403).json({ message: 'path not allowed' });

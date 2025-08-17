@@ -51,7 +51,7 @@ function PrizeRow({ label, values }: { label: string; values?: string[] | string
   );
 }
 
-export default function LotteryResults() {
+export default function LotteryResults({ hideHeaderTitle = false }: { hideHeaderTitle?: boolean }) {
   const [data, setData] = React.useState<LotteryResults | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -132,10 +132,17 @@ export default function LotteryResults() {
               <div className="text-white/90 font-sarabun text-sm">
                 {loading ? 'กำลังโหลด…' : (error ? <span className="text-white">{error}</span> : (data?.date || ''))}
               </div>
-              <h3 className="mt-1 text-3xl sm:text-4xl font-extrabold font-kanit text-white drop-shadow">
-                ผลสลากกินแบ่งรัฐบาล
-              </h3>
-              <div className="mt-1 text-white/90 font-sarabun">รางวัลที่ 1</div>
+              {!hideHeaderTitle && (
+                <>
+                  <h3 className="mt-1 text-3xl sm:text-4xl font-extrabold font-kanit text-white drop-shadow">
+                    ผลสลากกินแบ่งรัฐบาล
+                  </h3>
+                  <div className="mt-1 text-white/90 font-sarabun">รางวัลที่ 1</div>
+                </>
+              )}
+              {hideHeaderTitle && (
+                <div className="mt-1 text-white/90 font-sarabun">รางวัลที่ 1</div>
+              )}
             </div>
             <div className="text-4xl sm:text-6xl font-black font-mono tracking-widest text-white drop-shadow-[0_6px_20px_rgba(0,0,0,0.25)]">
               {first || '— — — — — —'}

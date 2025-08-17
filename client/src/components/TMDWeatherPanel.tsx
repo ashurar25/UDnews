@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, PROVINCES } from '../store/location';
+import { useTMDWeatherSummary } from '../hooks/useTMDForecast';
 
 type ImageCandidate = {
   label: string;
@@ -117,6 +118,29 @@ const TMDWeatherPanel: React.FC = () => {
   // Province selector from global store
   const { province: selectedProv, setProvince } = useLocation();
   const provinces = PROVINCES;
+
+  // Live weather summary (today) to drive background
+  const { data: summary } = useTMDWeatherSummary();
+  const today = summary?.today;
+  const rain = today?.rainChance ?? 0;
+  const desc = (today?.condition || '').toLowerCase();
+  const hour = new Date().getHours();
+  const isNight = hour >= 19 || hour < 6;
+
+  // Decide background gradient
+  const bgClass = useMemo(() => {
+    if (!today) return isNight
+      ? 'from-slate-800 to-indigo-900'
+      : 'from-sky-100 to-blue-200';
+    if (desc.includes('thunder')) return 'from-slate-700 to-slate-900';
+    if (rain >= 60 || desc.includes('rain') || desc.includes('shower') || desc.includes('drizzle')) {
+      return isNight ? 'from-slate-800 to-sky-700' : 'from-sky-200 to-sky-500';
+    }
+    if (desc.includes('overcast') || desc.includes('broken clouds') || desc.includes('cloud')) {
+      return isNight ? 'from-slate-700 to-slate-900' : 'from-gray-200 to-gray-400';
+    }
+    return isNight ? 'from-slate-800 to-indigo-900' : 'from-sky-100 to-blue-200';
+  }, [today, desc, rain, isNight]);
   // Candidate URLs (public TMD endpoints). If any path changes, the component will try alternatives.
   const radarCandidates: ImageCandidate = useMemo(() => ({
     label: 'เรดาร์ฝน (ประเทศไทย)',
@@ -153,7 +177,8 @@ const TMDWeatherPanel: React.FC = () => {
   }, [selectedProv]);
 
   return (
-    <div className="space-y-4">
+    <div className={`rounded-2xl p-3 bg-gradient-to-br ${bgClass}`}>
+      <div className="space-y-4">
       <div className="px-1">
         <h3 className="text-lg font-kanit font-bold mb-1">สภาพอากาศ TMD</h3>
         <p className="text-[12px] font-sarabun text-muted-foreground">ข้อมูลจากกรมอุตุนิยมวิทยา (อัปเดตอัตโนมัติ)</p>
@@ -198,6 +223,7 @@ const TMDWeatherPanel: React.FC = () => {
       {lightboxType === 'radar' && (
         <RadarTimelineLightbox initialSrc={lightboxSrc!} onClose={closeLightbox} />
       )}
+      </div>
     </div>
   );
 };
@@ -224,7 +250,7 @@ function buildRecentTimestamps(count = 8, stepMin = 10): string[] {
 }
 
 function toProxy(url: string) {
-  return `/api/tmd/image-proxy?url=${encodeURIComponent(url)}`;
+  return `/api/tmd/image-proxy?src=${encodeURIComponent(url)}`;
 }
 
 function radarFrameTemplates(ts: string): string[] {
