@@ -54,6 +54,19 @@ async function runMigrations() {
     
     // Ensure migrations table exists
     await ensureMigrationsTable();
+
+    // Preflight: ensure critical columns exist (idempotent)
+    // This protects production where migration files may not be bundled/copied.
+    try {
+      console.log('Ensuring critical schema columns exist...');
+      await db.execute(sql`
+        ALTER TABLE IF EXISTS news_articles
+        ADD COLUMN IF NOT EXISTS image_urls TEXT[]
+      `);
+      console.log('Ensured news_articles.image_urls');
+    } catch (e) {
+      console.warn('Preflight schema ensure failed (continuing):', e);
+    }
     
     // Get list of applied migrations
     const appliedMigrations = await getAppliedMigrations();
