@@ -235,6 +235,8 @@ class DisasterAlertService {
       console.warn('TMD weather parsing failed, fallback to simulation');
       await this.simulateWeatherCheck();
     }
+  }
+
   // ตรวจสอบแผ่นดินไหวจาก USGS
   async checkUSGSEarthquakes() {
     try {
