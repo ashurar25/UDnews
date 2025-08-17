@@ -14,6 +14,8 @@ try {
 } catch {}
 
 import express, { type Request, Response, NextFunction } from "express";
+import { db } from './db';
+import { sql } from 'drizzle-orm';
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { rssService } from "./rss-service";
@@ -156,9 +158,25 @@ app.use((req, res, next) => {
     log(`serving on port ${port}`);
     
     // Start automatic RSS processing after server is ready
-    setTimeout(() => {
-      rssService.startAutoProcessing();
-      log('RSS automatic processing started');
-    }, 5000); // Wait 5 seconds for server to be fully ready
+    // Kick off schema preflight and then RSS processing in background
+    (async () => {
+      try {
+        // Ensure critical columns exist (idempotent)
+        await db.execute(sql`
+          ALTER TABLE IF EXISTS news_articles
+          ADD COLUMN IF NOT EXISTS image_urls TEXT[]
+        `);
+        log('DB schema preflight complete');
+      } catch (e) {
+        console.warn('DB schema preflight failed:', e);
+      }
+      // Start automatic RSS processing after schema preflight
+      try {
+        rssService.startAutoProcessing();
+        log('RSS automatic processing started');
+      } catch (e) {
+        console.warn('Failed to start RSS processing:', e);
+      }
+    })();
   });
 })();
