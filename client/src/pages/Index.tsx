@@ -154,6 +154,17 @@ const Index = () => {
     rainStatus: 'กำลังโหลด...'
   };
 
+  // Background image mapping for weather conditions
+  const getWeatherBgByCondition = (desc: string) => {
+    const d = (desc || '').toLowerCase();
+    if (d.includes('thunder') || d.includes('storm')) return politicsImage; // dramatic sky
+    if (d.includes('rain') || d.includes('shower') || d.includes('drizzle')) return sportsImage; // rainy/cooler tone
+    if (d.includes('overcast') || d.includes('cloud')) return localImage; // cloudy/neutral
+    if (d.includes('mist') || d.includes('fog') || d.includes('haze')) return localImage;
+    // clear/default
+    return heroImage;
+  };
+
   // Fetch real news data from API with performance optimization - first 100 news items
   const { data: newsData, isLoading: isLoadingNews } = useQuery({
     queryKey: ['/api/news'],
@@ -387,7 +398,10 @@ const Index = () => {
             {/* Weather Widget */
             // Improved visuals + real hourly (1-hour) forecast for Udon Thani
             }
-            <div className="relative rounded-xl p-6 shadow-news overflow-hidden border border-white/30 bg-white/10 backdrop-blur-md">
+            <div
+              className="relative rounded-xl p-6 shadow-news overflow-hidden border border-white/30 bg-white/10 backdrop-blur-md bg-cover bg-center bg-no-repeat"
+              style={{ backgroundImage: `url(${getWeatherBgByCondition(currentWeather.condition)})` }}
+            >
               <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-white/20 pointer-events-none"></div>
               <div className="relative z-10">
                 <h3 className="text-xl font-bold font-kanit mb-4 text-foreground">

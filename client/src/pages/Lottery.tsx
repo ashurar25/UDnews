@@ -11,6 +11,12 @@ export default function Lottery() {
     return () => {};
   }, []);
 
+  React.useEffect(() => {
+    const prev = document.title;
+    document.title = 'ผลสลากกินแบ่งรัฐบาล - UD News Update';
+    return () => { document.title = prev; };
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 via-amber-50 to-white dark:from-gray-900 dark:via-gray-950 dark:to-black">
       {/* Decorative background */}
@@ -64,6 +70,83 @@ export default function Lottery() {
         {/* Read-only latest results table */}
         <div className="mb-10">
           <LotteryResults />
+        </div>
+
+        {/* Embedded tools from lottery.co.th */}
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-amber-200/70 bg-white/70 backdrop-blur-sm shadow-sm dark:bg-gray-900/60 dark:border-gray-700">
+            <div className="px-5 pt-5">
+              <h2 className="text-xl font-bold font-kanit text-orange-900 dark:text-orange-200">ตรวจหวย (โค้ดติดเว็บ)</h2>
+              <p className="mt-1 text-sm text-gray-600 font-sarabun dark:text-gray-300">ฝังผลสลากและเครื่องมือจาก lottery.co.th</p>
+            </div>
+            <div className="mt-4 overflow-hidden rounded-b-2xl">
+              <iframe
+                title="ตรวจหวย โค้ดติดเว็บ"
+                src="https://www.lottery.co.th/share"
+                width="100%"
+                height="650"
+                frameBorder="0"
+                className="w-full"
+              />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-amber-200/70 bg-white/70 backdrop-blur-sm shadow-sm dark:bg-gray-900/60 dark:border-gray-700">
+            <div className="px-5 pt-5">
+              <h2 className="text-xl font-bold font-kanit text-orange-900 dark:text-orange-200">ผลสลากรางวัลหลัก</h2>
+              <p className="mt-1 text-sm text-gray-600 font-sarabun dark:text-gray-300">แสดงเฉพาะรางวัลสำคัญแบบกระชับ</p>
+            </div>
+            <div className="mt-4 overflow-hidden rounded-b-2xl">
+              <iframe
+                title="ผลสลาก รางวัลหลัก"
+                src="https://www.lottery.co.th/show"
+                width="100%"
+                height="340"
+                frameBorder="0"
+                className="w-full"
+              />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-amber-200/70 bg-white/70 backdrop-blur-sm shadow-sm dark:bg-gray-900/60 dark:border-gray-700">
+            <div className="px-5 pt-5">
+              <h2 className="text-xl font-bold font-kanit text-orange-900 dark:text-orange-200">ตรวจหวยจากหมายเลขสลาก</h2>
+              <p className="mt-1 text-sm text-gray-600 font-sarabun dark:text-gray-300">กรอกหมายเลขเพื่อตรวจผล</p>
+            </div>
+            <div className="mt-4 overflow-hidden rounded-b-2xl">
+              <iframe
+                title="ตรวจหวย กรอกหมายเลข"
+                loading="lazy"
+                src="https://www.lottery.co.th/numbers"
+                width="100%"
+                height="410"
+                frameBorder="0"
+                className="w-full"
+              />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-amber-200/70 bg-white/70 backdrop-blur-sm shadow-sm dark:bg-gray-900/60 dark:border-gray-700">
+            <div className="px-5 pt-5">
+              <h2 className="text-xl font-bold font-kanit text-orange-900 dark:text-orange-200">ผลหวยย้อนหลัง 10 งวด</h2>
+              <p className="mt-1 text-sm text-gray-600 font-sarabun dark:text-gray-300">ดูผลย้อนหลังล่าสุด 10 งวด</p>
+            </div>
+            <div className="mt-4 overflow-hidden rounded-b-2xl">
+              <iframe
+                title="ผลหวยย้อนหลัง 10 งวด"
+                loading="lazy"
+                src="https://www.lottery.co.th/10lotto"
+                width="100%"
+                height="500"
+                frameBorder="0"
+                className="w-full"
+              />
+            </div>
+          </div>
+
+          <p className="text-xs text-gray-500 font-sarabun">
+            ข้อมูล iframe ทั้งหมดเป็นของเว็บไซต์ภายนอก (<a className="underline" href="https://www.lottery.co.th" target="_blank" rel="noreferrer">lottery.co.th</a>) และแสดงผลแบบอ่านอย่างเดียว
+          </p>
         </div>
 
         {/* ตรวจหวย UI ถูกนำออก หน้านี้แสดงผลรางวัลเท่านั้น */}
