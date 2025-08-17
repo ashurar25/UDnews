@@ -33,8 +33,7 @@ import { db } from "./db";
 import { storage } from "./storage";
 import { rssService } from "./rss-service";
 import { getCachedDailySummary, generateDailySummary } from './ai-summarizer';
-import { getTmdForecast, getWeatherRadarImage } from './weather-service';
-import { getUdonThaniWeatherSummary } from './weather-service';
+import { getTmdForecast, getUdonThaniWeatherSummary } from './weather-service';
 import { systemHealthService } from './services/system-health.service';
 import { authenticateToken as authMiddleware, generateToken, authorizeRoles } from "./middleware/auth";
 import rateLimit from "express-rate-limit";
@@ -45,7 +44,6 @@ import userRoutes from './user-api';
 import { nanoid } from 'nanoid';
 import QRCode from 'qrcode';
 import type { InsertDonation } from "@shared/schema";
-import { SitemapGenerator } from './sitemap-generator';
 import { notificationService } from './notification-service';
 import lotteryRoutes from './lottery-api';
 import { setTimeout as delay } from 'timers/promises';
@@ -359,70 +357,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(200).send(html);
     } catch (err) {
       return res.status(500).send('Internal Server Error');
-    }
-  });
-
-  // TMD Image Proxy (radar/satellite/meteogram) - strict allowlist
-  app.get('/api/tmd/image-proxy', async (req, res) => {
-    try {
-      const src = (req.query.src as string) || '';
-      if (!src) return res.status(400).json({ message: 'src is required' });
-
-      let u: URL;
-      try { u = new URL(src); } catch { return res.status(400).json({ message: 'invalid url' }); }
-
-      const allowedHosts = new Set(['data.tmd.go.th', 'weather.tmd.go.th', 'radar.tmd.go.th']);
-      if (!allowedHosts.has(u.hostname)) {
-        return res.status(403).json({ message: 'host not allowed' });
-      }
-
-      const allowedPrefixes = [
-        '/nwpapiv1/meteogram',
-        '/nwpapi/meteogram',
-        '/radar',
-        '/satellite',
-        '/WeatherMap',
-        '/WeatherForecast',
-        // For radar timeline frames on radar.tmd.go.th
-        '/composite',
-      ];
-      if (!allowedPrefixes.some((p) => u.pathname.startsWith(p))) {
-        return res.status(403).json({ message: 'path not allowed' });
-      }
-
-      const headers: Record<string, string> = { 'Accept': '*/*' };
-      const needsAuth = u.hostname === 'data.tmd.go.th' && u.pathname.startsWith('/nwpapiv1');
-      if (needsAuth) {
-        const token = process.env.TMD_API_KEY;
-        if (!token) return res.status(503).json({ message: 'TMD API key not configured' });
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const upstreamRes = await fetch(u.toString(), { headers } as any);
-      const contentType = upstreamRes.headers.get('content-type') || 'application/octet-stream';
-      res.status(upstreamRes.status);
-      res.setHeader('Content-Type', contentType);
-      // Light caching for images/maps to improve UX
-      const isImage = /image\//i.test(contentType);
-      if (isImage) {
-        res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300, stale-while-revalidate=60');
-      } else {
-        res.setHeader('Cache-Control', 'public, max-age=120');
-      }
-      const etag = upstreamRes.headers.get('etag');
-      const lastMod = upstreamRes.headers.get('last-modified');
-      if (etag) res.setHeader('ETag', etag);
-      if (lastMod) res.setHeader('Last-Modified', lastMod);
-      const rl = upstreamRes.headers.get('X-RateLimit-Remaining');
-      const rlL = upstreamRes.headers.get('X-RateLimit-Limit');
-      if (rl) res.setHeader('X-RateLimit-Remaining', rl);
-      if (rlL) res.setHeader('X-RateLimit-Limit', rlL);
-
-      const buffer = Buffer.from(await upstreamRes.arrayBuffer());
-      res.send(buffer);
-    } catch (err) {
-      console.error('Error proxying TMD image:', err);
-      res.status(500).json({ message: 'Failed to proxy TMD image' });
     }
   });
 
@@ -2756,23 +2690,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Weather forecast error:', error);
       res.status(500).json({ error: 'Failed to fetch weather forecast' });
-    }
-  });
-
-  // Proxy for weather radar images
-  app.get('/api/weather/radar', async (req, res) => {
-    try {
-      const { url } = req.query;
-      if (!url || typeof url !== 'string') {
-        return res.status(400).json({ error: 'Missing or invalid URL parameter' });
-      }
-
-      const image = await getWeatherRadarImage(url);
-      res.set('Content-Type', 'image/png');
-      res.send(image);
-    } catch (error) {
-      console.error('Weather radar error:', error);
-      res.status(500).json({ error: 'Failed to fetch weather radar image' });
     }
   });
 

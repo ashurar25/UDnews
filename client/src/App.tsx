@@ -27,7 +27,6 @@ import { ErrorBoundary } from "react-error-boundary";
 import GAListener from "@/components/GAListener";
 import DailySummary from "./pages/DailySummary";
 import Lottery from "./pages/Lottery";
-import ThaiCalendar from "./pages/ThaiCalendar";
 import { HelmetProvider } from "react-helmet-async";
 
 function ErrorFallback({error, resetErrorBoundary}: {error: Error, resetErrorBoundary: () => void}) {
@@ -94,7 +93,7 @@ const App = () => (
             <Route path="/admin" component={Admin} />
             <Route path="/daily-summary" component={DailySummary} />
             <Route path="/lottery" component={Lottery} />
-            <Route path="/thai-calendar" component={ThaiCalendar} />
+            {/** Thai Calendar temporarily disabled */}
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route component={NotFound} />
           </Switch>

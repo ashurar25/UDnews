@@ -18,7 +18,17 @@ type LotteryResults = {
   fetchedAt: string;
 };
 
-function NumberPill({ children, highlight = false }: { children: React.ReactNode, highlight?: boolean }) {
+type PillSize = 'sm' | 'md' | 'lg' | 'xl';
+
+function NumberPill({ children, highlight = false, size = 'md' }: { children: React.ReactNode; highlight?: boolean; size?: PillSize }) {
+  const sizeClass =
+    size === 'xl'
+      ? 'px-6 py-3 text-4xl sm:text-5xl'
+      : size === 'lg'
+      ? 'px-5 py-2.5 text-2xl'
+      : size === 'sm'
+      ? 'px-3 py-1.5 text-lg'
+      : 'px-4 py-2 text-xl';
   return (
     <div className="relative group">
       <div className={`
@@ -28,11 +38,11 @@ function NumberPill({ children, highlight = false }: { children: React.ReactNode
       />
       <span
         className={`
-          relative flex items-center justify-center rounded-lg px-4 py-2 text-sm font-mono font-bold
+          relative flex items-center justify-center rounded-lg font-mono font-extrabold tracking-widest ${sizeClass}
           ${highlight 
-            ? 'bg-gradient-to-br from-yellow-100 to-amber-50 text-amber-800 text-base' 
+            ? 'bg-gradient-to-br from-yellow-100 to-amber-50 text-amber-800' 
             : 'bg-white/95 text-amber-900'}
-          border border-amber-200 shadow-lg shadow-amber-100/50
+          border border-amber-200 shadow-xl shadow-amber-100/60
           transition-all duration-200 group-hover:scale-105`}
       >
         {children}
@@ -44,7 +54,7 @@ function NumberPill({ children, highlight = false }: { children: React.ReactNode
   );
 }
 
-function PrizeRow({ label, values }: { label: string; values?: string[] | string }) {
+function PrizeRow({ label, values, size = 'md' }: { label: string; values?: string[] | string; size?: PillSize }) {
   const list = Array.isArray(values) ? values : (values ? [values] : []);
   return (
     <tr className="border-b">
@@ -53,7 +63,7 @@ function PrizeRow({ label, values }: { label: string; values?: string[] | string
         {list.length ? (
           <div className="flex flex-wrap gap-2">
             {list.map((v, i) => (
-              <NumberPill key={i}>{v}</NumberPill>
+              <NumberPill key={i} size={size}>{v}</NumberPill>
             ))}
           </div>
         ) : (
@@ -179,13 +189,13 @@ export default function LotteryResults({ hideHeaderTitle = false }: { hideHeader
             {/* First prize number with shine effect */}
             <div className="relative">
               <div className="absolute -inset-1 bg-gradient-to-r from-yellow-300 to-amber-400 rounded-lg blur opacity-30 group-hover:opacity-60 transition duration-200"></div>
-              <div className="relative text-4xl sm:text-6xl font-black font-mono tracking-widest text-white">
+              <div className="relative text-white">
                 {first ? (
                   <div className="flex items-center">
-                    <NumberPill highlight>{first}</NumberPill>
+                    <NumberPill highlight size="xl">{first}</NumberPill>
                   </div>
                 ) : (
-                  <div className="text-white/70">— — — — — —</div>
+                  <div className="text-white/70 text-4xl sm:text-6xl font-black font-mono tracking-widest">— — — — — —</div>
                 )}
               </div>
             </div>
@@ -202,7 +212,7 @@ export default function LotteryResults({ hideHeaderTitle = false }: { hideHeader
                 </div>
                 <div className="flex flex-wrap gap-3">
                   {front3.length ? (
-                    front3.map((n, i) => <NumberPill key={i}>{n}</NumberPill>)
+                    front3.map((n, i) => <NumberPill key={i} size="lg">{n}</NumberPill>)
                   ) : (
                     <span className="text-amber-100/70">-</span>
                   )}
@@ -217,7 +227,7 @@ export default function LotteryResults({ hideHeaderTitle = false }: { hideHeader
                 </div>
                 <div className="flex flex-wrap gap-3">
                   {last3.length ? (
-                    last3.map((n, i) => <NumberPill key={i}>{n}</NumberPill>)
+                    last3.map((n, i) => <NumberPill key={i} size="lg">{n}</NumberPill>)
                   ) : (
                     <span className="text-amber-100/70">-</span>
                   )}
@@ -232,7 +242,7 @@ export default function LotteryResults({ hideHeaderTitle = false }: { hideHeader
                 </div>
                 <div className="flex flex-wrap gap-3">
                   {last2Arr.length ? (
-                    last2Arr.map((n, i) => <NumberPill key={i}>{n}</NumberPill>)
+                    last2Arr.map((n, i) => <NumberPill key={i} size="lg">{n}</NumberPill>)
                   ) : (
                     <span className="text-amber-100/70">-</span>
                   )}

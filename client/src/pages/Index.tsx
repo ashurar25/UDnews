@@ -16,13 +16,11 @@ import sportsImage from "@/assets/news-sports.jpg";
 import PushNotificationSetup from "@/components/PushNotificationSetup";
 import NewsletterSignup from "@/components/NewsletterSignup";
 import DisasterAlertWidget from "@/components/DisasterAlertWidget";
-import ThaiHolyDaysWidget from "@/components/ThaiHolyDaysWidget";
 import TodayHighlightBanner from "@/components/TodayHighlightBanner";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import MetaHead from "@/components/MetaHead";
 import TrendingWidget from "@/components/TrendingWidget";
-import TMDWeatherPanel from "@/components/TMDWeatherPanel";
 import { MiniThaiCalendar } from "@/components/MiniThaiCalendar";
 
 // Component wrapper ที่แสดง DisasterAlertWidget เมื่อมีการเตือนเท่านั้น
@@ -395,12 +393,6 @@ const Index = () => {
 
             {/* Popular Today */}
             <TrendingWidget />
-
-            {/* TMD Radar/Satellite */}
-            <TMDWeatherPanel />
-
-            {/* Thai Holy Days Widget */}
-            <ThaiHolyDaysWidget />
 
             {/* Thai Calendar - Prominently displayed */}
             <MiniThaiCalendar className="shadow-news" />

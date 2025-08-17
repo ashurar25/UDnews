@@ -117,9 +117,9 @@ export class SystemHealthService {
       // Get response time percentiles (simplified)
       const percentiles = await db.execute(sql`
         SELECT 
-          PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY response_time) as p50,
-          PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY response_time) as p95,
-          PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY response_time) as p99
+          PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency_ms) as p50,
+          PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency_ms) as p95,
+          PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY latency_ms) as p99
         FROM audit_logs
         WHERE created_at > ${oneHourAgo}
           AND status_code < 400
