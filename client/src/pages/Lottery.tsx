@@ -1,35 +1,24 @@
 import React from 'react';
-import ThaiLotteryChecker from '@/components/ThaiLotteryChecker';
-import { api } from '@/lib/api';
 import LotteryResults from '@/components/LotteryResults';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Trophy, CalendarDays, Sparkles } from 'lucide-react';
 
 export default function Lottery() {
-  const [rss, setRss] = React.useState<{ items: Array<{ title: string; link: string; pubDate?: string; isoDate?: string; summary?: string }> } | null>(null);
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    let mounted = true;
-    (async () => {
-      try {
-        setLoading(true);
-        const data = await api.get<{ items: any[] }>('/api/lottery/thai/rss/dailynews', { auth: false });
-        if (mounted) setRss({ items: data?.items || [] });
-      } catch (e: any) {
-        if (mounted) setError(e?.message || 'โหลดฟีดข่าวหวยไม่สำเร็จ');
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-    return () => { mounted = false; };
+    return () => {};
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-gray-900 dark:to-gray-950">
+    <div className="min-h-screen bg-gradient-to-b from-orange-50 via-amber-50 to-white dark:from-gray-900 dark:via-gray-950 dark:to-black">
+      {/* Decorative background */}
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-orange-200/50 blur-3xl dark:bg-orange-500/20" />
+        <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-amber-200/50 blur-3xl dark:bg-amber-500/20" />
+      </div>
+
       <div className="max-w-5xl mx-auto px-4 py-6">
         {/* Top actions */}
         <div className="flex items-center justify-between mb-4">
@@ -40,10 +29,36 @@ export default function Lottery() {
           </Link>
         </div>
 
-        {/* Heading */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold font-kanit text-orange-800 dark:text-orange-300 drop-shadow-sm">ผลสลากกินแบ่งรัฐบาล</h1>
-          <p className="text-gray-700 dark:text-gray-300 font-sarabun">แสดงผลงวดล่าสุดจากกองสลาก (อ่านอย่างเดียว)</p>
+        {/* Shareable Hero Header */}
+        <div className="relative mb-8 overflow-hidden rounded-2xl border border-amber-200/70 bg-gradient-to-br from-white via-amber-50 to-orange-100 shadow-lg dark:from-gray-900 dark:via-gray-900/60 dark:to-gray-800 dark:border-gray-700">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-amber-200/50 via-transparent to-transparent dark:from-orange-500/10" />
+          <div className="relative flex flex-col md:flex-row items-center gap-5 p-5 md:p-6">
+            <img
+              src="/logo.jpg"
+              alt="UD News Update"
+              className="h-16 w-16 md:h-20 md:w-20 rounded-xl object-cover shadow-md ring-2 ring-white/70 dark:ring-gray-700"
+              loading="eager"
+            />
+            <div className="flex-1 text-center md:text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 text-orange-800 text-xs font-sarabun shadow-sm dark:bg-orange-900/40 dark:text-orange-200">
+                <Sparkles className="h-3.5 w-3.5" /> ผลฉลากรัฐบาลงวดล่าสุด
+              </div>
+              <h1 className="mt-2 text-3xl md:text-4xl font-bold font-kanit text-orange-900 drop-shadow-sm dark:text-orange-200">
+                อัพเดทข่าวอุดร · ผลสลากกินแบ่งรัฐบาล
+              </h1>
+              <p className="mt-1 text-sm md:text-base text-gray-700 font-sarabun dark:text-gray-300">
+                แสดงข้อมูลอย่างเป็นทางการจากกองสลาก — อ่านอย่างเดียว พร้อมลิงก์ข่าวหวยเดลินิวส์
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-gray-700 dark:text-gray-400">
+                <span className="inline-flex items-center gap-1 font-sarabun">
+                  <Trophy className="h-4 w-4 text-amber-500" /> รางวัลที่ 1 เด่นชัด อ่านง่าย
+                </span>
+                <span className="inline-flex items-center gap-1 font-sarabun">
+                  <CalendarDays className="h-4 w-4 text-orange-500" /> อัปเดตอัตโนมัติ
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Read-only latest results table */}
@@ -51,41 +66,7 @@ export default function Lottery() {
           <LotteryResults />
         </div>
 
-        {/* Optional: keep checker tool below */}
-        <div className="mb-6">
-          <h2 className="text-xl font-bold font-kanit text-orange-700">ตรวจเลขของคุณ</h2>
-          <p className="text-gray-600 font-sarabun">ใส่เลขสลากเพื่อเทียบกับงวดล่าสุด</p>
-        </div>
-        <div className="rounded-lg border border-orange-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
-          <ThaiLotteryChecker />
-        </div>
-
-        <div className="mt-10">
-          <h2 className="text-xl font-bold font-kanit text-orange-700 mb-3">ข่าวหวยจากเดลินิวส์</h2>
-          {loading && (
-            <p className="text-gray-500 font-sarabun">กำลังโหลดข้อมูล…</p>
-          )}
-          {error && (
-            <p className="text-red-600 font-sarabun">{error}</p>
-          )}
-          {!loading && !error && (
-            <ul className="space-y-3">
-              {(rss?.items || []).slice(0, 12).map((item, idx) => (
-                <li key={idx} className="border rounded-md p-3 hover:bg-orange-50 transition">
-                  <a href={item.link} target="_blank" rel="noreferrer" className="block">
-                    <div className="font-kanit font-semibold text-orange-900">{item.title}</div>
-                    <div className="text-sm text-gray-500 font-sarabun">
-                      {item.isoDate ? new Date(item.isoDate).toLocaleString('th-TH') : (item.pubDate || '')}
-                    </div>
-                    {item.summary && (
-                      <p className="mt-1 text-gray-700 line-clamp-2 font-sarabun" dangerouslySetInnerHTML={{ __html: item.summary }} />
-                    )}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        {/* ตรวจหวย UI ถูกนำออก หน้านี้แสดงผลรางวัลเท่านั้น */}
       </div>
     </div>
   );

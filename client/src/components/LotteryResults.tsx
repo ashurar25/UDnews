@@ -49,14 +49,53 @@ export default function LotteryResults() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [showMore, setShowMore] = React.useState(false);
+  const [usingFallback, setUsingFallback] = React.useState(false);
 
   React.useEffect(() => {
     let mounted = true;
     (async () => {
       try {
         setLoading(true);
+        // Try primary backend API first
         const res = await api.get<LotteryResults>('/api/lottery/latest', { auth: false });
-        if (mounted) setData(res);
+        const primaryOk = !!(res && (res.firstPrize || res.last2 || (res.front3 && res.front3.length) || (res.last3 && res.last3.length)));
+        if (mounted && primaryOk) {
+          setData(res);
+          return;
+        }
+
+        // Fallback: fetch directly from public Rayriffy API (browser-side)
+        try {
+          const r = await fetch('https://lotto.api.rayriffy.com/latest', { method: 'GET' });
+          if (!r.ok) throw new Error('Rayriffy latest fetch failed: ' + r.status);
+          const j = await r.json();
+          const resp = (j && (j.response || j.data || j)) || {};
+
+          const running = resp.runningNumbers || resp.running || {};
+          const prizes = resp.prizes || {};
+
+          const normalized: LotteryResults = {
+            date: resp.date || resp.draw || undefined,
+            firstPrize: prizes.first?.number || prizes.first || undefined,
+            nearFirstPrize: prizes.nearby || prizes.nearFirst || [],
+            front3: running.frontThree || running.front3 || [],
+            last3: running.backThree || running.last3 || [],
+            last2: running.backTwo || running.last2 || undefined,
+            prize2: prizes.second || prizes.prize2 || [],
+            prize3: prizes.third || prizes.prize3 || [],
+            prize4: prizes.forth || prizes.fourth || prizes.prize4 || [],
+            prize5: prizes.fifth || prizes.prize5 || [],
+            source: 'https://lotto.api.rayriffy.com/latest',
+            fetchedAt: new Date().toISOString(),
+          };
+
+          if (mounted) {
+            setData(normalized);
+            setUsingFallback(true);
+          }
+        } catch (fallbackErr: any) {
+          if (mounted) throw fallbackErr;
+        }
       } catch (e: any) {
         if (mounted) setError(e?.message || 'โหลดผลสลากฯ ไม่สำเร็จ');
       } finally {
@@ -91,6 +130,11 @@ export default function LotteryResults() {
             {first || '— — — — — —'}
           </div>
         </div>
+        {usingFallback && !error && (
+          <div className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 inline-flex items-center px-2 py-1 rounded font-sarabun">
+            ใช้ข้อมูลสำรองจาก Rayriffy API
+          </div>
+        )}
         {data?.nearFirstPrize && data.nearFirstPrize.length > 0 && (
           <div className="mt-3">
             <div className="text-sm font-sarabun text-gray-600 dark:text-gray-300">รางวัลข้างเคียงรางวัลที่ 1</div>
@@ -148,7 +192,7 @@ export default function LotteryResults() {
 
       {data?.source && (
         <div className="mt-3 text-xs text-gray-500 font-sarabun">
-          แหล่งข้อมูล: <a className="underline" href={data.source} target="_blank" rel="noreferrer">กองสลาก (GLO)</a>
+          แหล่งข้อมูล: <a className="underline" href={data.source} target="_blank" rel="noreferrer">{usingFallback ? 'Rayriffy API' : 'กองสลาก (GLO)'}</a>
           {data.fetchedAt && <span> • อัปเดตเมื่อ {new Date(data.fetchedAt).toLocaleString('th-TH')}</span>}
         </div>
       )}
