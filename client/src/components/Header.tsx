@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, Search, Rss, Clock, Heart } from "lucide-react";
+import { Menu, Search, Rss, Clock, Heart, Trophy } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Link, useLocation } from "wouter";
 import { useTheme } from "@/components/ThemeProvider";
@@ -10,6 +10,7 @@ import PWAInstallButton from "./PWAInstallButton";
 import IOSInstallBanner from "./IOSInstallBanner";
 import SearchBar from "./SearchBar";
 import DisasterAlertWidget from "./DisasterAlertWidget";
+import { api } from "@/lib/api";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -17,6 +18,18 @@ const Header = () => {
   const { theme } = useTheme();
   const specialDay = getCurrentThaiSpecialDay();
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Lottery ticker state
+  type LatestLottery = {
+    date?: string;
+    firstPrize?: string;
+    front3?: string[];
+    last3?: string[];
+    last2?: string;
+  } | null;
+  const [lottery, setLottery] = useState<LatestLottery>(null);
+  const [lotteryLoading, setLotteryLoading] = useState(false);
+  const [lotteryErr, setLotteryErr] = useState<string | null>(null);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -34,6 +47,32 @@ const Header = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isMenuOpen]);
+
+  // Fetch latest lottery once for ticker
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLotteryLoading(true);
+        const res = await api.get<any>('/api/lottery/latest', { auth: false });
+        if (!mounted) return;
+        // Normalize minimal fields defensively
+        const normalized = {
+          date: res?.date,
+          firstPrize: res?.firstPrize,
+          front3: res?.front3 || res?.runningNumbers?.frontThree || [],
+          last3: res?.last3 || res?.runningNumbers?.backThree || [],
+          last2: res?.last2 || res?.runningNumbers?.backTwo,
+        } as LatestLottery;
+        setLottery(normalized);
+      } catch (e: any) {
+        if (mounted) setLotteryErr(e?.message || '');
+      } finally {
+        if (mounted) setLotteryLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   // Dynamic theme classes based on current theme
   const getThemeClasses = () => {
@@ -66,6 +105,7 @@ const Header = () => {
       <div className={themeClasses.topBar}>
         <div className="w-full px-6 flex justify-between items-center text-xs">
           <div className="flex items-center gap-2">
+
             <div className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
               <span className="font-sarabun">
@@ -92,6 +132,28 @@ const Header = () => {
               <span className="font-sarabun">📞 092-443-4311</span>
               <span className="font-sarabun">✉️ kenginol.ar@gmail.com</span>
             </div>
+          </div>
+
+          {/* Center - Lottery ticker (desktop) */}
+          <div className="hidden md:flex flex-1 justify-center px-4">
+            {lottery && (lottery.firstPrize || lottery.last2 || (lottery.front3 && lottery.front3.length) || (lottery.last3 && lottery.last3.length)) ? (
+              <Link to="/lottery" className="max-w-[70%]">
+                <div className="flex items-center gap-2 text-[11px] md:text-xs text-primary-foreground/90">
+                  <Trophy className="h-3 w-3 text-yellow-300" />
+                  <span className="font-sarabun truncate">
+                    ผลสลากฯ{lottery.date ? ` (${lottery.date})` : ''}: รางวัลที่ 1 {lottery.firstPrize || '-'}
+                    {lottery.front3 && lottery.front3.length ? ` • หน้า3 ${lottery.front3.join(' ')}` : ''}
+                    {lottery.last3 && lottery.last3.length ? ` • ท้าย3 ${lottery.last3.join(' ')}` : ''}
+                    {lottery.last2 ? ` • 2 ตัวท้าย ${lottery.last2}` : ''}
+                  </span>
+                </div>
+              </Link>
+            ) : (
+              <div className="flex items-center gap-2 text-[11px] md:text-xs text-primary-foreground/70">
+                <Trophy className="h-3 w-3" />
+                <span className="font-sarabun">{lotteryLoading ? 'กำลังโหลดผลสลากฯ…' : (lotteryErr ? '' : '')}</span>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
