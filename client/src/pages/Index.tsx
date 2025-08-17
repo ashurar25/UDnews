@@ -16,8 +16,11 @@ import sportsImage from "@/assets/news-sports.jpg";
 import PushNotificationSetup from "@/components/PushNotificationSetup";
 import NewsletterSignup from "@/components/NewsletterSignup";
 import DisasterAlertWidget from "@/components/DisasterAlertWidget";
+import ThaiHolyDaysWidget from "@/components/ThaiHolyDaysWidget";
+import TodayHighlightBanner from "@/components/TodayHighlightBanner";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { Helmet } from "react-helmet-async";
 
 // Component wrapper ที่แสดง DisasterAlertWidget เมื่อมีการเตือนเท่านั้น
 const ConditionalDisasterAlertWidget = () => {
@@ -157,12 +160,21 @@ const Index = () => {
   // Background image mapping for weather conditions
   const getWeatherBgByCondition = (desc: string) => {
     const d = (desc || '').toLowerCase();
-    if (d.includes('thunder') || d.includes('storm')) return politicsImage; // dramatic sky
-    if (d.includes('rain') || d.includes('shower') || d.includes('drizzle')) return sportsImage; // rainy/cooler tone
-    if (d.includes('overcast') || d.includes('cloud')) return localImage; // cloudy/neutral
-    if (d.includes('mist') || d.includes('fog') || d.includes('haze')) return localImage;
-    // clear/default
-    return heroImage;
+    // External, high-quality images (Unsplash) with cropping params for performance
+    const SUNNY = 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1600&q=80&auto=format&fit=crop';
+    const PARTLY_CLOUDY = 'https://images.unsplash.com/photo-1499346030926-9a72daac6c63?w=1600&q=80&auto=format&fit=crop';
+    const CLOUDY = 'https://images.unsplash.com/photo-1499346030926-9a72daac6c63?w=1600&q=80&auto=format&fit=crop';
+    const RAIN = 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=1600&q=80&auto=format&fit=crop';
+    const STORM = 'https://images.unsplash.com/photo-1461511669078-d46bf351cd6e?w=1600&q=80&auto=format&fit=crop';
+    const FOG = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1600&q=80&auto=format&fit=crop';
+
+    if (d.includes('thunder') || d.includes('storm')) return STORM;
+    if (d.includes('rain') || d.includes('shower') || d.includes('drizzle')) return RAIN;
+    if (d.includes('overcast')) return CLOUDY;
+    if (d.includes('cloud')) return PARTLY_CLOUDY;
+    if (d.includes('mist') || d.includes('fog') || d.includes('haze')) return FOG;
+    // default clear
+    return SUNNY;
   };
 
   // Fetch real news data from API with performance optimization - first 100 news items
@@ -221,6 +233,20 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>ข่าวอุดร ล่าสุด | UD News Update</title>
+        <meta name="description" content="เว็บไซต์ข่าวท้องถิ่นอุดรธานี รวบรวมข่าวสารล่าสุดจากหลากหลายแหล่ง พร้อมข้อมูลสภาพอากาศและข่าวประเภทต่างๆ" />
+        <link rel="canonical" href="https://udnewsupdate.sbs/" />
+        <meta property="og:title" content="อัพเดทข่าวอุดร - UD News Update" />
+        <meta property="og:description" content="เว็บไซต์ข่าวท้องถิ่นอุดรธานี รวบรวมข่าวสารล่าสุดจากหลากหลายแหล่ง" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://udnewsupdate.sbs/" />
+        <meta property="og:image" content="/og-home.svg" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="อัพเดทข่าวอุดร - UD News Update" />
+        <meta name="twitter:description" content="เว็บไซต์ข่าวท้องถิ่นอุดรธานี รวบรวมข่าวสารล่าสุดจากหลากหลายแหล่ง" />
+        <meta name="twitter:image" content="/og-home.svg" />
+      </Helmet>
       <Header />
       {/* Breaking News Banner */}
       {breakingNews.length > 0 && (
@@ -247,7 +273,7 @@ const Index = () => {
       {/* Hero News Section */}
       <section className="relative h-48 md:h-64 overflow-hidden">
         <img 
-          src={heroImage} 
+          src={getWeatherBgByCondition(currentWeather.condition)} 
           alt="UD News Hero"
           className="w-full h-full object-cover object-center"
           style={{ objectPosition: 'center 75%' }}
@@ -362,6 +388,8 @@ const Index = () => {
 
           {/* Sidebar */}
           <div className="space-y-8">
+            {/* Today Highlight Banner */}
+            <TodayHighlightBanner />
 
             {/* Sidebar Sponsor Banner Bar */}
             <SponsorBannerBar position="sidebar" autoPlay={true} showNavigation={false} bannerCount={3} />
@@ -391,6 +419,9 @@ const Index = () => {
                 ))}
               </div>
             </div>
+
+            {/* Thai Holy Days Widget */}
+            <ThaiHolyDaysWidget />
 
             {/* Newsletter Signup */}
             <NewsletterSignup className="shadow-news" />

@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#FFEDD5"/>
+      <stop offset="100%" stop-color="#FDBA74"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <g transform="translate(80,120)">
+    <rect x="0" y="0" width="1040" height="390" rx="24" fill="white" opacity="0.9"/>
+    <text x="20" y="60" font-family="Kanit, Arial, sans-serif" font-size="56" font-weight="700" fill="#ea580c">ปฏิทินวันพระ & วันสำคัญ</text>
+    <text x="20" y="110" font-family="Sarabun, Arial, sans-serif" font-size="28" fill="#374151">ดูวันพระ (จันทรคติ) และวันสำคัญของไทยตลอดทั้งเดือน</text>
+
+    <!-- simple calendar grid visual -->
+    <g transform="translate(20,150)">
+      <rect x="0" y="0" width="1000" height="200" rx="12" fill="#FFF7ED" stroke="#FDBA74"/>
+      <!-- 7 columns x 3 rows preview -->
+      <g fill="#FED7AA" stroke="#FDBA74" opacity="0.8">
+        <!-- draw cells -->
+        <!-- columns -->
+        <g>
+          <rect x="10" y="10" width="130" height="50" rx="8"/>
+          <rect x="10" y="70" width="130" height="50" rx="8"/>
+          <rect x="10" y="130" width="130" height="50" rx="8"/>
+        </g>
+        <g transform="translate(150,0)">
+          <rect x="10" y="10" width="130" height="50" rx="8"/>
+          <rect x="10" y="70" width="130" height="50" rx="8"/>
+          <rect x="10" y="130" width="130" height="50" rx="8"/>
+        </g>
+        <g transform="translate(300,0)">
+          <rect x="10" y="10" width="130" height="50" rx="8"/>
+          <rect x="10" y="70" width="130" height="50" rx="8"/>
+          <rect x="10" y="130" width="130" height="50" rx="8"/>
+        </g>
+        <g transform="translate(450,0)">
+          <rect x="10" y="10" width="130" height="50" rx="8"/>
+          <rect x="10" y="70" width="130" height="50" rx="8"/>
+          <rect x="10" y="130" width="130" height="50" rx="8"/>
+        </g>
+        <g transform="translate(600,0)">
+          <rect x="10" y="10" width="130" height="50" rx="8"/>
+          <rect x="10" y="70" width="130" height="50" rx="8"/>
+          <rect x="10" y="130" width="130" height="50" rx="8"/>
+        </g>
+        <g transform="translate(750,0)">
+          <rect x="10" y="10" width="130" height="50" rx="8"/>
+          <rect x="10" y="70" width="130" height="50" rx="8"/>
+          <rect x="10" y="130" width="130" height="50" rx="8"/>
+        </g>
+        <g transform="translate(900,0)">
+          <rect x="10" y="10" width="130" height="50" rx="8"/>
+          <rect x="10" y="70" width="130" height="50" rx="8"/>
+          <rect x="10" y="130" width="130" height="50" rx="8"/>
+        </g>
+      </g>
+      <!-- highlight badge -->
+      <g>
+        <rect x="40" y="25" width="120" height="28" rx="14" fill="#fef3c7" stroke="#f59e0b"/>
+        <text x="52" y="46" font-family="Sarabun, Arial, sans-serif" font-size="16" fill="#92400e">วันพระ</text>
+      </g>
+    </g>
+  </g>
+
+  <text x="80" y="580" font-family="Sarabun, Arial, sans-serif" font-size="26" fill="#1f2937">UD News Update • udnewsupdate.sbs</text>
+</svg>

@@ -6,17 +6,21 @@
     <meta name="vite-hmr" content="true" />
     <title>อัพเดทข่าวอุดร - UD News Update</title>
     <meta name="description" content="เว็บไซต์ข่าวท้องถิ่นอุดรธานี รวบรวมข่าวสารล่าสุดจากหลากหลายแหล่ง พร้อมข้อมูลสภาพอากาศและข่าวประเภทต่างๆ" />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
     <!-- Open Graph -->
     <meta property="og:title" content="อัพเดทข่าวอุดร - UD News Update" />
     <meta property="og:description" content="เว็บไซต์ข่าวท้องถิ่นอุดรธานี รวบรวมข่าวสารล่าสุดจากหลากหลายแหล่ง" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="UD News Update" />
     <meta property="og:locale" content="th_TH" />
+    <meta property="og:url" content="https://udnewsupdate.sbs/" />
     <meta property="og:image" content="/logo.jpg" />
     <meta property="og:image:alt" content="โลโก้ UD News Update" />
     <meta property="og:image:width" content="1024" />
     <meta property="og:image:height" content="1024" />
     <link rel="canonical" href="https://udnewsupdate.sbs/" />
+    <link rel="alternate" href="https://udnewsupdate.sbs/" hreflang="th-TH" />
+    <link rel="alternate" href="https://udnewsupdate.sbs/" hreflang="th" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
@@ -24,13 +28,22 @@
     <meta name="twitter:description" content="เว็บไซต์ข่าวท้องถิ่นอุดรธานี รวบรวมข่าวสารล่าสุดจากหลากหลายแหล่ง" />
     <meta name="twitter:image" content="/logo.jpg" />
     <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- Performance hints -->
+    <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+    <link rel="dns-prefetch" href="//images.unsplash.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <link rel="dns-prefetch" href="//fonts.gstatic.com">
+    <link rel="dns-prefetch" href="//api.openweathermap.org">
     <!-- iOS PWA support -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="UD News" />
     <link rel="apple-touch-icon" sizes="180x180" href="/logo.jpg" />
-    <link rel="alternate" type="application/rss+xml" title="UD News Update RSS" href="/rss.xml" />
-    <!-- Favicon: use site logo -->
+    <link rel="alternate" type="application/rss+xml" title="UD News Update RSS" href="/feed.xml" />
+    <!-- Favicon: SVG primary + fallbacks -->
+    <link rel="icon" href="/logo.svg" type="image/svg+xml" />
     <link rel="icon" href="/logo.jpg" type="image/jpeg" />
     <link rel="icon" sizes="any" href="/favicon.ico" />
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
@@ -49,6 +62,63 @@
           window.__ud_bip = null;
         });
       })();
+    </script>
+
+    <!-- JSON-LD: Organization -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "UD News Update",
+        "url": "https://udnewsupdate.sbs/",
+        "logo": "https://udnewsupdate.sbs/logo.jpg",
+        "sameAs": []
+      }
+    </script>
+    <!-- JSON-LD: WebSite with potentialAction Search -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "UD News Update",
+        "url": "https://udnewsupdate.sbs/",
+        "inLanguage": "th-TH",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://udnewsupdate.sbs/?q={search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
+        }
+      }
+    </script>
+    <!-- JSON-LD: SiteNavigationElement -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "itemListElement": [
+          {
+            "@type": "SiteNavigationElement",
+            "position": 1,
+            "name": "หน้าแรก",
+            "url": "https://udnewsupdate.sbs/"
+          },
+          {
+            "@type": "SiteNavigationElement",
+            "position": 2,
+            "name": "ปฏิทินไทย",
+            "url": "https://udnewsupdate.sbs/thai-calendar"
+          },
+          {
+            "@type": "SiteNavigationElement",
+            "position": 3,
+            "name": "ผลสลากกินแบ่งรัฐบาล",
+            "url": "https://udnewsupdate.sbs/lottery"
+          }
+        ]
+      }
     </script>
   </head>
   <body>

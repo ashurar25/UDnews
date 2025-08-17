@@ -79,6 +79,9 @@ app.get('/sitemap.xml', async (req: Request, res: Response) => {
     const entries: string[] = [];
     // Home
     entries.push(urlEntry(`${origin}/`, undefined, 'daily', '1.0'));
+    // Key static pages
+    entries.push(urlEntry(`${origin}/thai-calendar`, undefined, 'weekly', '0.6'));
+    entries.push(urlEntry(`${origin}/lottery`, undefined, 'weekly', '0.6'));
     // News items
     if (Array.isArray(items)) {
       for (const it of items) {
@@ -108,6 +111,56 @@ app.get('/sitemap.xml', async (req: Request, res: Response) => {
 function urlEntry(loc: string, lastmod?: string, changefreq = 'daily', priority = '0.8') {
   const last = lastmod ? `\n  <lastmod>${new Date(lastmod).toISOString()}</lastmod>` : '';
   return `  <url>\n  <loc>${loc}</loc>${last}\n  <changefreq>${changefreq}</changefreq>\n  <priority>${priority}</priority>\n  </url>`;
+}
+
+// RSS feed for latest news
+app.get('/feed.xml', async (req: Request, res: Response) => {
+  try {
+    const origin = `${req.protocol}://${req.get('host')}`;
+    const siteUrl = `${origin}`;
+    const apiUrl = `${origin}/api/news?limit=50&offset=0`;
+    const r = await fetch(apiUrl, { headers: { Accept: 'application/json' } });
+    if (!r.ok) throw new Error(`Fetch failed ${r.status}`);
+    const items: any[] = await r.json();
+
+    const now = new Date().toUTCString();
+    const rssItems = (Array.isArray(items) ? items : []).slice(0, 50).map((it) => {
+      const id = it?.id ?? it?.newsId;
+      const title = escapeXml(it?.title || `ข่าว #${id}`);
+      const description = escapeXml(it?.summary || it?.description || '');
+      const link = `${siteUrl}/news/${id}`;
+      const pubDate = new Date(it?.createdAt || Date.now()).toUTCString();
+      const guid = `${siteUrl}/news/${id}`;
+      return `    <item>\n      <title>${title}</title>\n      <link>${link}</link>\n      <guid isPermaLink="true">${guid}</guid>\n      <pubDate>${pubDate}</pubDate>\n      <description><![CDATA[${it?.summary || it?.description || ''}]]></description>\n    </item>`;
+    }).join('\n');
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n` +
+      `<rss version="2.0">\n` +
+      `  <channel>\n` +
+      `    <title>UD News Update - ข่าวล่าสุด</title>\n` +
+      `    <link>${siteUrl}</link>\n` +
+      `    <description>ฟีดข่าวล่าสุดจาก UD News Update</description>\n` +
+      `    <language>th-TH</language>\n` +
+      `    <lastBuildDate>${now}</lastBuildDate>\n` +
+      rssItems + '\n' +
+      `  </channel>\n` +
+      `</rss>`;
+
+    res.setHeader('Content-Type', 'application/rss+xml; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=600'); // 10 minutes
+    res.send(xml);
+  } catch (e) {
+    res.status(500).send('Failed to generate feed');
+  }
+});
+
+function escapeXml(s: string) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }
 
 app.use((req, res, next) => {

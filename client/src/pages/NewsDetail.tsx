@@ -18,6 +18,7 @@ import TTSReader from "@/components/TTSReader";
 import AppErrorBoundary from "@/components/AppErrorBoundary";
 import { getHourlyForecastHourly, type HourlyWeather } from "@/lib/weather-api";
 import { api } from "@/lib/api";
+import { Helmet } from "react-helmet-async";
 
 interface NewsItem {
   id: number;
@@ -192,7 +193,7 @@ export default function NewsDetail() {
         <MetaHead
           title={news.title}
           description={news.description || (news.content ? news.content.substring(0, 160) + '...' : '')}
-          image={toAbsoluteUrl(news.imageUrl)}
+          image={toAbsoluteUrl(news.imageUrl || '/og-article-default.svg')}
           url={toAbsoluteUrl(`/news/${news.id}`) || `/news/${news.id}`}
           type="article"
           siteName="UD News Update"
@@ -201,7 +202,7 @@ export default function NewsDetail() {
             '@type': 'NewsArticle',
             headline: news.title,
             description: news.description || news.summary,
-            image: news.imageUrl ? [toAbsoluteUrl(news.imageUrl)!] : undefined,
+            image: [toAbsoluteUrl(news.imageUrl || '/og-article-default.svg')!],
             datePublished: news.createdAt,
             dateModified: news.updatedAt || news.createdAt,
             mainEntityOfPage: toAbsoluteUrl(`/news/${news.id}`),
@@ -213,6 +214,36 @@ export default function NewsDetail() {
             },
           }}
         />
+      )}
+      {news && (
+        <Helmet>
+          <script type="application/ld+json">
+            {JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                {
+                  '@type': 'ListItem',
+                  position: 1,
+                  name: 'หน้าแรก',
+                  item: toAbsoluteUrl('/'),
+                },
+                {
+                  '@type': 'ListItem',
+                  position: 2,
+                  name: news.category || 'ข่าว',
+                  item: toAbsoluteUrl('/'),
+                },
+                {
+                  '@type': 'ListItem',
+                  position: 3,
+                  name: news.title,
+                  item: toAbsoluteUrl(`/news/${news.id}`),
+                },
+              ],
+            })}
+          </script>
+        </Helmet>
       )}
       <Header />
 

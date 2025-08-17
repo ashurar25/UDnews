@@ -3,6 +3,7 @@ import LotteryResults from '@/components/LotteryResults';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Trophy, CalendarDays, Sparkles, ExternalLink, Share2 } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 
 export default function Lottery() {
 
@@ -11,11 +12,7 @@ export default function Lottery() {
     return () => {};
   }, []);
 
-  React.useEffect(() => {
-    const prev = document.title;
-    document.title = 'ผลสลากกินแบ่งรัฐบาล - UD News Update';
-    return () => { document.title = prev; };
-  }, []);
+  // Title and SEO handled by <Helmet>
 
   // Latest announcement from lottery.co.th RSS
   const [latestPost, setLatestPost] = React.useState<{ title: string; link: string; pubDate: string; isoDate: string; summary: string } | null>(null);
@@ -91,68 +88,43 @@ export default function Lottery() {
     return () => { mounted = false; };
   }, []);
 
-  // Inject JSON-LD for SEO (Lottery announcement)
-  React.useEffect(() => {
-    const setMeta = (name: string, content: string, isProperty = false) => {
-      const selector = isProperty ? `meta[property="${name}"]` : `meta[name="${name}"]`;
-      let tag = document.head.querySelector<HTMLMetaElement>(selector);
-      if (!tag) {
-        tag = document.createElement('meta');
-        if (isProperty) tag.setAttribute('property', name); else tag.setAttribute('name', name);
-        document.head.appendChild(tag);
-      }
-      tag.setAttribute('content', content);
-    };
-
-    const script = document.createElement('script');
-    script.type = 'application/ld+json';
-    const headline = latestPost?.title || 'ผลสลากกินแบ่งรัฐบาล งวดล่าสุด';
-    const url = latestPost?.link || (typeof window !== 'undefined' ? window.location.href : '');
-    const datePublished = latestPost?.isoDate || new Date().toISOString();
-    const description = (latestPost?.summary || '').replace(/<[^>]+>/g, '').slice(0, 240);
-    const ogImage = (typeof window !== 'undefined' ? `${window.location.origin}/logo.jpg` : '/logo.jpg');
-    // Open Graph / Twitter
-    if (typeof document !== 'undefined') {
-      setMeta('og:title', headline, true);
-      setMeta('og:description', description, true);
-      setMeta('og:url', url || (typeof window !== 'undefined' ? window.location.href : ''), true);
-      setMeta('og:type', 'article', true);
-      setMeta('og:image', ogImage, true);
-      setMeta('twitter:card', 'summary_large_image');
-      setMeta('twitter:title', headline);
-      setMeta('twitter:description', description);
-      setMeta('twitter:image', ogImage);
-    }
-    const jsonLd = {
-      '@context': 'https://schema.org',
-      '@type': 'Article',
-      headline,
-      description,
-      url,
-      image: [ogImage],
-      datePublished,
-      dateModified: datePublished,
-      mainEntityOfPage: url,
-      author: {
-        '@type': 'Organization',
-        name: 'UD News Update'
-      },
-      publisher: {
-        '@type': 'Organization',
-        name: 'UD News Update',
-        logo: {
-          '@type': 'ImageObject',
-          url: ogImage
-        }
-      }
-    } as any;
-    script.textContent = JSON.stringify(jsonLd);
-    document.head.appendChild(script);
-    return () => { document.head.removeChild(script); };
-  }, [latestPost]);
+  // SEO is now injected with <Helmet> below
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 via-amber-50 to-white dark:from-gray-900 dark:via-gray-950 dark:to-black">
+      <Helmet>
+        <title>ผลสลากกินแบ่งรัฐบาล งวดล่าสุด | UD News Update</title>
+        <meta name="description" content={latestPost?.summary ? latestPost.summary.replace(/<[^>]+>/g, '').slice(0, 240) : 'อัปเดตผลสลากกินแบ่งรัฐบาลงวดล่าสุด แสดงรางวัลสำคัญและลิงก์ประกาศจากแหล่งทางการ'} />
+        <link rel="canonical" href="https://udnewsupdate.sbs/lottery" />
+        <meta property="og:locale" content="th_TH" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={latestPost?.title || 'ผลสลากกินแบ่งรัฐบาล งวดล่าสุด'} />
+        <meta property="og:description" content={latestPost?.summary ? latestPost.summary.replace(/<[^>]+>/g, '').slice(0, 240) : 'อัปเดตผลสลากกินแบ่งรัฐบาลงวดล่าสุด'} />
+        <meta property="og:url" content="https://udnewsupdate.sbs/lottery" />
+        <meta property="og:image" content="/og-home.svg" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={latestPost?.title || 'ผลสลากกินแบ่งรัฐบาล งวดล่าสุด'} />
+        <meta name="twitter:description" content={latestPost?.summary ? latestPost.summary.replace(/<[^>]+>/g, '').slice(0, 240) : 'อัปเดตผลสลากกินแบ่งรัฐบาลงวดล่าสุด'} />
+        <meta name="twitter:image" content="/og-home.svg" />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'WebPage',
+            name: 'ผลสลากกินแบ่งรัฐบาล งวดล่าสุด',
+            description: latestPost?.summary ? latestPost.summary.replace(/<[^>]+>/g, '').slice(0, 240) : 'อัปเดตผลสลากกินแบ่งรัฐบาลงวดล่าสุด',
+            url: 'https://udnewsupdate.sbs/lottery',
+            mainEntity: latestPost?.link ? {
+              '@type': 'Article',
+              headline: latestPost.title,
+              datePublished: latestPost.isoDate,
+              dateModified: latestPost.isoDate,
+              mainEntityOfPage: latestPost.link,
+              url: latestPost.link,
+              publisher: { '@type': 'Organization', name: 'UD News Update' }
+            } : undefined
+          })}
+        </script>
+      </Helmet>
       {/* Decorative background */}
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-orange-200/50 blur-3xl dark:bg-orange-500/20" />
