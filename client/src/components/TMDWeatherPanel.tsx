@@ -145,10 +145,13 @@ const TMDWeatherPanel: React.FC = () => {
   const radarCandidates: ImageCandidate = useMemo(() => ({
     label: 'เรดาร์ฝน (ประเทศไทย)',
     urls: [
-      // Common composite radar images (guessed common paths)
+      // Common composite radar images (multiple plausible paths)
       'https://weather.tmd.go.th/radar/256km/Composite.png',
       'https://weather.tmd.go.th/radar/Composite.png',
       'https://weather.tmd.go.th/WeatherMap/radar/Composite.png',
+      // radar.tmd.go.th variants
+      'https://radar.tmd.go.th/256km/Composite.png',
+      'https://radar.tmd.go.th/composite/png/latest.png',
     ],
   }), []);
 
@@ -158,6 +161,9 @@ const TMDWeatherPanel: React.FC = () => {
       'https://weather.tmd.go.th/satellite/latest_TH.png',
       'https://weather.tmd.go.th/WeatherMap/satellite/latest_TH.png',
       'https://weather.tmd.go.th/satellite/Thailand.png',
+      // additional common variants
+      'https://weather.tmd.go.th/satellite/latest.jpg',
+      'https://weather.tmd.go.th/satellite/ir_th.png',
     ],
   }), []);
 
@@ -168,6 +174,12 @@ const TMDWeatherPanel: React.FC = () => {
     return {
       label: `Meteogram (${label})`,
       urls: [
+        // Image-specific endpoints (if available)
+        `https://data.tmd.go.th/nwpapiv1/meteogram/image?lat=${lat}&lon=${lon}`,
+        `https://data.tmd.go.th/nwpapiv1/meteogram/image?province=${encodedProv}`,
+        `https://data.tmd.go.th/nwpapi/meteogram/image?lat=${lat}&lon=${lon}`,
+        `https://data.tmd.go.th/nwpapi/meteogram/image?province=${encodedProv}`,
+        // Generic endpoints (some deployments return image directly)
         `https://data.tmd.go.th/nwpapiv1/meteogram/latlon?lat=${lat}&lon=${lon}`,
         `https://data.tmd.go.th/nwpapiv1/meteogram/province?name=${encodedProv}`,
         `https://data.tmd.go.th/nwpapi/meteogram?lat=${lat}&lon=${lon}`,
