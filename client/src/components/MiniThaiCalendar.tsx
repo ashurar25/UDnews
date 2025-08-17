@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { formatThaiDateISO, toISO } from '@/lib/date-th';
-import { getThaiHolidaysForMonth } from '@/lib/thai-calendar';
+import { fetchThaiHolidaysForMonth } from '@/lib/thai-calendar';
 import { Calendar as CalendarIcon } from 'lucide-react';
 
 type MiniThaiCalendarProps = {
@@ -14,9 +14,21 @@ export const MiniThaiCalendar: React.FC<MiniThaiCalendarProps> = ({ className = 
   const year = today.getFullYear();
   const month = today.getMonth() + 1;
   const day = today.getDate();
+  const [holidays, setHolidays] = useState<Array<{ date: string; name: string }>>([]);
   
-  // Get holidays for the current month
-  const holidays = useMemo(() => getThaiHolidaysForMonth(year, month), [year, month]);
+  // Get holidays for the current month (async via API with built-in fallback)
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const h = await fetchThaiHolidaysForMonth(year, month);
+        if (active) setHolidays(h);
+      } catch {
+        // ignore; fetchThaiHolidaysForMonth already has fallback
+      }
+    })();
+    return () => { active = false; };
+  }, [year, month]);
   
   // Get the first day of the month and number of days in the month
   const firstDay = new Date(year, month - 1, 1);

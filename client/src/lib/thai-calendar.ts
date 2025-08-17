@@ -1,8 +1,11 @@
 // Thai calendar utilities: Wan Phra (Buddhist holy days) and Thai holidays
-// Wan Phra (วันพระ) requires Thai lunar calculations.
+// Now fetch Wan Phra from server endpoint backed by MyHora JSON
+
+import { api } from '@/lib/api';
+import { getWanPhraFallback } from '@/data/wanphra';
 
 export interface WanPhraDate {
-  date: string; // YYYY-MM-DD
+  date: string; // YYYY-MM-DD (Gregorian)
   label: string; // e.g., 'ขึ้น 15 ค่ำ', 'แรม 8 ค่ำ'
 }
 
@@ -13,94 +16,52 @@ interface ThaiHoliday {
   type: 'public' | 'religious' | 'observance';
 }
 
-// Constants for lunar calculations
-const LUNAR_MONTH = 29.530588853; // Synodic month in days
-const LUNAR_YEAR = 354.36707; // Lunar year in days
-const EPOCH = 2440587.5; // Unix epoch in Julian days (1970-01-01)";
-
-import { getWanPhraFallback } from "@/data/wanphra";
-
-export interface WanPhraDate {
-  date: string; // YYYY-MM-DD (Gregorian)
-  label: string; // e.g., 'ขึ้น 15 ค่ำ', 'แรม 8 ค่ำ'
-}
-
-// Convert a Date to Julian day
-function toJulian(date: Date): number {
-  return date.getTime() / 86400000 + EPOCH;
-}
-
-// Calculate moon phase (0-1)
-function getMoonPhase(julian: number): number {
-  const phase = ((julian - 2451550.1) / LUNAR_MONTH) % 1;
-  return phase < 0 ? phase + 1 : phase;
-}
-
-// Get moon phase name in Thai
-function getMoonPhaseName(phase: number): { label: string; isWaxing: boolean } {
-  if (phase < 0.03 || phase > 0.97) return { label: 'ขึ้น 15 ค่ำ', isWaxing: false };
-  if (phase < 0.22) return { label: 'แรม 1 ค่ำ', isWaxing: false };
-  if (phase < 0.28) return { label: 'แรม 8 ค่ำ', isWaxing: false };
-  if (phase < 0.5) return { label: 'แรม 15 ค่ำ', isWaxing: false };
-  if (phase < 0.53) return { label: 'ขึ้น 1 ค่ำ', isWaxing: true };
-  if (phase < 0.72) return { label: 'ขึ้น 8 ค่ำ', isWaxing: true };
-  return { label: 'ขึ้น 15 ค่ำ', isWaxing: true };
-}
-
 /**
- * Get Buddhist holy days (วันพระ) for a specific month
+ * Get Buddhist holy days (วันพระ) for a specific month using server API.
  */
 export async function getWanPhraDates(year: number, month: number): Promise<WanPhraDate[]> {
-  const results: WanPhraDate[] = [];
-  const daysInMonth = new Date(year, month, 0).getDate();
-  
-  for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(year, month - 1, day);
-    const julian = toJulian(date);
-    const phase = getMoonPhase(julian);
-    const { label } = getMoonPhaseName(phase);
-    
-    // Only include significant days (1st, 8th, 15th waxing/waning)
-    if (label.includes('1') || label.includes('8') || label.includes('15')) {
-      results.push({
-        date: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
-        label
-      });
-    }
+  try {
+    const items = await api.get<WanPhraDate[]>(`/api/wanphra?year=${year}&month=${month}` as string, { auth: false });
+    return Array.isArray(items) ? items : [];
+  } catch (e) {
+    // Fallback to local precomputed data if available
+    const fallback = getWanPhraFallback(year, month);
+    return fallback.map(x => ({ date: x.date, label: x.label }));
   }
-  
-  return results;
 }
 
 /**
- * Get the next Buddhist holy day (วันพระ) from a given date
+ * Get the next Buddhist holy day (วันพระ) from a given date by checking
+ * current and next month via the server API.
  */
 export async function getNextWanPhra(fromDate: Date = new Date()): Promise<WanPhraDate | null> {
-  const year = fromDate.getFullYear();
-  const month = fromDate.getMonth() + 1;
-  const day = fromDate.getDate();
-  
-  // Check next 60 days for a holy day
-  for (let i = 0; i < 60; i++) {
-    const currentDate = new Date(year, month - 1, day + i);
-    const checkYear = currentDate.getFullYear();
-    const checkMonth = currentDate.getMonth() + 1;
-    const checkDay = currentDate.getDate();
-    
-    const julian = toJulian(currentDate);
-    const phase = getMoonPhase(julian);
-    const { label } = getMoonPhaseName(phase);
-    
-    // Check if it's a significant day
-    if (label.includes('8') || label.includes('15')) {
-      return {
-        date: `${checkYear}-${String(checkMonth).padStart(2, '0')}-${String(checkDay).padStart(2, '0')}`,
-        label
-      };
-    }
+  const y = fromDate.getFullYear();
+  const m = fromDate.getMonth() + 1;
+  const nextMonth = m === 12 ? 1 : m + 1;
+  const nextYear = m === 12 ? y + 1 : y;
+  const todayStr = formatDate(fromDate);
+
+  try {
+    const [thisM, nextM] = await Promise.all([
+      getWanPhraDates(y, m),
+      getWanPhraDates(nextYear, nextMonth),
+    ]);
+    const all = [...thisM, ...nextM];
+    const upcoming = all
+      .filter(d => d.date >= todayStr)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    return upcoming[0] || null;
+  } catch {
+    // Fallback via local dataset
+    const fallbackAll = [
+      ...getWanPhraFallback(y, m),
+      ...getWanPhraFallback(nextYear, nextMonth),
+    ].map(x => ({ date: x.date, label: x.label }));
+    const upcoming = fallbackAll
+      .filter(d => d.date >= todayStr)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    return upcoming[0] || null;
   }
-  
-  return null;
 }
 
 const THAI_HOLIDAYS: ThaiHoliday[] = [
@@ -137,6 +98,19 @@ export function getThaiHolidaysForMonth(year: number, month: number): Array<{ da
       date: `${year}-${holiday.date}`,
       name: holiday.name
     }));
+}
+
+/**
+ * Fetch Thai holidays for a specific month via server API with fallback to static list.
+ */
+export async function fetchThaiHolidaysForMonth(year: number, month: number): Promise<Array<{ date: string; name: string }>> {
+  try {
+    const items = await api.get<Array<{ date: string; name: string }>>(`/api/thai-holidays?year=${year}&month=${month}`, { auth: false });
+    if (Array.isArray(items)) return items;
+  } catch (e) {
+    // ignore and fallback
+  }
+  return getThaiHolidaysForMonth(year, month);
 }
 
 // Helper function to format date as YYYY-MM-DD

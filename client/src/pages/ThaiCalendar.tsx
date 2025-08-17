@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import TodayHighlightBanner from '@/components/TodayHighlightBanner';
-import { getThaiHolidaysForMonth, getWanPhraDates } from '@/lib/thai-calendar';
+import { fetchThaiHolidaysForMonth, getWanPhraDates } from '@/lib/thai-calendar';
 import { formatThaiDateISO, formatThaiMonthYear, pad, toISO } from '@/lib/date-th';
 import { Helmet } from 'react-helmet-async';
 
@@ -23,7 +23,7 @@ const ThaiCalendar: React.FC = () => {
         setLoading(true);
         const [wps, hls] = await Promise.all([
           getWanPhraDates(year, month),
-          Promise.resolve(getThaiHolidaysForMonth(year, month))
+          fetchThaiHolidaysForMonth(year, month)
         ]);
         if (!mounted) return;
         setWanPhra(wps.map(w => ({ date: w.date, label: w.label })));

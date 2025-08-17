@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { getThaiHolidaysForMonth, getNextWanPhra, getWanPhraDates } from '@/lib/thai-calendar';
+import { fetchThaiHolidaysForMonth, getNextWanPhra, getWanPhraDates } from '@/lib/thai-calendar';
 
 interface NextItem { date: string; label: string; }
 
@@ -30,7 +30,7 @@ const ThaiHolyDaysWidget: React.FC = () => {
         const [next, list, hlist] = await Promise.all([
           getNextWanPhra(now),
           getWanPhraDates(y, m),
-          Promise.resolve(getThaiHolidaysForMonth(y, m))
+          fetchThaiHolidaysForMonth(y, m)
         ]);
         if (!mounted) return;
         setWanPhraNext(next ? { date: next.date, label: next.label } : null);

@@ -1,16 +1,17 @@
 import { db } from '../db';
-import { auditLogs } from '../db/schema';
-import { eq, and, gte, lte, sql } from 'drizzle-orm';
-import type { UserRole } from '@shared/schema';
+import { auditLogs } from '@shared/schema';
+import { eq, and, gte, lte, sql, desc } from 'drizzle-orm';
 
 export interface AuditLogEntry {
-  userId: number;
-  action: string;
-  entityType: string;
-  entityId?: string | number;
-  details?: Record<string, any>;
-  ipAddress?: string;
-  userAgent?: string;
+  method: string;
+  path: string;
+  userId?: number | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  bodySummary?: string | null;
+  statusCode?: number | null;
+  latencyMs?: number | null;
+  createdAt?: Date; // optional override (defaults to DB now())
 }
 
 export class AuditLogService {
@@ -27,120 +28,98 @@ export class AuditLogService {
 
   async log(entry: AuditLogEntry): Promise<void> {
     try {
-      await db.insert(auditLogs).values({
-        userId: entry.userId,
-        action: entry.action,
-        entityType: entry.entityType,
-        entityId: entry.entityId?.toString(),
-        details: entry.details || {},
-        ipAddress: entry.ipAddress || null,
-        userAgent: entry.userAgent || null,
-        timestamp: new Date()
-      });
+      const values: any = {
+        method: entry.method,
+        path: entry.path,
+        userId: entry.userId ?? null,
+        ipAddress: entry.ipAddress ?? null,
+        userAgent: entry.userAgent ?? null,
+        bodySummary: entry.bodySummary ?? null,
+        statusCode: entry.statusCode ?? null,
+        latencyMs: entry.latencyMs ?? null,
+      };
+      if (entry.createdAt) values.createdAt = entry.createdAt;
+      await db.insert(auditLogs).values(values as any);
     } catch (error) {
       console.error('Failed to log audit entry:', error);
     }
   }
 
   async getLogs({
-    startDate,
-    endDate,
-    action,
-    entityType,
+    from,
+    to,
+    method,
+    path,
     userId,
-    role,
+    statusCode,
     page = 1,
-    pageSize = 20
+    pageSize = 50,
   }: {
-    startDate?: Date;
-    endDate?: Date;
-    action?: string;
-    entityType?: string;
+    from?: Date;
+    to?: Date;
+    method?: string;
+    path?: string;
     userId?: number;
-    role?: UserRole;
+    statusCode?: number;
     page?: number;
     pageSize?: number;
   }) {
     const offset = (page - 1) * pageSize;
-    
-    const whereConditions = [];
-    
-    if (startDate) whereConditions.push(gte(auditLogs.timestamp, startDate));
-    if (endDate) {
-      const nextDay = new Date(endDate);
-      nextDay.setDate(endDate.getDate() + 1);
-      whereConditions.push(lt(auditLogs.timestamp, nextDay));
-    }
-    if (action) whereConditions.push(eq(auditLogs.action, action));
-    if (entityType) whereConditions.push(eq(auditLogs.entityType, entityType));
-    if (userId) whereConditions.push(eq(auditLogs.userId, userId));
-    
-    // Add role filter if needed (requires joining with users table)
-    if (role) {
-      // This assumes you have a users table with a role column
-      whereConditions.push(sql`${auditLogs.user}->>'role' = ${role}`);
-    }
 
-    const [logs, total] = await Promise.all([
-      db.query.auditLogs.findMany({
-        where: whereConditions.length > 0 ? and(...whereConditions) : undefined,
-        orderBy: (logs, { desc }) => [desc(logs.timestamp)],
-        limit: pageSize,
-        offset,
-        with: {
-          user: {
-            columns: {
-              username: true,
-              role: true,
-              email: true
-            }
-          }
-        }
-      }),
-      db.select({ count: sql<number>`count(*)` })
-        .from(auditLogs)
-        .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
-        .then(res => Number(res[0].count) || 0)
-    ]);
+    const whereClauses: any[] = [];
+    if (from) whereClauses.push(gte(auditLogs.createdAt as any, from));
+    if (to) whereClauses.push(lte(auditLogs.createdAt as any, to));
+    if (method) whereClauses.push(eq(auditLogs.method as any, method));
+    if (typeof userId === 'number') whereClauses.push(eq(auditLogs.userId as any, userId));
+    if (typeof statusCode === 'number') whereClauses.push(eq(auditLogs.statusCode as any, statusCode));
+    if (path) whereClauses.push(sql`path ILIKE '%' || ${String(path)} || '%'`);
+
+    const whereExpr = whereClauses.length ? and(...whereClauses) : undefined;
+
+    const items = await db
+      .select()
+      .from(auditLogs)
+      .where(whereExpr as any)
+      .orderBy(desc(auditLogs.createdAt))
+      .limit(pageSize as any)
+      .offset(offset as any);
+
+    const [{ cnt }] = await db
+      .select({ cnt: sql<number>`cast(count(*) as int)` })
+      .from(auditLogs)
+      .where(whereExpr as any);
+    const total = Number(cnt || 0);
 
     return {
-      data: logs,
+      data: items,
       pagination: {
         total,
         page,
         pageSize,
-        totalPages: Math.ceil(total / pageSize)
-      }
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      },
     };
   }
 
   async exportLogs(format: 'json' | 'csv' = 'json') {
-    const logs = await db.query.auditLogs.findMany({
-      orderBy: (logs, { desc }) => [desc(logs.timestamp)],
-      with: {
-        user: {
-          columns: {
-            username: true,
-            email: true,
-            role: true
-          }
-        }
-      },
-      limit: 10000 // Limit to prevent memory issues
-    });
+    const logs = await db
+      .select()
+      .from(auditLogs)
+      .orderBy(desc(auditLogs.createdAt))
+      .limit(10000 as any); // Limit to prevent memory issues
 
     if (format === 'csv') {
       const { Parser } = await import('json2csv');
       const fields = [
-        'timestamp',
-        'action',
-        'entityType',
-        'entityId',
-        'user.username',
-        'user.role',
+        'createdAt',
+        'method',
+        'path',
+        'userId',
+        'statusCode',
+        'latencyMs',
         'ipAddress',
         'userAgent',
-        'details'
+        'bodySummary',
       ];
       
       const json2csvParser = new Parser({ fields });
@@ -152,3 +131,4 @@ export class AuditLogService {
 }
 
 export const auditLogService = AuditLogService.getInstance();
+

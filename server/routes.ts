@@ -67,6 +67,8 @@ const individualNewsCache = new NodeCache({ stdTTL: 1800, checkperiod: 120 }); /
 const tmdForecastCache = new NodeCache({ stdTTL: 120, checkperiod: 60 }); // 2 minutes
 // Cache for Wan Phra ICS
 const wanPhraCache = new NodeCache({ stdTTL: 12 * 60 * 60, checkperiod: 60 * 60 }); // 12 hours
+// Cache for Thai Holidays (MyHora JSON)
+const thaiHolidayCache = new NodeCache({ stdTTL: 12 * 60 * 60, checkperiod: 60 * 60 }); // 12 hours
 
 // Rate limiting configuration
 const generalLimiter = rateLimit({
@@ -151,6 +153,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // best-effort only
       }
     });
+    return next();
+  });
 
   // Wan Phra API from Google Calendar ICS (public)
   app.get('/api/wanphra', async (req: Request, res: Response) => {
@@ -158,45 +162,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const year = parseInt(String(req.query.year || ''));
       const month = parseInt(String(req.query.month || ''));
       if (!year || !month || month < 1 || month > 12) return res.status(400).json({ message: 'year and month are required' });
+      // Use MyHora JSON source for Wan Phra dates
+      const myHoraUrl = process.env.WANPHRA_MYHORA_URL || 'https://www.myhora.com/calendar/ical/buddha.aspx?latest.json';
+      const cacheKey = `wanphra:myhora:${myHoraUrl}`;
 
-      const icsEnv = process.env.WANPHRA_ICS_URL;
-      const calId = process.env.WANPHRA_GOOGLE_CAL_ID || 'n7kthnfuc8uldm955sfkpjt244@group.calendar.google.com';
-      const icsUrl = icsEnv || `https://www.google.com/calendar/ical/${encodeURIComponent(calId)}/public/basic.ics`;
-
-      const cacheKey = `wanphra:ics:${icsUrl}`;
-      let icsText = wanPhraCache.get<string>(cacheKey);
-      if (!icsText) {
-        const resp = await fetch(icsUrl, { headers: { 'Accept': 'text/calendar' } as any });
-        if (!resp.ok) return res.status(502).json({ message: 'Failed to fetch ICS' });
-        icsText = await resp.text();
-        wanPhraCache.set(cacheKey, icsText);
+      let jsonText = wanPhraCache.get<string>(cacheKey);
+      if (!jsonText) {
+        const resp = await fetch(myHoraUrl, { headers: { 'Accept': 'application/json' } as any });
+        if (!resp.ok) return res.status(502).json({ message: 'Failed to fetch Wan Phra JSON' });
+        jsonText = await resp.text();
+        // Cache raw text to avoid JSON.parse cost repeatedly
+        wanPhraCache.set(cacheKey, jsonText);
       }
 
-      // Unfold lines per RFC 5545 (CRLF followed by space/tab indicates continuation)
-      const unfolded = icsText.replace(/\r?\n[ \t]/g, '');
+      let data: any;
+      try {
+        data = JSON.parse(jsonText);
+      } catch {
+        return res.status(502).json({ message: 'Invalid JSON from upstream' });
+      }
 
-      // Minimal ICS parse: split VEVENTs
+      const cal = data && data.VCALENDAR && Array.isArray(data.VCALENDAR) ? data.VCALENDAR[0] : null;
+      const vevents: any[] = cal && Array.isArray(cal.VEVENT) ? cal.VEVENT : [];
+
       const events: Array<{ date: string; summary: string }> = [];
-      const chunks = unfolded.split(/BEGIN:VEVENT/).slice(1);
-      for (const ch of chunks) {
-        const endIdx = ch.indexOf('END:VEVENT');
-        const body = endIdx >= 0 ? ch.slice(0, endIdx) : ch;
-        const dtstartMatch = body.match(/DTSTART(?:;[^:]+)?:([0-9]{8})/);
-        const summaryMatch = body.match(/SUMMARY(?:;[^:]+)?:([^\r\n]+)/);
-        if (dtstartMatch) {
-          const y = dtstartMatch[1].slice(0,4);
-          const m = dtstartMatch[1].slice(4,6);
-          const d = dtstartMatch[1].slice(6,8);
-          const date = `${y}-${m}-${d}`;
-          const summary = summaryMatch ? summaryMatch[1].trim() : '';
-          events.push({ date, summary });
-        }
+      for (const ev of vevents) {
+        // MyHora uses "DTSTART;VALUE=DATE": "YYYYMMDD"
+        const dtRaw = ev['DTSTART;VALUE=DATE'] || ev.DTSTART;
+        if (typeof dtRaw !== 'string' || !/^\d{8}$/.test(dtRaw)) continue;
+        const y = dtRaw.slice(0, 4);
+        const m = dtRaw.slice(4, 6);
+        const d = dtRaw.slice(6, 8);
+        const date = `${y}-${m}-${d}`;
+        const summary = typeof ev.SUMMARY === 'string' ? ev.SUMMARY.trim() : (typeof ev.DESCRIPTION === 'string' ? ev.DESCRIPTION.trim() : 'วันพระ');
+        events.push({ date, summary });
       }
 
       // Filter for requested month
       const mm = String(month).padStart(2, '0');
       const yy = String(year);
-      const items = events.filter(e => e.date.startsWith(`${yy}-${mm}-`))
+      const items = events
+        .filter(e => e.date.startsWith(`${yy}-${mm}-`))
         .map(e => ({ date: e.date, label: e.summary }));
 
       res.setHeader('Cache-Control', 'public, max-age=3600, stale-while-revalidate=3600');
@@ -206,8 +212,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: 'Failed to load Wan Phra dates' });
     }
   });
-    next();
+  
+  // Thai Holidays API from MyHora JSON (public)
+  app.get('/api/thai-holidays', async (req: Request, res: Response) => {
+    try {
+      const year = parseInt(String(req.query.year || ''));
+      const month = parseInt(String(req.query.month || ''));
+      if (!year || !month || month < 1 || month > 12) return res.status(400).json({ message: 'year and month are required' });
+
+      const myHoraUrl = process.env.THAI_HOLIDAY_MYHORA_URL || 'https://www.myhora.com/calendar/ical/holiday.aspx?latest.json';
+      const cacheKey = `thaiholidays:myhora:${myHoraUrl}`;
+
+      let jsonText = thaiHolidayCache.get<string>(cacheKey);
+      if (!jsonText) {
+        const resp = await fetch(myHoraUrl, { headers: { 'Accept': 'application/json' } as any });
+        if (!resp.ok) return res.status(502).json({ message: 'Failed to fetch Thai Holidays JSON' });
+        jsonText = await resp.text();
+        thaiHolidayCache.set(cacheKey, jsonText);
+      }
+
+      let data: any;
+      try {
+        data = JSON.parse(jsonText);
+      } catch {
+        return res.status(502).json({ message: 'Invalid JSON from upstream' });
+      }
+
+      const cal = data && data.VCALENDAR && Array.isArray(data.VCALENDAR) ? data.VCALENDAR[0] : null;
+      const vevents: any[] = cal && Array.isArray(cal.VEVENT) ? cal.VEVENT : [];
+
+      const events: Array<{ date: string; name: string }> = [];
+      for (const ev of vevents) {
+        const dtRaw = ev['DTSTART;VALUE=DATE'] || ev.DTSTART;
+        if (typeof dtRaw !== 'string' || !/^[0-9]{8}$/.test(dtRaw)) continue;
+        const y = dtRaw.slice(0, 4);
+        const m = dtRaw.slice(4, 6);
+        const d = dtRaw.slice(6, 8);
+        const date = `${y}-${m}-${d}`;
+        const name = typeof ev.SUMMARY === 'string' ? ev.SUMMARY.trim() : (typeof ev.DESCRIPTION === 'string' ? ev.DESCRIPTION.trim() : 'วันหยุด');
+        events.push({ date, name });
+      }
+
+      const mm = String(month).padStart(2, '0');
+      const yy = String(year);
+      const items = events.filter(e => e.date.startsWith(`${yy}-${mm}-`));
+
+      res.setHeader('Cache-Control', 'public, max-age=3600, stale-while-revalidate=3600');
+      return res.json(items);
+    } catch (e) {
+      console.error('thai-holidays endpoint error', e);
+      return res.status(500).json({ message: 'Failed to load Thai holiday dates' });
+    }
   });
+  
 
   // Server-rendered share page for social crawlers (Open Graph/Twitter Cards)
   // Example: https://your-site.com/share/123
