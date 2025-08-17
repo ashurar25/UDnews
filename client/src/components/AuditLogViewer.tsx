@@ -122,7 +122,6 @@ export default function AuditLogViewer() {
   };
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const isFilterActive = Boolean(method || pathQ || userId || statusCode || from || to);
 
   // Load filters from URL once
   React.useEffect(() => {
@@ -205,6 +204,8 @@ export default function AuditLogViewer() {
     setTo('');
     setDateRange({ from: undefined, to: undefined });
   };
+
+  const isFilterActive = Boolean(method || pathQ || userId || statusCode || from || to);
 
   return (
     <Card className="w-full">
