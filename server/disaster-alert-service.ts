@@ -80,14 +80,13 @@ class DisasterAlertService {
       const lat = process.env.TMD_DEFAULT_LAT || '17.413';
       const lon = process.env.TMD_DEFAULT_LON || '102.787';
 
-      // Attempt common TMD NWP API pattern for forecast by location. Adjust if needed.
+      // Use stable daily/hourly endpoints instead of deprecated location/city paths.
       const urlCandidates = [
-        // Preferred v1 API (as per example)
-        `https://data.tmd.go.th/nwpapiv1/forecast/location/city?lat=${lat}&lon=${lon}`,
-        `https://data.tmd.go.th/nwpapiv1/forecast/location?lat=${lat}&lon=${lon}`,
-        // Legacy paths kept as fallback
-        `https://data.tmd.go.th/nwpapi/forecast/location/city?lat=${lat}&lon=${lon}`,
-        `https://data.tmd.go.th/nwpapi/forecast/location?lat=${lat}&lon=${lon}`
+        `https://data.tmd.go.th/nwpapiv1/forecast/hourly?lat=${lat}&lon=${lon}`,
+        `https://data.tmd.go.th/nwpapiv1/forecast/daily?lat=${lat}&lon=${lon}`,
+        // Legacy fallbacks (in case v1 path changes)
+        `https://data.tmd.go.th/nwpapi/forecast/hourly?lat=${lat}&lon=${lon}`,
+        `https://data.tmd.go.th/nwpapi/forecast/daily?lat=${lat}&lon=${lon}`
       ];
 
       let fetched = false;
@@ -236,13 +235,28 @@ class DisasterAlertService {
       console.warn('TMD weather parsing failed, fallback to simulation');
       await this.simulateWeatherCheck();
     }
-  }
-
   // ตรวจสอบแผ่นดินไหวจาก USGS
   async checkUSGSEarthquakes() {
     try {
-      const response = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson');
-      if (!response.ok) return;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      let response: Response | null = null;
+      try {
+        response = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson', { signal: controller.signal } as any);
+      } catch (e) {
+        // Retry once on network/timeout
+        if ((e as any).name === 'AbortError') {
+          console.warn('USGS request aborted (timeout), retrying once...');
+        } else {
+          console.warn('USGS request error, retrying once...', e);
+        }
+        const controller2 = new AbortController();
+        setTimeout(() => controller2.abort(), 8000);
+        response = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson', { signal: controller2.signal } as any);
+      } finally {
+        clearTimeout(timeout);
+      }
+      if (!response || !response.ok) return;
 
       const data = await response.json();
 
