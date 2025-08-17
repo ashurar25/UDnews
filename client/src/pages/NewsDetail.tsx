@@ -197,6 +197,11 @@ export default function NewsDetail() {
           url={toAbsoluteUrl(`/news/${news.id}`) || `/news/${news.id}`}
           type="article"
           siteName="UD News Update"
+          locale="th_TH"
+          imageWidth="1200"
+          imageHeight="630"
+          articlePublishedTime={new Date(news.createdAt).toISOString()}
+          articleModifiedTime={new Date(news.updatedAt || news.createdAt).toISOString()}
           jsonLd={{
             '@context': 'https://schema.org',
             '@type': 'NewsArticle',

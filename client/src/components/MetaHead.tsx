@@ -10,6 +10,11 @@ interface MetaHeadProps {
   canonical?: string;
   noindex?: boolean;
   jsonLd?: Record<string, any>;
+  locale?: string; // e.g., 'th_TH'
+  imageWidth?: string;
+  imageHeight?: string;
+  articlePublishedTime?: string; // ISO string
+  articleModifiedTime?: string; // ISO string
 }
 
 function upsertTag(selector: string, create: () => HTMLElement, set: (el: HTMLElement) => void) {
@@ -31,6 +36,11 @@ export default function MetaHead({
   canonical,
   noindex,
   jsonLd,
+  locale,
+  imageWidth,
+  imageHeight,
+  articlePublishedTime,
+  articleModifiedTime,
 }: MetaHeadProps) {
   useEffect(() => {
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -71,6 +81,7 @@ export default function MetaHead({
       'og:url': absUrl,
       'og:type': type,
       'og:site_name': siteName,
+      'og:locale': locale,
     };
     Object.entries(og).forEach(([property, content]) => {
       if (!content) return;
@@ -80,6 +91,36 @@ export default function MetaHead({
         return m;
       }, (m) => m.setAttribute('content', content));
     });
+
+    if (absImage && imageWidth) {
+      upsertTag('meta[property="og:image:width"]', () => {
+        const m = document.createElement('meta');
+        m.setAttribute('property', 'og:image:width');
+        return m;
+      }, (m) => m.setAttribute('content', imageWidth));
+    }
+    if (absImage && imageHeight) {
+      upsertTag('meta[property="og:image:height"]', () => {
+        const m = document.createElement('meta');
+        m.setAttribute('property', 'og:image:height');
+        return m;
+      }, (m) => m.setAttribute('content', imageHeight));
+    }
+
+    if (type === 'article') {
+      const articleTags: Record<string, string | undefined> = {
+        'article:published_time': articlePublishedTime,
+        'article:modified_time': articleModifiedTime,
+      };
+      Object.entries(articleTags).forEach(([property, content]) => {
+        if (!content) return;
+        upsertTag(`meta[property="${property}"]`, () => {
+          const m = document.createElement('meta');
+          m.setAttribute('property', property);
+          return m;
+        }, (m) => m.setAttribute('content', content));
+      });
+    }
 
     // Twitter
     const tw: Record<string, string | undefined> = {
@@ -128,7 +169,7 @@ export default function MetaHead({
       } catch {}
       script.text = JSON.stringify(schemaObj);
     }
-  }, [title, description, image, url, type, siteName, canonical, noindex, jsonLd]);
+  }, [title, description, image, url, type, siteName, canonical, noindex, jsonLd, locale, imageWidth, imageHeight, articlePublishedTime, articleModifiedTime]);
 
   return null;
 }

@@ -86,24 +86,35 @@ const ThaiCalendar: React.FC = () => {
         <meta name="twitter:description" content={`ดูวันพระและวันสำคัญของไทย ประจำ${headerText}`} />
         <meta name="twitter:image" content="/og-calendar.svg" />
         {(() => {
-          // Build JSON-LD Events for current month (holidays + Wan Phra)
-          const events = [
-            ...wanPhra.map(w => ({
-              '@type': 'Event',
-              name: `วันพระ (${w.label})`,
-              startDate: w.date,
-              eventAttendanceMode: 'https://schema.org/OnlineEventAttendanceMode',
-              location: { '@type': 'Place', name: 'Thailand' }
-            })),
-            ...holidays.map(h => ({
-              '@type': 'Event',
-              name: h.name,
-              startDate: h.date,
-              eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-              location: { '@type': 'Place', name: 'Thailand' }
-            }))
-          ];
-          const graph = { '@context': 'https://schema.org', '@graph': events.slice(0, 20) };
+          // Build JSON-LD Events for upcoming dates in current month (limit 20)
+          const todayIso = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+          const toStartOfDayIso = (d: string) => `${d}T00:00:00+07:00`;
+          const upcoming = [
+            ...wanPhra
+              .filter(w => w.date >= todayIso)
+              .map(w => ({
+                '@type': 'Event',
+                name: `วันพระ (${w.label})`,
+                startDate: toStartOfDayIso(w.date),
+                eventStatus: 'https://schema.org/EventScheduled',
+                eventAttendanceMode: 'https://schema.org/OnlineEventAttendanceMode',
+                location: { '@type': 'Place', name: 'Thailand' }
+              })),
+            ...holidays
+              .filter(h => h.date >= todayIso)
+              .map(h => ({
+                '@type': 'Event',
+                name: h.name,
+                startDate: toStartOfDayIso(h.date),
+                eventStatus: 'https://schema.org/EventScheduled',
+                eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+                location: { '@type': 'Place', name: 'Thailand' }
+              }))
+          ]
+          .sort((a, b) => (a.startDate as string).localeCompare(b.startDate as string))
+          .slice(0, 20);
+
+          const graph = { '@context': 'https://schema.org', '@graph': upcoming };
           return (
             <script type="application/ld+json">
               {JSON.stringify(graph)}

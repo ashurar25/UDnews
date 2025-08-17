@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Key, Eye, EyeOff, Lock, ShieldCheck, Loader2, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
+import MetaHead from "@/components/MetaHead";
 
 const Login = () => {
   const [location, setLocation] = useLocation();
@@ -62,6 +63,16 @@ const Login = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
+      <MetaHead
+        title="เข้าสู่ระบบแอดมิน | UD News Update"
+        description="เข้าสู่ระบบสำหรับผู้ดูแล UD News Update"
+        url="/login"
+        canonical="https://udnewsupdate.sbs/login"
+        noindex
+        siteName="UD News Update"
+        type="website"
+        locale="th_TH"
+      />
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-100 dark:from-gray-950 dark:via-gray-900 dark:to-amber-950" />
       <div className="absolute inset-0 opacity-40 dark:opacity-30" aria-hidden>

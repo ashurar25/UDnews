@@ -6,7 +6,7 @@ import NewsCard from "@/components/NewsCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-
+import MetaHead from "@/components/MetaHead";
 
 interface NewsItem {
   id: number;
@@ -94,6 +94,7 @@ const CategoryNews = () => {
   }));
 
   const categoryTitle = category ? categoryTitles[category] || 'ข่าวทั่วไป' : 'ข่าว';
+  const absPath = `/category/${category ?? ''}`;
 
   if (isLoading) {
     return (
@@ -113,6 +114,16 @@ const CategoryNews = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <MetaHead
+        title={`${categoryTitle} | UD News Update`}
+        description={`รวมข่าวหมวด ${categoryTitle} ข่าวล่าสุดจากอุดรธานี`}
+        image="/og-article-default.svg"
+        url={absPath}
+        canonical={`https://udnewsupdate.sbs${absPath}`}
+        siteName="UD News Update"
+        type="website"
+        locale="th_TH"
+      />
       <Header />
       
       <main className="container mx-auto px-4 py-8">

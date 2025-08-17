@@ -14,6 +14,7 @@ try {
 } catch {}
 
 import express, { type Request, Response, NextFunction } from "express";
+import compression from 'compression';
 import { db } from './db';
 import { sql } from 'drizzle-orm';
 import { registerRoutes } from "./routes";
@@ -58,13 +59,23 @@ app.use((req, res, next) => {
   next();
 });
 
+// Enable gzip compression (safe default)
+app.use(compression({ threshold: 1024 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Serve uploaded/optimized images
 app.use(
   "/uploads",
-  express.static(path.resolve(import.meta.dirname, "./public/uploads"))
+  express.static(path.resolve(import.meta.dirname, "./public/uploads"), {
+    maxAge: '7d',
+    immutable: false,
+    setHeaders: (res, filePath) => {
+      // Allow CDN/proxy caching
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+    }
+  })
 );
 
 // Dynamic sitemap.xml

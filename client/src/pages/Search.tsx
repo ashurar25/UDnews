@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Filter, Calendar } from "lucide-react";
 import { NewsItem, ProcessedNewsItem } from "@/types/news";
+import MetaHead from "@/components/MetaHead";
 
 const SearchPage = () => {
   const [location] = useLocation();
@@ -120,6 +121,16 @@ const SearchPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <MetaHead
+        title={searchQuery ? `ค้นหา: ${searchQuery} | UD News Update` : 'ค้นหาข่าว | UD News Update'}
+        description={searchQuery ? `ผลการค้นหาสำหรับ "${searchQuery}"` : 'ค้นหาข่าวล่าสุดจาก UD News Update'}
+        url={searchQuery ? `/search?q=${encodeURIComponent(searchQuery)}` : '/search'}
+        canonical={`https://udnewsupdate.sbs/search`}
+        noindex
+        siteName="UD News Update"
+        type="website"
+        locale="th_TH"
+      />
       <Header />
       
       <main className="container mx-auto px-4 py-8">

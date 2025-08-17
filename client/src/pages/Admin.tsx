@@ -30,6 +30,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useToast } from '@/hooks/use-toast';
+import MetaHead from '@/components/MetaHead';
 
 // Import actual components with error handling
 const NewsManager = lazy(() => import('@/components/NewsManager').catch(() => ({ default: () => <PlaceholderComponent title="จัดการข่าว" /> })));
@@ -160,6 +161,16 @@ const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <MetaHead
+        title="เข้าสู่ระบบผู้ดูแล | UD News Update"
+        description="หน้าเข้าสู่ระบบสำหรับผู้ดูแลระบบ UD News Update"
+        url="/admin/login"
+        canonical="https://udnewsupdate.sbs/admin/login"
+        noindex
+        siteName="UD News Update"
+        type="website"
+        locale="th_TH"
+      />
       <Card className="w-full max-w-md backdrop-blur-md bg-white/70 dark:bg-zinc-900/40 border border-white/30 dark:border-white/10 shadow-xl">
         <CardHeader className="text-center bg-gradient-to-r from-orange-50/70 to-red-50/60 dark:from-orange-900/10 dark:to-red-900/10 rounded-t-xl">
           <CardTitle className="text-2xl font-bold font-kanit text-orange-800">
@@ -506,6 +517,16 @@ function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      <MetaHead
+        title="ระบบจัดการ | UD News Update"
+        description="แผงควบคุมผู้ดูแลระบบ UD News Update"
+        url="/admin"
+        canonical="https://udnewsupdate.sbs/admin"
+        noindex
+        siteName="UD News Update"
+        type="website"
+        locale="th_TH"
+      />
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div 
