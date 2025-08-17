@@ -34,19 +34,19 @@ const getWeatherGradient = (condition: string) => {
   const isDaytime = new Date().getHours() >= 6 && new Date().getHours() < 18;
   
   if (condition.includes('ฝน') || condition.includes('พายุ')) {
-    return 'from-blue-600/80 to-slate-700/90';
+    return 'from-blue-400/80 to-blue-200/90';
   } else if (condition.includes('เมฆ')) {
     return isDaytime 
-      ? 'from-blue-400/80 to-blue-600/80' 
-      : 'from-slate-600/90 to-blue-800/90';
+      ? 'from-blue-200/90 to-blue-300/90' 
+      : 'from-blue-100/90 to-blue-200/90';
   } else if (condition.includes('แดด') || condition.includes('แจ่มใส')) {
     return isDaytime 
-      ? 'from-amber-400/90 to-orange-500/90' 
-      : 'from-indigo-700/90 to-blue-900/90';
+      ? 'from-yellow-200/90 to-orange-300/90' 
+      : 'from-blue-100/90 to-blue-200/90';
   } else {
     return isDaytime 
-      ? 'from-blue-400/80 to-cyan-500/90' 
-      : 'from-blue-800/90 to-indigo-900/90';
+      ? 'from-blue-200/90 to-cyan-200/90' 
+      : 'from-blue-100/90 to-blue-200/90';
   }
 };
 

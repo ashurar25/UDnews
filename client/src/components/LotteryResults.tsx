@@ -1,5 +1,7 @@
 import React from 'react';
 import { api } from '@/lib/api';
+import { FaTrophy, FaMedal, FaAward, FaStar } from 'react-icons/fa';
+import { GiLaurelCrown, GiTrophyCup } from 'react-icons/gi';
 
 type LotteryResults = {
   date?: string;
@@ -16,18 +18,29 @@ type LotteryResults = {
   fetchedAt: string;
 };
 
-function NumberPill({ children }: { children: React.ReactNode }) {
+function NumberPill({ children, highlight = false }: { children: React.ReactNode, highlight?: boolean }) {
   return (
-    <span
-      className="inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-sm font-mono
-                 bg-gradient-to-br from-white/90 via-orange-50/80 to-white/60
-                 dark:from-gray-700 dark:via-gray-700/80 dark:to-gray-600/70
-                 text-orange-800 dark:text-orange-200
-                 border border-white/60 dark:border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.08)]
-                 backdrop-blur-sm"
-    >
-      {children}
-    </span>
+    <div className="relative group">
+      <div className={`
+        absolute -inset-0.5 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-lg 
+        ${highlight ? 'opacity-100' : 'opacity-0 group-hover:opacity-60'} 
+        blur transition duration-200 group-hover:duration-200`}
+      />
+      <span
+        className={`
+          relative flex items-center justify-center rounded-lg px-4 py-2 text-sm font-mono font-bold
+          ${highlight 
+            ? 'bg-gradient-to-br from-yellow-100 to-amber-50 text-amber-800 text-base' 
+            : 'bg-white/95 text-amber-900'}
+          border border-amber-200 shadow-lg shadow-amber-100/50
+          transition-all duration-200 group-hover:scale-105`}
+      >
+        {children}
+        {highlight && (
+          <FaStar className="ml-1.5 text-amber-400" />
+        )}
+      </span>
+    </div>
   );
 }
 
@@ -118,70 +131,129 @@ export default function LotteryResults({ hideHeaderTitle = false }: { hideHeader
 
   return (
     <div className="w-full">
-      {/* Single glossy hero card */}
-      <div className="relative overflow-hidden rounded-2xl shadow-xl border border-white/20 dark:border-white/10
-                      bg-gradient-to-br from-orange-500 via-amber-400 to-rose-400">
-        {/* Decorative overlays */}
-        <div className="absolute inset-0 opacity-25 mix-blend-overlay bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.6),transparent_60%)]" />
-        <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-white/20 blur-2xl" />
+      {/* Main card with elegant frame */}
+      <div className="relative overflow-hidden rounded-2xl shadow-2xl border-2 border-amber-300/30
+          bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500">
+        
+        {/* Decorative elements */}
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9zdmc+')] opacity-30" />
+        <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-gradient-to-br from-amber-300/20 to-rose-300/20 blur-3xl" />
+        <div className="absolute -bottom-24 -left-24 w-64 h-64 rounded-full bg-gradient-to-tr from-yellow-300/20 to-orange-300/20 blur-3xl" />
+        
+        {/* Corner decorations */}
+        <div className="absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 border-amber-300/50 rounded-tl-2xl" />
+        <div className="absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 border-amber-300/50 rounded-tr-2xl" />
+        <div className="absolute bottom-0 left-0 w-12 h-12 border-b-4 border-l-4 border-amber-300/50 rounded-bl-2xl" />
+        <div className="absolute bottom-0 right-0 w-12 h-12 border-b-4 border-r-4 border-amber-300/50 rounded-br-2xl" />
 
         <div className="relative p-6 sm:p-8">
-          {/* Header row */}
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-            <div>
-              <div className="text-white/90 font-sarabun text-sm">
+          {/* Header with trophy icon */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <GiTrophyCup className="text-amber-200 text-2xl" />
+              <span className="text-white/90 font-sarabun text-sm">
                 {loading ? 'กำลังโหลด…' : (error ? <span className="text-white">{error}</span> : (data?.date || ''))}
-              </div>
-              {!hideHeaderTitle && (
-                <>
-                  <h3 className="mt-1 text-3xl sm:text-4xl font-extrabold font-kanit text-white drop-shadow">
-                    ผลสลากกินแบ่งรัฐบาล
-                  </h3>
-                  <div className="mt-1 text-white/90 font-sarabun">รางวัลที่ 1</div>
-                </>
-              )}
-              {hideHeaderTitle && (
-                <div className="mt-1 text-white/90 font-sarabun">รางวัลที่ 1</div>
-              )}
+              </span>
             </div>
-            <div className="text-4xl sm:text-6xl font-black font-mono tracking-widest text-white drop-shadow-[0_6px_20px_rgba(0,0,0,0.25)]">
-              {first || '— — — — — —'}
+            {usingFallback && !error && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white border border-amber-200/30">
+                ข้อมูลสำรอง
+              </span>
+            )}
+          </div>
+
+          {/* Main title */}
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mt-4">
+            <div>
+              {!hideHeaderTitle && (
+                <h2 className="mt-1 text-3xl sm:text-4xl font-extrabold font-kanit text-white drop-shadow-lg">
+                  ผลสลากกินแบ่งรัฐบาล
+                </h2>
+              )}
+              <div className="flex items-center mt-2">
+                <FaAward className="text-amber-200 mr-2" />
+                <span className="text-amber-100 font-sarabun">รางวัลที่ 1</span>
+              </div>
+            </div>
+            
+            {/* First prize number with shine effect */}
+            <div className="relative">
+              <div className="absolute -inset-1 bg-gradient-to-r from-yellow-300 to-amber-400 rounded-lg blur opacity-30 group-hover:opacity-60 transition duration-200"></div>
+              <div className="relative text-4xl sm:text-6xl font-black font-mono tracking-widest text-white">
+                {first ? (
+                  <div className="flex items-center">
+                    <NumberPill highlight>{first}</NumberPill>
+                  </div>
+                ) : (
+                  <div className="text-white/70">— — — — — —</div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Divider glass panel */}
-          <div className="mt-6 rounded-xl bg-white/20 backdrop-blur-md border border-white/30 p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Prize numbers grid */}
+          <div className="mt-8 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 p-5 shadow-inner">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               {/* Front 3 */}
               <div>
-                <div className="text-white/90 font-sarabun">เลขหน้า 3 ตัว</div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {front3.length ? front3.map((n, i) => <NumberPill key={i}>{n}</NumberPill>) : <span className="text-white/70">-</span>}
+                <div className="flex items-center text-amber-100 font-sarabun mb-2">
+                  <FaMedal className="text-amber-300 mr-2" />
+                  <span>เลขหน้า 3 ตัว</span>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {front3.length ? (
+                    front3.map((n, i) => <NumberPill key={i}>{n}</NumberPill>)
+                  ) : (
+                    <span className="text-amber-100/70">-</span>
+                  )}
                 </div>
               </div>
+              
               {/* Last 3 */}
               <div>
-                <div className="text-white/90 font-sarabun">เลขท้าย 3 ตัว</div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {last3.length ? last3.map((n, i) => <NumberPill key={i}>{n}</NumberPill>) : <span className="text-white/70">-</span>}
+                <div className="flex items-center text-amber-100 font-sarabun mb-2">
+                  <FaMedal className="text-amber-300 mr-2" />
+                  <span>เลขท้าย 3 ตัว</span>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {last3.length ? (
+                    last3.map((n, i) => <NumberPill key={i}>{n}</NumberPill>)
+                  ) : (
+                    <span className="text-amber-100/70">-</span>
+                  )}
                 </div>
               </div>
+              
               {/* Last 2 */}
               <div>
-                <div className="text-white/90 font-sarabun">เลขท้าย 2 ตัว</div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {last2Arr.length ? last2Arr.map((n, i) => <NumberPill key={i}>{n}</NumberPill>) : <span className="text-white/70">-</span>}
+                <div className="flex items-center text-amber-100 font-sarabun mb-2">
+                  <FaMedal className="text-amber-300 mr-2" />
+                  <span>เลขท้าย 2 ตัว</span>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {last2Arr.length ? (
+                    last2Arr.map((n, i) => <NumberPill key={i}>{n}</NumberPill>)
+                  ) : (
+                    <span className="text-amber-100/70">-</span>
+                  )}
                 </div>
               </div>
             </div>
           </div>
 
-          {usingFallback && !error && (
-            <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full text-xs font-sarabun
-                            bg-white/30 border border-white/40 text-white shadow">
-              ใช้ข้อมูลสำรองจาก Rayriffy API
-            </div>
-          )}
+          {/* Footer */}
+          <div className="mt-5 pt-4 border-t border-amber-300/20">
+            {data?.source && (
+              <div className="text-xs text-amber-100/80 font-sarabun">
+                แหล่งข้อมูล: <a className="underline hover:text-white transition-colors" href={data.source} target="_blank" rel="noreferrer">
+                  {usingFallback ? 'Rayriffy API' : 'กองสลาก (GLO)'}
+                </a>
+                {data.fetchedAt && (
+                  <span> • อัปเดตเมื่อ {new Date(data.fetchedAt).toLocaleString('th-TH')}</span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

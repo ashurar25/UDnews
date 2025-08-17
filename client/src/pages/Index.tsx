@@ -23,6 +23,7 @@ import { apiRequest } from "@/lib/queryClient";
 import MetaHead from "@/components/MetaHead";
 import TrendingWidget from "@/components/TrendingWidget";
 import TMDWeatherPanel from "@/components/TMDWeatherPanel";
+import { MiniThaiCalendar } from "@/components/MiniThaiCalendar";
 
 // Component wrapper ที่แสดง DisasterAlertWidget เมื่อมีการเตือนเท่านั้น
 const ConditionalDisasterAlertWidget = () => {
@@ -400,6 +401,9 @@ const Index = () => {
 
             {/* Thai Holy Days Widget */}
             <ThaiHolyDaysWidget />
+
+            {/* Thai Calendar - Prominently displayed */}
+            <MiniThaiCalendar className="shadow-news" />
 
             {/* Newsletter Signup */}
             <NewsletterSignup className="shadow-news" />
