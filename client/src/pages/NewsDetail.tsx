@@ -19,6 +19,8 @@ import AppErrorBoundary from "@/components/AppErrorBoundary";
 import { getHourlyForecastHourly, type HourlyWeather } from "@/lib/weather-api";
 import { api } from "@/lib/api";
 import { Helmet } from "react-helmet-async";
+import TrendingWidget from "@/components/TrendingWidget";
+import NewsletterSignup from "@/components/NewsletterSignup";
 
 interface NewsItem {
   id: number;
@@ -424,6 +426,9 @@ export default function NewsDetail() {
               </CardContent>
             </Card>
 
+            {/* Trending Widget */}
+            <TrendingWidget className="shadow-news" />
+
             {/* Related News */}
             <Card>
               <CardContent className="p-6">
@@ -468,6 +473,9 @@ export default function NewsDetail() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Newsletter Signup */}
+            <NewsletterSignup className="shadow-news" />
 
             {/* Additional Info */}
             <Card>

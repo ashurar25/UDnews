@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import MetaHead from "@/components/MetaHead";
+import NewsletterSignup from "@/components/NewsletterSignup";
+import TrendingWidget from "@/components/TrendingWidget";
 
 interface NewsItem {
   id: number;
@@ -171,6 +173,16 @@ const CategoryNews = () => {
             </div>
           </div>
         )}
+
+        {/* Newsletter Signup */}
+        <div className="mt-10">
+          <NewsletterSignup className="shadow-news" />
+        </div>
+
+        {/* Trending Widget */}
+        <div className="mt-8">
+          <TrendingWidget title="กำลังมาแรงในวันนี้" limit={6} className="shadow-news" />
+        </div>
       </main>
 
       <Footer />

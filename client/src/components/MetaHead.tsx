@@ -65,13 +65,15 @@ export default function MetaHead({
       }, (l) => l.setAttribute('href', canonical || absUrl));
     }
 
-    if (noindex) {
-      upsertTag('meta[name="robots"]', () => {
-        const m = document.createElement('meta');
-        m.setAttribute('name', 'robots');
-        return m;
-      }, (m) => m.setAttribute('content', 'noindex,nofollow'));
-    }
+    // Robots: prefer large image preview for Discover. If noindex, keep it while adding directive.
+    const robotsContent = noindex
+      ? 'noindex,nofollow,max-image-preview:large'
+      : 'index,follow,max-image-preview:large';
+    upsertTag('meta[name="robots"]', () => {
+      const m = document.createElement('meta');
+      m.setAttribute('name', 'robots');
+      return m;
+    }, (m) => m.setAttribute('content', robotsContent));
 
     // Open Graph
     const og: Record<string, string | undefined> = {

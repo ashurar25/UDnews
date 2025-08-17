@@ -20,7 +20,8 @@ import ThaiHolyDaysWidget from "@/components/ThaiHolyDaysWidget";
 import TodayHighlightBanner from "@/components/TodayHighlightBanner";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Helmet } from "react-helmet-async";
+import MetaHead from "@/components/MetaHead";
+import TrendingWidget from "@/components/TrendingWidget";
 
 // Component wrapper ที่แสดง DisasterAlertWidget เมื่อมีการเตือนเท่านั้น
 const ConditionalDisasterAlertWidget = () => {
@@ -233,20 +234,16 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Helmet>
-        <title>ข่าวอุดร ล่าสุด | UD News Update</title>
-        <meta name="description" content="เว็บไซต์ข่าวท้องถิ่นอุดรธานี รวบรวมข่าวสารล่าสุดจากหลากหลายแหล่ง พร้อมข้อมูลสภาพอากาศและข่าวประเภทต่างๆ" />
-        <link rel="canonical" href="https://udnewsupdate.sbs/" />
-        <meta property="og:title" content="อัพเดทข่าวอุดร - UD News Update" />
-        <meta property="og:description" content="เว็บไซต์ข่าวท้องถิ่นอุดรธานี รวบรวมข่าวสารล่าสุดจากหลากหลายแหล่ง" />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://udnewsupdate.sbs/" />
-        <meta property="og:image" content="/og-home.svg" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="อัพเดทข่าวอุดร - UD News Update" />
-        <meta name="twitter:description" content="เว็บไซต์ข่าวท้องถิ่นอุดรธานี รวบรวมข่าวสารล่าสุดจากหลากหลายแหล่ง" />
-        <meta name="twitter:image" content="/og-home.svg" />
-      </Helmet>
+      <MetaHead
+        title="ข่าวอุดร ล่าสุด | UD News Update"
+        description="เว็บไซต์ข่าวท้องถิ่นอุดรธานี รวบรวมข่าวสารล่าสุดจากหลากหลายแหล่ง พร้อมข้อมูลสภาพอากาศและข่าวประเภทต่างๆ"
+        image="/og-home.svg"
+        url="/"
+        canonical="https://udnewsupdate.sbs/"
+        siteName="UD News Update"
+        type="website"
+        locale="th_TH"
+      />
       <Header />
       {/* Breaking News Banner */}
       {breakingNews.length > 0 && (
@@ -395,30 +392,7 @@ const Index = () => {
             <SponsorBannerBar position="sidebar" autoPlay={true} showNavigation={false} bannerCount={3} />
 
             {/* Popular Today */}
-            <div className="bg-card rounded-lg p-6 shadow-news">
-              <h3 className="text-xl font-bold font-kanit mb-4 flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                ยอดนิยมวันนี้
-              </h3>
-              <div className="space-y-4">
-                {latestNews.slice(0, 12).map((news, index) => (
-                  <div key={index} className="flex gap-3 p-3 rounded hover:bg-accent transition-colors cursor-pointer">
-                    <span className="text-primary font-bold font-kanit text-lg">
-                      {index + 1}
-                    </span>
-                    <div>
-                      <h4 className="font-semibold font-kanit text-sm leading-tight mb-1">
-                        {news.title}
-                      </h4>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        <span className="font-sarabun">{news.time}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <TrendingWidget />
 
             {/* Thai Holy Days Widget */}
             <ThaiHolyDaysWidget />
