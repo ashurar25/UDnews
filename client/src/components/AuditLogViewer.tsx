@@ -7,17 +7,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { DateRange } from 'react-day-picker';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format, subDays } from 'date-fns';
 import { th } from 'date-fns/locale';
-import { CalendarIcon, Filter, Search, X } from 'lucide-react';
+import { CalendarIcon, Filter, Search, X, Download, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface DateRange {
-  from?: Date;
-  to?: Date;
-}
+// Using react-day-picker's DateRange type instead
 
 interface AuditLogItem {
   id: number;
@@ -74,7 +72,10 @@ function useAuditLogs(params: UseAuditLogsParams) {
 export default function AuditLogViewer() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: undefined,
+    to: undefined
+  });
   const [method, setMethod] = useState('');
   const [pathQ, setPathQ] = useState('');
   const [userId, setUserId] = useState('');
@@ -87,9 +88,15 @@ export default function AuditLogViewer() {
   const handleDateSelect = (range: DateRange | undefined) => {
     setDateRange(range);
     setPage(1);
-    if (range?.from && range?.to) {
-      setFrom(format(range.from, 'yyyy-MM-dd'));
-      setTo(format(range.to, 'yyyy-MM-dd'));
+    if (range?.from) {
+      setFrom(range.from.toISOString());
+      if (range.to) {
+        const endOfDay = new Date(range.to);
+        endOfDay.setHours(23, 59, 59, 999);
+        setTo(endOfDay.toISOString());
+      } else {
+        setTo('');
+      }
     } else {
       setFrom('');
       setTo('');
@@ -108,10 +115,14 @@ export default function AuditLogViewer() {
   });
 
   const data = query.data as AuditLogResponse | undefined;
-  const { isLoading, isError, refetch } = query as any;
+  const { isLoading, isError, refetch } = query as unknown as {
+    isLoading: boolean;
+    isError: boolean;
+    refetch: () => void;
+  };
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const isFilterActive = method || pathQ || userId || statusCode || from || to;
+  const isFilterActive = Boolean(method || pathQ || userId || statusCode || from || to);
 
   // Load filters from URL once
   React.useEffect(() => {
@@ -192,10 +203,8 @@ export default function AuditLogViewer() {
     setStatusCode('');
     setFrom('');
     setTo('');
-    setDateRange(undefined);
+    setDateRange({ from: undefined, to: undefined });
   };
-
-  const isFilterActive = method || pathQ || userId || statusCode || from || to;
 
   return (
     <Card className="w-full">
@@ -223,66 +232,115 @@ export default function AuditLogViewer() {
         <div className="text-sm text-gray-600">รวม {total.toLocaleString()} รายการ</div>
         {/* Filters */}
         {showFilters && (
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
-            <div className="md:col-span-1">
-              <Select value={method} onValueChange={(v) => { setPage(1); setMethod(v === 'ALL' ? '' : v); }}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Method" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">All</SelectItem>
-                  <SelectItem value="POST">POST</SelectItem>
-                  <SelectItem value="PUT">PUT</SelectItem>
-                  <SelectItem value="PATCH">PATCH</SelectItem>
-                  <SelectItem value="DELETE">DELETE</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+              <div className="md:col-span-1">
+                <Select value={method} onValueChange={(v) => { setPage(1); setMethod(v === 'ALL' ? '' : v); }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All</SelectItem>
+                    <SelectItem value="POST">POST</SelectItem>
+                    <SelectItem value="PUT">PUT</SelectItem>
+                    <SelectItem value="PATCH">PATCH</SelectItem>
+                    <SelectItem value="DELETE">DELETE</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="md:col-span-2">
+                <Input placeholder="Path contains..." value={pathQ} onChange={(e) => { setPage(1); setPathQ(e.target.value); }} />
+              </div>
+              <div>
+                <Input type="number" placeholder="User ID" value={userId} onChange={(e) => { setPage(1); setUserId(e.target.value); }} />
+              </div>
+              <div>
+                <Input type="number" placeholder="Status" value={statusCode} onChange={(e) => { setPage(1); setStatusCode(e.target.value); }} />
+              </div>
+              <div className="md:col-span-1">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="date"
+                      variant="outline"
+                      className={cn(
+                        'w-full justify-start text-left font-normal',
+                        !dateRange?.from && 'text-muted-foreground'
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateRange?.from ? (
+                        dateRange?.to ? (
+                          <>
+                            {format(dateRange.from, 'PPP', { locale: th })} -{' '}
+                            {format(dateRange.to, 'PPP', { locale: th })}
+                          </>
+                        ) : (
+                          format(dateRange.from, 'PPP', { locale: th })
+                        )
+                      ) : (
+                        <span>เลือกช่วงเวลา</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      initialFocus
+                      mode="range"
+                      defaultMonth={dateRange?.from}
+                      selected={dateRange}
+                      onSelect={handleDateSelect}
+                      numberOfMonths={2}
+                      locale={th}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
-            <div className="md:col-span-2">
-              <Input placeholder="Path contains..." value={pathQ} onChange={(e) => { setPage(1); setPathQ(e.target.value); }} />
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+              <div className="md:col-span-2">
+                <Input 
+                  type="datetime-local" 
+                  value={from} 
+                  onChange={(e) => { setPage(1); setFrom(e.target.value); }} 
+                  className="w-full"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <Input 
+                  type="datetime-local" 
+                  value={to} 
+                  onChange={(e) => { setPage(1); setTo(e.target.value); }} 
+                  className="w-full"
+                />
+              </div>
+              <div className="md:col-span-2 flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={resetFilters} disabled={!isFilterActive}>
+                  <X className="h-4 w-4 mr-1" />
+                  Clear Filters
+                </Button>
+                <Button variant="outline" size="sm" onClick={exportCsv}>
+                  <Download className="h-4 w-4 mr-1" />
+                  Export CSV
+                </Button>
+              </div>
             </div>
-            <div>
-              <Input type="number" placeholder="User ID" value={userId} onChange={(e) => { setPage(1); setUserId(e.target.value); }} />
-            </div>
-            <div>
-              <Input type="number" placeholder="Status" value={statusCode} onChange={(e) => { setPage(1); setStatusCode(e.target.value); }} />
-            </div>
-            <div className="flex gap-2">
-              <Calendar
-                dateRange={dateRange}
-                onChange={handleDateSelect}
-              />
-            </div>
-                <SelectValue placeholder="Method" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All</SelectItem>
-                <SelectItem value="POST">POST</SelectItem>
-                <SelectItem value="PUT">PUT</SelectItem>
-                <SelectItem value="PATCH">PATCH</SelectItem>
-                <SelectItem value="DELETE">DELETE</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
-          <div className="md:col-span-2">
-            <Input placeholder="Path contains..." value={pathQ} onChange={(e) => { setPage(1); setPathQ(e.target.value); }} />
-          </div>
-          <div>
-            <Input type="number" placeholder="User ID" value={userId} onChange={(e) => { setPage(1); setUserId(e.target.value); }} />
-          </div>
-          <div>
-            <Input type="number" placeholder="Status" value={statusCode} onChange={(e) => { setPage(1); setStatusCode(e.target.value); }} />
-          </div>
-          <div className="flex gap-2">
-            <Input type="datetime-local" value={from} onChange={(e) => { setPage(1); setFrom(e.target.value); }} />
-            <Input type="datetime-local" value={to} onChange={(e) => { setPage(1); setTo(e.target.value); }} />
-          </div>
-        </div>
+        )}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => refetch()}>รีเฟรช</Button>
-            <Button variant="secondary" onClick={exportCsv}>ส่งออก CSV</Button>
-            <Button variant="ghost" onClick={resetFilters}>ล้างตัวกรอง</Button>
+            <Button variant="outline" onClick={() => refetch()}>
+              <RefreshCw className="h-4 w-4 mr-1" />
+              รีเฟรช
+            </Button>
+            <Button variant="secondary" onClick={exportCsv}>
+              <Download className="h-4 w-4 mr-1" />
+              ส่งออก CSV
+            </Button>
+            <Button variant="ghost" onClick={resetFilters} disabled={!isFilterActive}>
+              <X className="h-4 w-4 mr-1" />
+              ล้างตัวกรอง
+            </Button>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-600">แสดง</span>
