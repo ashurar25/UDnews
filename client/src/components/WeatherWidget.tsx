@@ -150,9 +150,11 @@ const WeatherWidget = () => {
       className="group relative"
     >
       <div 
-        className={`flex items-center text-sm md:text-base ${textColor} bg-gradient-to-br ${weatherGradient} rounded-2xl px-4 py-2 backdrop-blur-sm border ${borderColor} shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer`}
+        className={`relative flex items-center text-sm md:text-base ${textColor} rounded-2xl px-4 py-2 backdrop-blur-md border ${borderColor} shadow-news hover:shadow-2xl transition-all duration-300 cursor-pointer bg-white/10 dark:bg-white/5`}
         onClick={() => setShowDetails(!showDetails)}
       >
+        <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-white/10 rounded-2xl pointer-events-none" />
+        <div className="relative z-10 flex items-center">
         <motion.div 
           className="relative"
           animate={{ 
@@ -183,7 +185,7 @@ const WeatherWidget = () => {
             <FiMapPin className="w-3.5 h-3.5 mr-1.5 text-current opacity-90" />
             <span className="font-kanit font-bold drop-shadow-sm">{weather.city}</span>
           </div>
-          <span className="font-kanit font-bold text-xl drop-shadow-sm">{Math.round(weather.temp)}°</span>
+          <span className="font-kanit font-extrabold text-xl bg-gradient-to-r from-amber-500 to-orange-600 bg-clip-text text-transparent drop-shadow-sm">{Math.round(weather.temp)}°</span>
           <span className="hidden md:inline-block w-px h-5 bg-current/30 mx-1"></span>
           <span className="hidden md:inline font-sarabun text-sm opacity-90">{weather.conditionThai}</span>
           <motion.span 
@@ -198,6 +200,7 @@ const WeatherWidget = () => {
             )}
           </motion.span>
         </div>
+        </div>
 
       <AnimatePresence>
         {showDetails && (
@@ -208,7 +211,9 @@ const WeatherWidget = () => {
             exit={{ opacity: 0, y: 10, scale: 0.98, transition: { duration: 0.2 } }}
             transition={{ type: "spring", damping: 25, stiffness: 300, mass: 0.5 }}
           >
-            <div className={`rounded-2xl ${bgOpacity} text-foreground shadow-2xl ring-1 ring-white/10 p-5 backdrop-blur-lg border ${borderColor}`}>
+            <div className={`relative rounded-2xl ${bgOpacity} text-foreground shadow-2xl ring-1 ring-white/10 p-5 backdrop-blur-lg border ${borderColor}`}>
+              <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-white/20 pointer-events-none"></div>
+              <div className="relative z-10">
               {/* Current Weather Header */}
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-3">
@@ -309,7 +314,7 @@ const WeatherWidget = () => {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="flex flex-col items-center p-2 rounded-lg bg-white/50 dark:bg-gray-800/50 border border-white/20 dark:border-gray-700/50"
+                      className="flex flex-col items-center p-2 rounded-lg bg-white/60 dark:bg-gray-800/50 border border-white/30 dark:border-gray-700/50 hover:bg-white/70 transition-colors"
                     >
                       <div className="text-xs font-sarabun text-muted-foreground">
                         {index === 0 ? 'วันนี้' : day.day}
@@ -354,6 +359,7 @@ const WeatherWidget = () => {
                   อัปเดตล่าสุด: {new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
+            </div>
             </div>
           </motion.div>
         )}
