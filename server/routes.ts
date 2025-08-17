@@ -33,6 +33,7 @@ import { db } from "./db";
 import { storage } from "./storage";
 import { rssService } from "./rss-service";
 import { getCachedDailySummary, generateDailySummary } from './ai-summarizer';
+import { getTmdForecast, getWeatherRadarImage } from './weather-service';
 import { authenticateToken as authMiddleware, generateToken, authorizeRoles } from "./middleware/auth";
 import rateLimit from "express-rate-limit";
 import path from 'path';
@@ -2644,6 +2645,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (e) {
       console.error(e);
       res.status(500).json({ error: 'Failed to fetch audit logs' });
+    }
+  });
+
+  // Weather API endpoints
+  app.get('/api/weather/forecast', async (req, res) => {
+    try {
+      const { lat = '17.4138', lon = '102.7870' } = req.query;
+      const forecast = await getTmdForecast(Number(lat), Number(lon));
+      res.json(forecast);
+    } catch (error) {
+      console.error('Weather forecast error:', error);
+      res.status(500).json({ error: 'Failed to fetch weather forecast' });
+    }
+  });
+
+  // Proxy for weather radar images
+  app.get('/api/weather/radar', async (req, res) => {
+    try {
+      const { url } = req.query;
+      if (!url || typeof url !== 'string') {
+        return res.status(400).json({ error: 'Missing or invalid URL parameter' });
+      }
+
+      const image = await getWeatherRadarImage(url);
+      res.set('Content-Type', 'image/png');
+      res.send(image);
+    } catch (error) {
+      console.error('Weather radar error:', error);
+      res.status(500).json({ error: 'Failed to fetch weather radar image' });
     }
   });
 

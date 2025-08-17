@@ -16,14 +16,7 @@ interface ThaiHoliday {
 // Constants for lunar calculations
 const LUNAR_MONTH = 29.530588853; // Synodic month in days
 const LUNAR_YEAR = 354.36707; // Lunar year in days
-const EPOCH = 2440587.5; // Unix epoch in Julian days (1970-01-01)";
-
-import { getWanPhraFallback } from "@/data/wanphra";
-
-export interface WanPhraDate {
-  date: string; // YYYY-MM-DD (Gregorian)
-  label: string; // e.g., 'ขึ้น 15 ค่ำ', 'แรม 8 ค่ำ'
-}
+const EPOCH = 2440587.5; // Unix epoch in Julian days (1970-01-01)
 
 // Convert a Date to Julian day
 function toJulian(date: Date): number {
@@ -137,12 +130,4 @@ export function getThaiHolidaysForMonth(year: number, month: number): Array<{ da
       date: `${year}-${holiday.date}`,
       name: holiday.name
     }));
-}
-
-// Helper function to format date as YYYY-MM-DD
-function formatDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
 }
