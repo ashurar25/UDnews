@@ -17,6 +17,7 @@ import PushNotificationSetup from "@/components/PushNotificationSetup";
 import NewsletterSignup from "@/components/NewsletterSignup";
 import DisasterAlertWidget from "@/components/DisasterAlertWidget";
 import TodayHighlightBanner from "@/components/TodayHighlightBanner";
+import WanPhraTodayBanner from "@/components/WanPhraTodayBanner";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import MetaHead from "@/components/MetaHead";
@@ -263,6 +264,8 @@ const Index = () => {
 
       {/* Special Day Banner (shows only when theme is thai-special) */}
       <ThaiSpecialDayBanner />
+      {/* Wan Phra Today (real, from MyHora via server) */}
+      <WanPhraTodayBanner />
 
       {/* Disaster Alert Widget - แสดงเมื่อมีการเตือนเท่านั้น */}
       <ConditionalDisasterAlertWidget />
@@ -270,7 +273,7 @@ const Index = () => {
       {/* Hero News Section */}
       <section className="relative h-48 md:h-64 overflow-hidden">
         <img 
-          src={getWeatherBgByCondition(currentWeather.condition)} 
+          src={heroImage}
           alt="UD News Hero"
           className="w-full h-full object-cover object-center"
           style={{ objectPosition: 'center 75%' }}
@@ -404,9 +407,10 @@ const Index = () => {
             // Improved visuals + real hourly (1-hour) forecast for Udon Thani
             }
             <div
-              className="relative rounded-xl p-6 shadow-news overflow-hidden border border-white/30 bg-white/10 backdrop-blur-md bg-cover bg-center bg-no-repeat"
-              style={{ backgroundImage: `url(${getWeatherBgByCondition(currentWeather.condition)})` }}
+              className="relative rounded-xl p-6 shadow-news overflow-hidden border border-white/30 bg-gradient-to-br from-sky-200 via-sky-300 to-orange-200 dark:from-sky-900 dark:via-sky-800 dark:to-orange-700"
             >
+              {/* Decorative sun (orange sunset) */}
+              <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-gradient-to-br from-amber-300 to-orange-500 opacity-80 blur-sm pointer-events-none" />
               <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-white/20 pointer-events-none"></div>
               <div className="relative z-10">
                 <h3 className="text-xl font-bold font-kanit mb-4 text-foreground">
