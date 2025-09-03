@@ -180,11 +180,77 @@ export class RSSService {
 
   // Download image and store optimized copy to /uploads, returning local URL
   private async downloadAndStoreImage(imageUrl: string): Promise<string | null> {
+    let buffer: Buffer | null = null;
     try {
-      const res = await this.fetchWithRetry(imageUrl, { headers: { 'User-Agent': 'UD-News-Image-Fetcher/1.0' } }, 3, 20000);
+      // Add size limit check via HEAD request first
+      try {
+        const headRes = await this.fetchWithRetry(imageUrl, { 
+          method: 'HEAD', 
+          headers: { 'User-Agent': 'UD-News-Image-Fetcher/1.0' } 
+        }, 1, 8000);
+        
+        if (headRes.ok) {
+          const contentLength = headRes.headers.get('content-length');
+          if (contentLength) {
+            const size = parseInt(contentLength);
+            // Reject images larger than 10MB to prevent memory issues
+            if (size > 10 * 1024 * 1024) {
+              console.warn(`Image too large (${Math.round(size/1024/1024)}MB), skipping:`, imageUrl);
+              return null;
+            }
+          }
+        }
+      } catch {
+        // HEAD request failed, continue with GET but be more cautious
+      }
+
+      const res = await this.fetchWithRetry(imageUrl, { 
+        headers: { 'User-Agent': 'UD-News-Image-Fetcher/1.0' } 
+      }, 2, 15000); // Reduced retries and timeout
+      
       if (!res.ok) return null;
+      
       const contentType = res.headers.get('content-type') || '';
-      const buffer = Buffer.from(await res.arrayBuffer());
+      
+      // Validate content type
+      if (!contentType.startsWith('image/')) {
+        console.warn('Invalid content type for image:', contentType, imageUrl);
+        return null;
+      }
+
+      // Stream the response to avoid loading entire image into memory at once
+      const reader = res.body?.getReader();
+      if (!reader) {
+        console.warn('No readable stream for image:', imageUrl);
+        return null;
+      }
+
+      const chunks: Uint8Array[] = [];
+      let totalSize = 0;
+      const maxSize = 10 * 1024 * 1024; // 10MB limit
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          totalSize += value.length;
+          if (totalSize > maxSize) {
+            console.warn(`Image stream exceeded size limit (${Math.round(totalSize/1024/1024)}MB), aborting:`, imageUrl);
+            return null;
+          }
+          
+          chunks.push(value);
+        }
+      } finally {
+        reader.releaseLock();
+      }
+
+      // Combine chunks into buffer
+      buffer = Buffer.concat(chunks.map(chunk => Buffer.from(chunk)));
+      
+      // Clear chunks array to free memory
+      chunks.length = 0;
 
       // Determine a filename and extension
       const urlObj = new URL(imageUrl, 'http://dummy');
@@ -200,10 +266,16 @@ export class RSSService {
 
       // Optimize to webp by default
       const localPath = await ImageOptimizer.optimizeImage(buffer, filename, { format: 'webp' });
+      
       return localPath; // e.g., /uploads/...
     } catch (e) {
       console.warn('Failed to download/store image:', imageUrl, e);
       return null;
+    } finally {
+      // Explicitly clear buffer to help GC
+      if (buffer) {
+        buffer = null;
+      }
     }
   }
 
@@ -673,27 +745,46 @@ export class RSSService {
 
       let totalProcessed = 0;
 
-      // Process feeds in parallel for faster performance
-      const feedPromises = activeFeeds.map(async (feed, index) => {
-        try {
-          // Stagger requests to avoid overwhelming servers
-          await new Promise(resolve => setTimeout(resolve, index * 500));
-          const count = await this.processFeed(feed.id, feed.url, feed.category);
-          return count;
-        } catch (error) {
-          console.error(`Failed to process feed ${feed.title}:`, error);
-          // Record the error in feed status if not already done by processFeed
-          if (!this.feedStatus[feed.id] || !this.feedStatus[feed.id].lastError) {
-             this.feedStatus[feed.id] = { isProcessing: false, lastError: error instanceof Error ? error.message : 'Unknown error' };
+      // Process feeds with controlled concurrency to prevent memory issues
+      const maxConcurrent = 3; // Limit concurrent feed processing
+      const results: number[] = [];
+      
+      for (let i = 0; i < activeFeeds.length; i += maxConcurrent) {
+        const batch = activeFeeds.slice(i, i + maxConcurrent);
+        const batchPromises = batch.map(async (feed, batchIndex) => {
+          try {
+            // Stagger requests within batch to avoid overwhelming servers
+            await new Promise(resolve => setTimeout(resolve, batchIndex * 500));
+            const count = await this.processFeed(feed.id, feed.url, feed.category);
+            return count;
+          } catch (error) {
+            console.error(`Failed to process feed ${feed.title}:`, error);
+            // Record the error in feed status if not already done by processFeed
+            if (!this.feedStatus[feed.id] || !this.feedStatus[feed.id].lastError) {
+               this.feedStatus[feed.id] = { isProcessing: false, lastError: error instanceof Error ? error.message : 'Unknown error' };
+            }
+            return 0;
           }
-          return 0;
+        });
+        
+        const batchResults = await Promise.allSettled(batchPromises);
+        results.push(...batchResults.map(result => result.status === 'fulfilled' ? result.value : 0));
+        
+        // Force garbage collection between batches if available
+        if (global.gc) {
+          global.gc();
         }
-      });
+        
+        // Small delay between batches to allow memory cleanup
+        if (i + maxConcurrent < activeFeeds.length) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+      
+      const feedPromises = Promise.resolve(results);
 
-      const results = await Promise.allSettled(feedPromises);
-      totalProcessed = results.reduce((sum, result) => {
-        return sum + (result.status === 'fulfilled' ? result.value : 0);
-      }, 0);
+      const batchResults = await feedPromises;
+      totalProcessed = batchResults.reduce((sum, count) => sum + count, 0);
 
       console.log(`RSS processing complete. Total articles processed across all feeds: ${totalProcessed}`);
     } catch (error) {

@@ -47,6 +47,7 @@ import type { InsertDonation } from "@shared/schema";
 import { notificationService } from './notification-service';
 import lotteryRoutes from './lottery-api';
 import { setTimeout as delay } from 'timers/promises';
+import { fortuneService } from './fortune-service';
 
 // Simple HTML escape for meta tag content
 function escapeHtml(input: string): string {
@@ -2690,6 +2691,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Weather forecast error:', error);
       res.status(500).json({ error: 'Failed to fetch weather forecast' });
+    }
+  });
+
+  // Fortune Telling API endpoints
+  app.get('/api/fortune/zodiacs', async (req, res) => {
+    try {
+      const zodiacs = fortuneService.getAllZodiacs();
+      res.json(zodiacs);
+    } catch (error) {
+      console.error('Error fetching zodiacs:', error);
+      res.status(500).json({ error: 'Failed to fetch zodiac signs' });
+    }
+  });
+
+  app.get('/api/fortune/daily/:zodiacName', async (req, res) => {
+    try {
+      const { zodiacName } = req.params;
+      const zodiac = fortuneService.getZodiacByName(zodiacName);
+      
+      if (!zodiac) {
+        return res.status(404).json({ error: 'Zodiac sign not found' });
+      }
+
+      const fortune = fortuneService.generateDailyFortune(zodiac);
+      res.json({ zodiac, fortune });
+    } catch (error) {
+      console.error('Error generating daily fortune:', error);
+      res.status(500).json({ error: 'Failed to generate fortune' });
+    }
+  });
+
+  app.get('/api/fortune/weekly/:zodiacName', async (req, res) => {
+    try {
+      const { zodiacName } = req.params;
+      const zodiac = fortuneService.getZodiacByName(zodiacName);
+      
+      if (!zodiac) {
+        return res.status(404).json({ error: 'Zodiac sign not found' });
+      }
+
+      const weeklyFortune = fortuneService.getWeeklyFortune(zodiac);
+      res.json(weeklyFortune);
+    } catch (error) {
+      console.error('Error generating weekly fortune:', error);
+      res.status(500).json({ error: 'Failed to generate weekly fortune' });
+    }
+  });
+
+  app.post('/api/fortune/by-date', async (req, res) => {
+    try {
+      const { birthDate } = req.body;
+      
+      if (!birthDate) {
+        return res.status(400).json({ error: 'Birth date is required' });
+      }
+
+      const date = new Date(birthDate);
+      const zodiac = fortuneService.getZodiacByDate(date);
+      
+      if (!zodiac) {
+        return res.status(404).json({ error: 'Could not determine zodiac sign from birth date' });
+      }
+
+      const fortune = fortuneService.generateDailyFortune(zodiac);
+      res.json({ zodiac, fortune });
+    } catch (error) {
+      console.error('Error generating fortune by date:', error);
+      res.status(500).json({ error: 'Failed to generate fortune' });
     }
   });
 
