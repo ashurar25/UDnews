@@ -62,10 +62,14 @@ function ErrorFallback({error, resetErrorBoundary}: {error: Error, resetErrorBou
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      gcTime: 1000 * 60 * 10, // 10 minutes (updated from cacheTime)
-      retry: 2,
+      staleTime: 1000 * 30, // 30 seconds
+      gcTime: 1000 * 60 * 3, // 3 minutes
+      retry: 1,
       refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
+      retryOnMount: false,
+      // Remove keepPreviousData as it's not a valid option
     },
   },
 });
