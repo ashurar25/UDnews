@@ -1267,10 +1267,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Find user in database
+      // Find user in database (case-insensitive search)
       const user = await db.query.users.findFirst({
-        where: (usersTable, { eq }) => eq(usersTable.username, username)
+        where: (usersTable, { eq, and, ilike }) => 
+          and(
+            ilike(usersTable.username, username.toLowerCase()),
+            eq(usersTable.isActive, true)
+          )
       });
+      
+      console.log('Login attempt for user:', username, 'User found:', !!user);
 
       // Verify user exists and is active
       if (!user || !user.isActive) {
