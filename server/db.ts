@@ -26,19 +26,28 @@ const BACKUP_DATABASE_URL = "postgresql://neondb_owner:npg_pq2xNLg1BCJS@ep-soft-
 // ใช้ environment variable หรือ primary database เป็นค่าเริ่มต้น
 export const DATABASE_URL = process.env.DATABASE_URL || PRIMARY_DATABASE_URL;
 
+// Configure main database pool with optimized settings
 export const pool = new Pool({ 
   connectionString: DATABASE_URL,
   ssl: {
     rejectUnauthorized: false
-  }
+  },
+  max: 20, // Maximum number of clients in the pool
+  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
+  connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
+  maxUses: 7500, // Close and remove a connection after it has been used 7500 times
 });
 
-// สร้าง backup connection pool
+// Configure backup database pool with optimized settings
 export const backupPool = new Pool({ 
   connectionString: BACKUP_DATABASE_URL,
   ssl: {
     rejectUnauthorized: false
-  }
+  },
+  max: 10, // Fewer connections for backup
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
+  maxUses: 5000,
 });
 
 export const db = drizzle(pool, { schema });

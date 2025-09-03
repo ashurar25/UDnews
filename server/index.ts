@@ -20,8 +20,17 @@ import { sql } from 'drizzle-orm';
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { rssService } from "./rss-service";
+import { logMemoryUsage } from './utils/memoryMonitor';
 
 const app = express();
+
+// Log initial memory usage
+logMemoryUsage('Server startup');
+
+// Log memory usage every 15 minutes in production
+if (process.env.NODE_ENV === 'production') {
+  setInterval(() => logMemoryUsage('Production Memory Check'), 15 * 60 * 1000);
+}
 
 // Trust proxy if behind a reverse proxy/CDN
 app.set('trust proxy', 1);

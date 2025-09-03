@@ -1,13 +1,12 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import type { PluginOption } from 'vite';
 
 export default defineConfig({
-  plugins: [
-    react(),
-  ],
+  plugins: [react()],
   build: {
-    sourcemap: true,
+    sourcemap: process.env.NODE_ENV !== 'production',
+    minify: 'terser',
+    chunkSizeWarningLimit: 1000, // Increase chunk size warning limit (in kbs)
     rollupOptions: {
       output: {
         manualChunks: {
@@ -22,8 +21,15 @@ export default defineConfig({
     watch: {
       usePolling: true,
     },
+    hmr: {
+      overlay: false,
+    },
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
+    exclude: ['@babel/runtime'],
+  },
+  esbuild: {
+    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
   },
 });
