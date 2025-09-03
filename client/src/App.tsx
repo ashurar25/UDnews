@@ -1,33 +1,46 @@
+import { lazy, Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Router, Route, Switch } from "wouter";
 import { navItems } from "./nav-items";
-import Local from "./pages/Local";
-import Politics from "./pages/Politics";
-import Crime from "./pages/Crime";
-import Sports from "./pages/Sports";
-import Entertainment from "./pages/Entertainment";
-import Contact from "./pages/Contact";
-import Index from "./pages/Index";
-import Admin from "./pages/Admin";
-import NewsDetail from "./pages/NewsDetail";
-import AllNews from "./pages/AllNews";
-import CategoryNews from "./pages/CategoryNews";
-import Donate from "./pages/Donate";
-import NotFound from "./pages/NotFound";
-import Search from "./pages/Search";
-import TestSystems from "./pages/TestSystems";
-import Login from "./pages/Login";
-import DisasterAlert from "@/pages/DisasterAlert";
-import SystemStatus from "@/pages/SystemStatus";
-import "./App.css";
 import { ErrorBoundary } from "react-error-boundary";
 import GAListener from "@/components/GAListener";
-import DailySummary from "./pages/DailySummary";
-import Lottery from "./pages/Lottery";
 import { HelmetProvider } from "react-helmet-async";
+import { Skeleton } from "@/components/ui/skeleton";
+import "./App.css";
+
+// Lazy load all page components
+const Local = lazy(() => import("./pages/Local"));
+const Politics = lazy(() => import("./pages/Politics"));
+const Crime = lazy(() => import("./pages/Crime"));
+const Sports = lazy(() => import("./pages/Sports"));
+const Entertainment = lazy(() => import("./pages/Entertainment"));
+const Contact = lazy(() => import("./pages/Contact"));
+const Index = lazy(() => import("./pages/Index"));
+const Admin = lazy(() => import("./pages/Admin"));
+const NewsDetail = lazy(() => import("./pages/NewsDetail"));
+const AllNews = lazy(() => import("./pages/AllNews"));
+const CategoryNews = lazy(() => import("./pages/CategoryNews"));
+const Donate = lazy(() => import("./pages/Donate"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Search = lazy(() => import("./pages/Search"));
+const TestSystems = lazy(() => import("./pages/TestSystems"));
+const Login = lazy(() => import("./pages/Login"));
+const DisasterAlert = lazy(() => import("@/pages/DisasterAlert"));
+const SystemStatus = lazy(() => import("@/pages/SystemStatus"));
+const DailySummary = lazy(() => import("./pages/DailySummary"));
+const Lottery = lazy(() => import("./pages/Lottery"));
+
+// Loading component for Suspense
+const PageLoading = () => (
+  <div className="flex flex-col space-y-3 p-4">
+    <Skeleton className="h-4 w-[250px]" />
+    <Skeleton className="h-4 w-[200px]" />
+    <Skeleton className="h-[300px] w-full" />
+  </div>
+);
 
 function ErrorFallback({error, resetErrorBoundary}: {error: Error, resetErrorBoundary: () => void}) {
   return (
@@ -57,51 +70,52 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => (
-  <HelmetProvider>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <Router>
-        <ErrorBoundary
-          FallbackComponent={ErrorFallback}
-          onError={(error) => {
-            console.error('Application Error:', error);
-          }}
-        >
-          <GAListener />
-          <Switch>
-            {navItems.map(({ to, page }) => (
-              <Route key={to} path={to} component={page} />
-            ))}
-            <Route path="/local" component={Local} />
-            <Route path="/politics" component={Politics} />
-            <Route path="/crime" component={Crime} />
-            <Route path="/sports" component={Sports} />
-            <Route path="/entertainment" component={Entertainment} />
-            <Route path="/contact" component={Contact} />
-            <Route path="/news" component={AllNews} />
-            <Route path="/all-news" component={AllNews} />
-            <Route path="/news/:id" component={NewsDetail} />
-            <Route path="/category/:category" component={CategoryNews} />
-            <Route path="/donate" component={Donate} />
-            <Route path="/search" component={Search} />
-            <Route path="/test-systems" component={TestSystems} />
-            <Route path="/system-status" component={SystemStatus} />
-            <Route path="/login" component={Login} />
-            <Route path="/admin" component={Admin} />
-            <Route path="/daily-summary" component={DailySummary} />
-            <Route path="/lottery" component={Lottery} />
-            {/** Thai Calendar temporarily disabled */}
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route component={NotFound} />
-          </Switch>
-        </ErrorBoundary>
-        </Router>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </HelmetProvider>
+// Wrapper component for routes to add Suspense
+const RouteWithSuspense = ({ component: Component, ...rest }: { component: React.ComponentType }) => (
+  <Suspense fallback={<PageLoading />}>
+    <Component {...rest} />
+  </Suspense>
 );
+
+function App() {
+  return (
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <ErrorBoundary FallbackComponent={ErrorFallback} onError={(error) => console.error(error)}>
+          <TooltipProvider>
+            <GAListener>
+              <Router>
+                <Switch>
+                  <Route path="/" component={() => <RouteWithSuspense component={Index} />} />
+                  <Route path="/local" component={() => <RouteWithSuspense component={Local} />} />
+                  <Route path="/politics" component={() => <RouteWithSuspense component={Politics} />} />
+                  <Route path="/crime" component={() => <RouteWithSuspense component={Crime} />} />
+                  <Route path="/sports" component={() => <RouteWithSuspense component={Sports} />} />
+                  <Route path="/entertainment" component={() => <RouteWithSuspense component={Entertainment} />} />
+                  <Route path="/contact" component={() => <RouteWithSuspense component={Contact} />} />
+                  <Route path="/admin" component={() => <RouteWithSuspense component={Admin} />} />
+                  <Route path="/news/:id" component={(params: any) => <RouteWithSuspense component={NewsDetail} {...params} />} />
+                  <Route path="/all-news" component={() => <RouteWithSuspense component={AllNews} />} />
+                  <Route path="/category/:category" component={(params: any) => <RouteWithSuspense component={CategoryNews} {...params} />} />
+                  <Route path="/donate" component={() => <RouteWithSuspense component={Donate} />} />
+                  <Route path="/search" component={() => <RouteWithSuspense component={Search} />} />
+                  <Route path="/test-systems" component={() => <RouteWithSuspense component={TestSystems} />} />
+                  <Route path="/login" component={() => <RouteWithSuspense component={Login} />} />
+                  <Route path="/disaster-alert" component={() => <RouteWithSuspense component={DisasterAlert} />} />
+                  <Route path="/system-status" component={() => <RouteWithSuspense component={SystemStatus} />} />
+                  <Route path="/daily-summary" component={() => <RouteWithSuspense component={DailySummary} />} />
+                  <Route path="/lottery" component={() => <RouteWithSuspense component={Lottery} />} />
+                  <Route component={() => <RouteWithSuspense component={NotFound} />} />
+                </Switch>
+              </Router>
+              <Toaster />
+              <Sonner position="top-right" />
+            </GAListener>
+          </TooltipProvider>
+        </ErrorBoundary>
+      </QueryClientProvider>
+    </HelmetProvider>
+  );
+}
 
 export default App;
