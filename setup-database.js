@@ -1,21 +1,15 @@
-import { Pool } from '@neondatabase/serverless';
-import fs from 'fs';
-import path from 'path';
+const { Client } = require('pg');
+const fs = require('fs');
+require('dotenv').config();
 
-if (!process.env.DATABASE_URL) {
-  console.error('DATABASE_URL environment variable is required');
-  process.exit(1);
-}
-
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-async function runMigrations() {
+async function setupDatabase() {
   const client = new Client({
     connectionString: process.env.DATABASE_URL,
   });
 
   try {
     await client.connect();
-    console.log('Connected to database');
+    console.log('✅ Connected to database');
 
     // Read and execute the users table SQL
     const usersSql = fs.readFileSync('create-users-table.sql', 'utf8');
@@ -23,7 +17,7 @@ async function runMigrations() {
     
     console.log('✅ All tables created successfully');
     
-    // List existing tables
+    // List existing tables to verify
     const tables = await client.query(`
       SELECT table_name 
       FROM information_schema.tables 
@@ -31,14 +25,14 @@ async function runMigrations() {
       ORDER BY table_name;
     `);
     
-    console.log('📋 Existing tables:');
+    console.log('📋 Database tables:');
     tables.rows.forEach(row => console.log(`  - ${row.table_name}`));
     
   } catch (error) {
-    console.error('❌ Error running migrations:', error);
+    console.error('❌ Error setting up database:', error);
   } finally {
     await client.end();
   }
 }
 
-runMigrations();
+setupDatabase();
