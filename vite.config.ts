@@ -1,8 +1,9 @@
 import { defineConfig, type UserConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { visualizer } from 'rollup-plugin-visualizer';
 import path from 'path';
 import type { PluginOption } from 'vite';
+
+declare function require(module: string): any;
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }): UserConfig => {
@@ -16,18 +17,23 @@ export default defineConfig(({ mode }): UserConfig => {
   ];
 
   if (isAnalyze) {
-    plugins.push(
-      visualizer({
-        open: true,
-        filename: 'bundle-analyzer-report.html',
-        gzipSize: true,
-        brotliSize: true,
-      }) as PluginOption
-    );
+    try {
+      const { visualizer } = require('rollup-plugin-visualizer');
+      plugins.push(
+        visualizer({
+          open: true,
+          filename: 'bundle-analyzer-report.html',
+          gzipSize: true,
+          brotliSize: true,
+        }) as PluginOption
+      );
+    } catch (e) {
+      console.warn('rollup-plugin-visualizer not available');
+    }
   }
 
   const config: UserConfig = {
-    plugins,
+    plugins: plugins.length > 0 ? plugins : undefined,
     
     resolve: {
       alias: [
@@ -54,16 +60,9 @@ export default defineConfig(({ mode }): UserConfig => {
       sourcemap: !isProduction,
       minify: isProduction ? 'terser' : false,
       chunkSizeWarningLimit: 1000,
-      terserOptions: isProduction ? {
-        compress: {
-          drop_console: true,
-          drop_debugger: true,
-        },
-        output: {
-          comments: false,
-        },
-      } : undefined,
       rollupOptions: {
+        preserveEntrySignatures: 'strict',
+        external: [],
         output: {
           manualChunks: {
             react: ['react', 'react-dom', 'react-router-dom'],
