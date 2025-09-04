@@ -23,7 +23,7 @@ import { apiRequest } from "@/lib/queryClient";
 import MetaHead from "@/components/MetaHead";
 import TrendingWidget from "@/components/TrendingWidget";
 import { MiniThaiCalendar } from "@/components/MiniThaiCalendar";
-import FortuneWidget from "@/components/FortuneWidget";
+ 
 
 // Component wrapper ที่แสดง DisasterAlertWidget เมื่อมีการเตือนเท่านั้น
 const ConditionalDisasterAlertWidget = () => {
@@ -395,8 +395,7 @@ const Index = () => {
             {/* Sidebar Sponsor Banner Bar */}
             <SponsorBannerBar position="sidebar" autoPlay={true} showNavigation={false} bannerCount={3} />
 
-            {/* Fortune Widget */}
-            <FortuneWidget />
+            
 
             {/* Popular Today */}
             <TrendingWidget />

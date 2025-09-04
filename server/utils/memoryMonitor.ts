@@ -19,6 +19,10 @@ let lastMemoryUsage: MemoryUsage = {
 const GC_INTERVAL = 5 * 60 * 1000; // 5 minutes
 let lastGcTime = 0;
 
+// Hard cap in MB (configurable via env). Default 500MB
+const MAX_MB = Number.parseInt(process.env.MEMORY_MAX_MB || '500', 10);
+const MAX_RSS_BYTES = Math.max(100, isFinite(MAX_MB) ? MAX_MB : 500) * 1024 * 1024;
+
 function formatMemory(bytes: number): string {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -29,7 +33,7 @@ function formatMemory(bytes: number): string {
 
 export function logMemoryUsage(label = 'Memory usage') {
   try {
-    const currentMemory = process.memoryUsage();
+    let currentMemory = process.memoryUsage();
     const now = Date.now();
     
     // Calculate differences
@@ -53,7 +57,25 @@ export function logMemoryUsage(label = 'Memory usage') {
       console.log(`ArrayBuffers: \x1b[33m${formatMemory(arrayBuffers)}\x1b[0m`);
     }
     
-    // Force garbage collection if it's been a while
+    // Hard memory cap enforcement: if RSS exceeds limit, try GC once, then exit
+    if (currentMemory.rss > MAX_RSS_BYTES) {
+      console.error(`\n\x1b[31mMemory cap exceeded\x1b[0m: RSS=${formatMemory(currentMemory.rss)} > cap=${formatMemory(MAX_RSS_BYTES)}`);
+      if (global.gc) {
+        const startTime = performance.now();
+        global.gc();
+        const endTime = performance.now();
+        console.warn(`Forced GC due to memory cap. Took ${ (endTime - startTime).toFixed(2) }ms`);
+        currentMemory = process.memoryUsage();
+      }
+      if (currentMemory.rss > MAX_RSS_BYTES) {
+        console.error(`\x1b[31mExiting process due to memory cap (${formatMemory(MAX_RSS_BYTES)})\x1b[0m`);
+        // Allow logs to flush
+        setTimeout(() => process.exit(1), 50);
+        return;
+      }
+    }
+
+    // Force garbage collection periodically
     if (now - lastGcTime > GC_INTERVAL) {
       if (global.gc) {
         console.log('\n\x1b[36m=== Running garbage collection ===\x1b[0m');

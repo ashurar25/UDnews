@@ -27,9 +27,11 @@ const app = express();
 // Log initial memory usage
 logMemoryUsage('Server startup');
 
-// Log memory usage every 15 minutes in production
+// Log memory usage on interval in production (default 60s, configurable via MEM_CHECK_INTERVAL_SEC)
 if (process.env.NODE_ENV === 'production') {
-  setInterval(() => logMemoryUsage('Production Memory Check'), 15 * 60 * 1000);
+  const intervalSec = Number.parseInt(process.env.MEM_CHECK_INTERVAL_SEC || '60', 10);
+  const intervalMs = Math.max(10, isFinite(intervalSec) ? intervalSec : 60) * 1000;
+  setInterval(() => logMemoryUsage('Production Memory Check'), intervalMs);
 }
 
 // Trust proxy if behind a reverse proxy/CDN

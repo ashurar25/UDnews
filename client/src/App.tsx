@@ -32,6 +32,7 @@ const DisasterAlert = lazy(() => import("@/pages/DisasterAlert"));
 const SystemStatus = lazy(() => import("@/pages/SystemStatus"));
 const DailySummary = lazy(() => import("./pages/DailySummary"));
 const Lottery = lazy(() => import("./pages/Lottery"));
+const Fortune = lazy(() => import("./pages/Fortune"));
 
 // Loading component for Suspense
 const PageLoading = () => (
@@ -109,6 +110,7 @@ function App() {
                   <Route path="/system-status" component={() => <RouteWithSuspense component={SystemStatus} />} />
                   <Route path="/daily-summary" component={() => <RouteWithSuspense component={DailySummary} />} />
                   <Route path="/lottery" component={() => <RouteWithSuspense component={Lottery} />} />
+                  <Route path="/fortune" component={() => <RouteWithSuspense component={Fortune} />} />
                   <Route component={() => <RouteWithSuspense component={NotFound} />} />
                 </Switch>
               </Router>
