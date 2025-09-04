@@ -37,10 +37,15 @@ if (process.env.NODE_ENV === 'production') {
 // Trust proxy if behind a reverse proxy/CDN
 app.set('trust proxy', 1);
 
-// Force HTTPS behind Render/Proxy using x-forwarded-proto
+// Force HTTPS behind proxy/CDN using x-forwarded-proto
+// Safer: only enforce in production, allow opt-out via FORCE_HTTPS=false,
+// and only redirect when the header exists and is not https to avoid loops locally.
 app.use((req, res, next) => {
-  const xfProto = req.headers['x-forwarded-proto'];
-  if (xfProto !== 'https') {
+  const forceHttps = (process.env.FORCE_HTTPS ?? 'true') !== 'false';
+  const isProd = process.env.NODE_ENV === 'production';
+  const xfProto = req.headers['x-forwarded-proto'] as string | undefined;
+
+  if (forceHttps && isProd && xfProto && xfProto !== 'https') {
     return res.redirect(301, `https://${req.headers.host}${req.url}`);
   }
   next();
