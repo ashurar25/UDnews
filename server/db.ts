@@ -26,16 +26,30 @@ const BACKUP_DATABASE_URL = "postgresql://neondb_owner:npg_pq2xNLg1BCJS@ep-soft-
 // ใช้ environment variable หรือ primary database เป็นค่าเริ่มต้น
 export const DATABASE_URL = process.env.DATABASE_URL || PRIMARY_DATABASE_URL;
 
+// Ensure SSL mode is enforced for providers that require it (e.g., Render, Neon)
+const ensureSslParam = (url: string) => {
+  try {
+    const needsSsl = /render\.com|neon\.tech/i.test(url) && !/[?&](ssl|sslmode)=/i.test(url);
+    if (!needsSsl) return url;
+    return url + (url.includes('?') ? '&' : '?') + 'sslmode=require';
+  } catch {
+    return url;
+  }
+};
+const EFFECTIVE_DATABASE_URL = ensureSslParam(DATABASE_URL);
+
 // Configure main database pool with optimized settings
 export const pool = new Pool({ 
-  connectionString: DATABASE_URL,
+  connectionString: EFFECTIVE_DATABASE_URL,
   ssl: {
     rejectUnauthorized: false
   },
   max: 20, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-  connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
+  connectionTimeoutMillis: 10000, // Allow up to 10s for cold starts / network hiccups
   maxUses: 7500, // Close and remove a connection after it has been used 7500 times
+  keepAlive: true,
+  keepAliveInitialDelayMillis: 0,
 });
 
 // Configure backup database pool with optimized settings

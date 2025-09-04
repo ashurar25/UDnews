@@ -242,36 +242,52 @@ app.use((req, res, next) => {
 
   // Use environment port or default to 5000
   // this serves both the API and the client.
-  const port = parseInt(process.env.PORT || "5000", 10);
   const host = "0.0.0.0"; // Bind to all interfaces
-  
-  server.listen(port, host, (err?: Error) => {
-    if (err) {
-      console.error("Failed to start server:", err);
-      process.exit(1);
-    }
-    log(`serving on port ${port}`);
-    
-    // Start automatic RSS processing after server is ready
-    // Kick off schema preflight and then RSS processing in background
-    (async () => {
-      try {
-        // Ensure critical columns exist (idempotent)
-        await db.execute(sql`
-          ALTER TABLE IF EXISTS news_articles
-          ADD COLUMN IF NOT EXISTS image_urls TEXT[]
-        `);
-        log('DB schema preflight complete');
-      } catch (e) {
-        console.warn('DB schema preflight failed:', e);
+  const basePort = parseInt(process.env.PORT || "5000", 10) || 5000;
+
+  const startServer = (p: number, retries = 10) => {
+    const onError = (e: any) => {
+      if ((e?.code === 'EADDRINUSE' || e?.code === 'EACCES') && retries > 0) {
+        console.warn(`Port ${p} unavailable (${e?.code}). Retrying on port ${p + 1}...`);
+        try { server.close?.(); } catch {}
+        // Try the next port
+        startServer(p + 1, retries - 1);
+      } else {
+        console.error('Failed to start server:', e);
+        process.exit(1);
       }
-      // Start automatic RSS processing after schema preflight
-      try {
-        rssService.startAutoProcessing();
-        log('RSS automatic processing started');
-      } catch (e) {
-        console.warn('Failed to start RSS processing:', e);
-      }
-    })();
-  });
+    };
+
+    server.once('error', onError);
+    server.listen(p, host, () => {
+      // Remove the once error handler on successful listen
+      try { (server as any).off?.('error', onError); } catch {}
+
+      log(`serving on port ${p}`);
+
+      // Start automatic RSS processing after server is ready
+      // Kick off schema preflight and then RSS processing in background
+      (async () => {
+        try {
+          // Ensure critical columns exist (idempotent)
+          await db.execute(sql`
+            ALTER TABLE IF EXISTS news_articles
+            ADD COLUMN IF NOT EXISTS image_urls TEXT[]
+          `);
+          log('DB schema preflight complete');
+        } catch (e) {
+          console.warn('DB schema preflight failed:', e);
+        }
+        // Start automatic RSS processing after schema preflight
+        try {
+          rssService.startAutoProcessing();
+          log('RSS automatic processing started');
+        } catch (e) {
+          console.warn('Failed to start RSS processing:', e);
+        }
+      })();
+    });
+  };
+
+  startServer(basePort);
 })();
