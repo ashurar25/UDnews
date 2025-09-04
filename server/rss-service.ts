@@ -4,6 +4,12 @@ import { storage } from './storage';
 import { type InsertNews } from '@shared/schema';
 import { ImageOptimizer } from './image-optimizer';
 
+// Environment-based tuning knobs to control memory usage
+const RSS_MAX_CONCURRENT = Math.max(1, parseInt(process.env.RSS_MAX_CONCURRENT || '2'));
+const RSS_BATCH_DELAY_MS = Math.max(0, parseInt(process.env.RSS_BATCH_DELAY_MS || '1500'));
+const RSS_CONTENT_IMAGE_LIMIT = Math.max(0, parseInt(process.env.RSS_CONTENT_IMAGE_LIMIT || '1'));
+const RSS_GC_BETWEEN_ITEMS = (process.env.RSS_GC_BETWEEN_ITEMS || 'true').toLowerCase() !== 'false';
+
 const parser = new Parser({
   timeout: 8000,
   headers: {
@@ -563,20 +569,19 @@ export class RSSService {
     // Generate content hash for deduplication
     const contentHash = this.generateContentHash(item.title, item.link);
 
-    // Check if this article already exists (by sourceUrl or similar title)
-    const existingNews = await storage.getAllNews(); // This might be inefficient for many news items
-    const exists = existingNews.some(news => {
-      // Check exact URL match
-      if (item.link && news.sourceUrl === item.link) return true;
-
-      // Check similar titles (fuzzy matching)
-      if (news.title && item.title) {
-        const similarity = this.calculateSimilarity(news.title.toLowerCase(), item.title.toLowerCase());
+    // Check if this article already exists (prefer precise, then limited fuzzy)
+    // 1) Fast path: exact URL match via DB
+    const byUrl = await storage.getNewsByUrl(item.link);
+    let exists = !!byUrl;
+    // 2) If not found by URL, only fetch a LIMITED set of recent news to compare titles
+    if (!exists) {
+      const recent = await storage.getAllNews(200, 0); // Limit to latest 200 to keep memory low
+      exists = recent.some(news => {
+        if (!news.title) return false;
+        const similarity = this.calculateSimilarity(news.title.toLowerCase(), item.title!.toLowerCase());
         return similarity > 0.85; // 85% similarity threshold
-      }
-
-      return false;
-    });
+      });
+    }
 
     if (exists) {
       return false; // Skip duplicate articles
@@ -649,12 +654,13 @@ export class RSSService {
     let processedContent = cleanedContent;
     let processedImageUrls: string[] = [];
     
-    // If we have content images, ensure they're properly hosted
-    if (contentImageUrls.length > 0) {
+    // If we have content images, ensure they're properly hosted (limited by RSS_CONTENT_IMAGE_LIMIT)
+    if (contentImageUrls.length > 0 && RSS_CONTENT_IMAGE_LIMIT > 0) {
       try {
         const root = parse(cleanedContent);
         const imgElements = root.querySelectorAll('img');
         
+        let downloaded = 0;
         for (const img of imgElements) {
           const src = img.getAttribute('src') || img.getAttribute('data-src');
           if (src) {
@@ -668,6 +674,11 @@ export class RSSService {
               img.setAttribute('loading', 'lazy');
               img.setAttribute('alt', item.title || 'News image');
               if (!processedImageUrls.includes(localUrl) && processedImageUrls.length < 5) processedImageUrls.push(localUrl);
+              downloaded++;
+              if (downloaded >= RSS_CONTENT_IMAGE_LIMIT) {
+                // Stop downloading more to limit memory/IO
+                break;
+              }
             }
           }
         }
@@ -746,7 +757,7 @@ export class RSSService {
       let totalProcessed = 0;
 
       // Process feeds with controlled concurrency to prevent memory issues
-      const maxConcurrent = 3; // Limit concurrent feed processing
+      const maxConcurrent = RSS_MAX_CONCURRENT; // Limit concurrent feed processing via env
       const results: number[] = [];
       
       for (let i = 0; i < activeFeeds.length; i += maxConcurrent) {
@@ -756,6 +767,10 @@ export class RSSService {
             // Stagger requests within batch to avoid overwhelming servers
             await new Promise(resolve => setTimeout(resolve, batchIndex * 500));
             const count = await this.processFeed(feed.id, feed.url, feed.category);
+            // Optionally GC between items
+            if (RSS_GC_BETWEEN_ITEMS && global.gc) {
+              try { global.gc(); } catch {}
+            }
             return count;
           } catch (error) {
             console.error(`Failed to process feed ${feed.title}:`, error);
@@ -777,7 +792,7 @@ export class RSSService {
         
         // Small delay between batches to allow memory cleanup
         if (i + maxConcurrent < activeFeeds.length) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, RSS_BATCH_DELAY_MS));
         }
       }
       
