@@ -4,7 +4,7 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development NODE_OPTIONS=\"--max-old-space-size=500 --expose-gc\" tsx server/index.ts",
+    "dev": "cross-env PORT=3001 NODE_ENV=development NODE_OPTIONS=\"--max-old-space-size=500 --expose-gc\" npx tsx server/index.ts",
     "prebuild": "cross-env SITE_ORIGIN=https://udnewsupdate.sbs tsx scripts/generate-sitemap.ts || echo sitemap skipped",
     "build": "vite build && esbuild server/index.ts server/scripts/migrate.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --outbase=server",
     "sitemap": "cross-env SITE_ORIGIN=https://udnewsupdate.sbs tsx scripts/generate-sitemap.ts",
