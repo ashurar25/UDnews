@@ -2,7 +2,7 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
-import { createServer as createViteServer, createLogger } from "vite";
+import { createServer as createViteServer, createLogger, type UserConfig } from "vite";
 import { type Server } from "http";
 import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
@@ -28,8 +28,18 @@ export async function setupVite(app: Express, server: Server) {
     port: 8080,
     cors: true
   } as const;
+  // Resolve the project's Vite config for development
+  const baseConfig: UserConfig | Promise<UserConfig> =
+    typeof viteConfig === 'function'
+      ? viteConfig({ mode: 'development', command: 'serve' } as any)
+      : (viteConfig as unknown as UserConfig);
+  const resolvedConfig = await Promise.resolve(baseConfig);
+  // Ensure root points to client directory during dev
+  const root = resolvedConfig.root || path.resolve(import.meta.dirname, '..', 'client');
+
   const vite = await createViteServer({
-    ...viteConfig,
+    ...resolvedConfig,
+    root,
     configFile: false,
     customLogger: {
       ...viteLogger,
