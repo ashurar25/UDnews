@@ -1,67 +1,30 @@
 
-// Service Worker for Push Notifications
-// UD News - Push Notification Service Worker
+// Service Worker for UD News (cleaned)
+// - Avoid duplicate declarations and simplify caching
+// - Version bump forces clients to update SW when changed
 
-const CACHE_NAME = 'ud-news-v1';
-const urlsToCache = [
-  '/',
-  '/logo.jpg',
-  '/placeholder.svg'
-];
+const CACHE_NAME = 'ud-news-v3';
+const PRECACHE_URLS = ['/', '/logo.jpg', '/placeholder.svg'];
 
-// Install event
+// Utility: safe fetch without caching APIs
+function shouldBypassCache(request) {
+  if (request.method !== 'GET') return true;
+  const url = new URL(request.url);
+  if (url.pathname.startsWith('/api/')) return true;
+  return false;
+}
+
+// Install: pre-cache minimal shell
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => {
-        return cache.addAll(urlsToCache);
+      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .then(() => self.skipWaiting())
+      .catch((err) => {
+        // don't fail install due to precache issues
+        console.warn('[SW] precache failed:', err);
       })
   );
-});
-
-// Fetch event
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        if (response) {
-          return response;
-        }
-        return fetch(event.request);
-      }
-    )
-  );
-});
-
-// Push event
-self.addEventListener('push', (event) => {
-  if (event.data) {
-    const data = event.data.json();
-    const options = {
-      body: data.body,
-      icon: data.icon || '/logo.jpg',
-      badge: data.badge || '/logo.jpg',
-      tag: data.tag || 'default',
-      requireInteraction: data.requireInteraction || false,
-      data: {
-        url: data.url
-      },
-      actions: [
-        {
-          action: 'open',
-          title: 'อ่านข่าว'
-        },
-        {
-          action: 'close',
-          title: 'ปิด'
-        }
-      ]
-    };
-
-    event.waitUntil(
-      self.registration.showNotification(data.title, options)
-    );
-  }
 });
 
 // Notification click event
@@ -135,44 +98,23 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache when offline
 self.addEventListener('fetch', (event) => {
-  // Only cache GET requests
-  if (event.request.method !== 'GET') {
-    return;
-  }
-
-  // Skip caching for API requests
-  if (event.request.url.includes('/api/')) {
-    return;
-  }
+  const { request } = event;
+  if (shouldBypassCache(request)) return; // Let network handle
 
   event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Return cached version or fetch from network
-        return response || fetch(event.request).then((fetchResponse) => {
-          // Check if we received a valid response
-          if (!fetchResponse || fetchResponse.status !== 200 || fetchResponse.type !== 'basic') {
-            return fetchResponse;
-          }
-
-          // Clone the response
-          const responseToCache = fetchResponse.clone();
-
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-
-          return fetchResponse;
-        });
-      })
-      .catch(() => {
-        // Return offline page or placeholder
-        if (event.request.destination === 'document') {
-          return caches.match('/');
-        }
+    caches.match(request).then((cached) => {
+      if (cached) return cached;
+      return fetch(request).then((resp) => {
+        try {
+          const copy = resp.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        } catch {}
+        return resp;
+      }).catch(() => {
+        if (request.destination === 'document') return caches.match('/');
         return new Response('Offline', { status: 503 });
-      })
+      });
+    })
   );
 });
 
