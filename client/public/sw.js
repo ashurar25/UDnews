@@ -3,15 +3,26 @@
 // - Avoid duplicate declarations and simplify caching
 // - Version bump forces clients to update SW when changed
 
-const CACHE_NAME = 'ud-news-v3';
+const CACHE_NAME = 'ud-news-v4';
 const PRECACHE_URLS = ['/', '/logo.jpg', '/placeholder.svg'];
 
 // Utility: safe fetch without caching APIs
 function shouldBypassCache(request) {
-  if (request.method !== 'GET') return true;
-  const url = new URL(request.url);
-  if (url.pathname.startsWith('/api/')) return true;
-  return false;
+  try {
+    // Only cache safe, same-origin GET requests over http(s)
+    if (request.method !== 'GET') return true;
+    const url = new URL(request.url);
+    const isHttp = url.protocol === 'http:' || url.protocol === 'https:';
+    if (!isHttp) return true; // e.g., chrome-extension:, data:, blob:
+    if (url.origin !== self.location.origin) return true; // third-party
+    if (url.pathname.startsWith('/api/')) return true; // never cache APIs
+    if (request.headers && request.headers.get && request.headers.get('range')) return true; // media range
+    // Workaround Chrome bug when only-if-cached with cross-origin
+    if (request.cache === 'only-if-cached' && request.mode !== 'same-origin') return true;
+    return false;
+  } catch {
+    return true;
+  }
 }
 
 // Install: pre-cache minimal shell
@@ -105,10 +116,13 @@ self.addEventListener('fetch', (event) => {
     caches.match(request).then((cached) => {
       if (cached) return cached;
       return fetch(request).then((resp) => {
-        try {
+        // Only cache successful, same-origin basic responses
+        if (resp && resp.ok && resp.type === 'basic') {
           const copy = resp.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-        } catch {}
+          caches.open(CACHE_NAME)
+            .then((cache) => cache.put(request, copy))
+            .catch(() => {});
+        }
         return resp;
       }).catch(() => {
         if (request.destination === 'document') return caches.match('/');
