@@ -436,7 +436,29 @@ export class RSSService {
   }
 
   // Process a single RSS feed with improved performance
-  async processFeed(feedId: number, feedUrl: string, category: string): Promise<number> {
+  async processFeed(feedId: string | number, feedUrl: string, category: string): Promise<number> {
+    // Convert feedId to number if it's a string, handle UUIDs and string IDs
+    let numericFeedId: number;
+    if (typeof feedId === 'string') {
+      // Try to extract numeric part or use hash for non-numeric strings
+      const numericMatch = feedId.match(/\d+/);
+      if (numericMatch) {
+        numericFeedId = parseInt(numericMatch[0], 10);
+      } else {
+        // For UUIDs or string IDs, create a consistent numeric hash
+        numericFeedId = Math.abs(feedId.split('').reduce((a, b) => {
+          a = ((a << 5) - a) + b.charCodeAt(0);
+          return a & a;
+        }, 0));
+      }
+    } else {
+      numericFeedId = feedId;
+    }
+    
+    if (isNaN(numericFeedId) || numericFeedId <= 0) {
+      console.error(`Invalid feedId: ${feedId}`);
+      return 0;
+    }
     let articlesProcessed = 0;
     let articlesAdded = 0;
     let success = true;
@@ -445,7 +467,7 @@ export class RSSService {
     try {
       console.log(`Processing RSS feed: ${feedUrl}`);
       // Mark feed as processing
-      this.feedStatus[feedId] = { isProcessing: true, lastError: null };
+      this.feedStatus[numericFeedId] = { isProcessing: true, lastError: null };
 
       console.log(`🔄 Fetching RSS from: ${feedUrl}`);
 
@@ -471,13 +493,25 @@ export class RSSService {
 
       console.log(`✅ RSS fetched successfully from ${feedUrl}: ${xml.length} characters`);
 
-      // Use the global parser instance
-      const feed = await parser.parseString(xml); // Use parseString with the fetched XML
+      // Clean XML content before parsing to handle malformed entities
+      let cleanXml = xml;
+      try {
+        // Fix common XML entity issues
+        cleanXml = xml
+          .replace(/&(?![a-zA-Z0-9#]{1,7};)/g, '&amp;') // Fix unescaped ampersands
+          .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // Remove control characters
+          .replace(/&([^;]+)=([^;]*);/g, '&amp;$1=$2;'); // Fix malformed entities with equals
+      } catch (cleanError) {
+        console.warn(`XML cleaning failed for ${feedUrl}, using original:`, cleanError);
+      }
+
+      // Use the global parser instance with cleaned XML
+      const feed = await parser.parseString(cleanXml);
 
       if (!feed || !feed.items || feed.items.length === 0) {
         console.log(`No items found in feed: ${feedUrl}`);
-        await this.recordProcessingHistory(feedId, 0, 0, true, 'No items found in feed');
-        this.lastProcessed.set(feedId, new Date()); // Update last processed time even if no items
+        await this.recordProcessingHistory(numericFeedId, 0, 0, true, 'No items found in feed');
+        this.lastProcessed.set(numericFeedId, new Date()); // Update last processed time even if no items
         return 0;
       }
 
@@ -486,7 +520,7 @@ export class RSSService {
       // Process each item in the feed
       for (const item of feed.items) {
         try {
-          const wasAdded = await this.processRSSItem(item as RSSItem, category, feedId);
+          const wasAdded = await this.processRSSItem(item as RSSItem, category, numericFeedId);
           if (wasAdded) articlesAdded++;
         } catch (error) {
           console.error(`Error processing RSS item from ${feedUrl}:`, error);
@@ -495,13 +529,13 @@ export class RSSService {
       }
 
       // Update feed last processed time
-      await storage.updateRssFeedLastProcessed(feedId);
+      await storage.updateRssFeedLastProcessed(numericFeedId);
 
       // Record processing history
-      await this.recordProcessingHistory(feedId, articlesProcessed, articlesAdded, true, null);
+      await this.recordProcessingHistory(numericFeedId, articlesProcessed, articlesAdded, true, null);
 
-      this.lastProcessed.set(feedId, new Date());
-      this.feedStatus[feedId] = { isProcessing: false, lastError: null, lastProcessed: new Date(), itemsProcessed: articlesAdded };
+      this.lastProcessed.set(numericFeedId, new Date());
+      this.feedStatus[numericFeedId] = { isProcessing: false, lastError: null, lastProcessed: new Date(), itemsProcessed: articlesAdded };
       console.log(`Successfully processed ${articlesAdded}/${articlesProcessed} items from ${feedUrl}`);
       return articlesAdded;
 
@@ -511,11 +545,11 @@ export class RSSService {
       console.error(`Error processing RSS feed ${feedUrl}:`, error);
 
       // Record failed processing
-      await this.recordProcessingHistory(feedId, articlesProcessed, articlesAdded, false, errorMessage);
+      await this.recordProcessingHistory(numericFeedId, articlesProcessed, articlesAdded, success, errorMessage);
 
       // Update last processed time even on error
-      this.lastProcessed.set(feedId, new Date());
-      this.feedStatus[feedId] = { isProcessing: false, lastError: errorMessage, lastProcessed: new Date(), itemsProcessed: articlesAdded };
+      this.lastProcessed.set(numericFeedId, new Date());
+      this.feedStatus[numericFeedId] = { isProcessing: false, lastError: errorMessage, lastProcessed: new Date(), itemsProcessed: articlesAdded };
 
       // Check if it's a parsing error and try alternative approach (consider if this is still needed or if timeout is sufficient)
       if (error instanceof Error && error.message && error.message.includes('Non-whitespace before first tag')) {
