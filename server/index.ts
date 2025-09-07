@@ -243,7 +243,8 @@ app.use((req, res, next) => {
   // Use environment port or default to 5000
   // this serves both the API and the client.
   const host = "0.0.0.0"; // Bind to all interfaces
-  const basePort = parseInt(process.env.PORT || "5000", 10) || 5000;
+  // Force port 5000 in development for Replit workflow compatibility
+  const basePort = process.env.NODE_ENV === 'development' ? 5000 : parseInt(process.env.PORT || "5000", 10) || 5000;
 
   const startServer = (p: number, retries = 10) => {
     const onError = (e: any) => {
