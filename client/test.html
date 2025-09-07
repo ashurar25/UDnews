@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ทดสอบเซิร์ฟเวอร์ - UD News Update</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 600px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+        .status {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.2em;
+            margin: 20px 0;
+            display: inline-block;
+        }
+        .info {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .btn {
+            background: #FF6B35;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: #e55a2b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 เซิร์ฟเวอร์ทำงานแล้ว!</h1>
+        <div class="status">
+            ✅ UD News Update Server กำลังทำงาน
+        </div>
+        
+        <div class="info">
+            <h3>📋 ข้อมูลเซิร์ฟเวอร์:</h3>
+            <p><strong>เวลา:</strong> <span id="time"></span></p>
+            <p><strong>URL:</strong> http://localhost:5173</p>
+            <p><strong>สถานะ:</strong> Development Mode</p>
+        </div>
+
+        <div>
+            <a href="/index.html" class="btn">🏠 ไปหน้าแรก</a>
+            <a href="javascript:location.reload()" class="btn">🔄 รีเฟรช</a>
+        </div>
+
+        <div class="info">
+            <h3>🔧 ขั้นตอนต่อไป:</h3>
+            <p>1. ตรวจสอบว่า React App โหลดได้</p>
+            <p>2. เช็ค Browser Console สำหรับ errors</p>
+            <p>3. ตรวจสอบ Network tab</p>
+        </div>
+    </div>
+
+    <script>
+        // แสดงเวลาปัจจุบัน
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('time').textContent = now.toLocaleString('th-TH');
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+
+        // ทดสอบ JavaScript
+        console.log('✅ JavaScript ทำงานปกติ');
+        console.log('🕐 เวลาปัจจุบัน:', new Date().toLocaleString('th-TH'));
+        console.log('🌐 URL ปัจจุบัน:', window.location.href);
+    </script>
+</body>
+</html>
