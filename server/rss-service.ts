@@ -493,14 +493,21 @@ export class RSSService {
 
       console.log(`✅ RSS fetched successfully from ${feedUrl}: ${xml.length} characters`);
 
-      // Clean XML content before parsing to handle malformed entities
+      // Clean XML content before parsing to handle malformed entities and attributes
       let cleanXml = xml;
       try {
         // Fix common XML entity issues
         cleanXml = xml
           .replace(/&(?![a-zA-Z0-9#]{1,7};)/g, '&amp;') // Fix unescaped ampersands
           .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // Remove control characters
-          .replace(/&([^;]+)=([^;]*);/g, '&amp;$1=$2;'); // Fix malformed entities with equals
+          .replace(/&([^;]+)=([^;]*);/g, '&amp;$1=$2;') // Fix malformed entities with equals
+          // Fix unquoted attribute values (common in Thai PBS RSS)
+          .replace(/(\w+)=([^"\s>]+)(?=[\s>])/g, '$1="$2"') // Quote unquoted attributes
+          .replace(/(\w+)=([^"\s>]+)$/gm, '$1="$2"') // Quote unquoted attributes at end of line
+          // Fix malformed HTML entities in content
+          .replace(/&([a-zA-Z]+)(?![a-zA-Z0-9#;])/g, '&amp;$1')
+          // Remove or fix problematic characters that break XML parsing
+          .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '');
       } catch (cleanError) {
         console.warn(`XML cleaning failed for ${feedUrl}, using original:`, cleanError);
       }
