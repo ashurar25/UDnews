@@ -26,9 +26,11 @@ export const DATABASE_URL = process.env.DATABASE_URL || PRIMARY_DATABASE_URL;
 // Ensure SSL mode is enforced for providers that require it (e.g., Render, Neon)
 const ensureSslParam = (url: string) => {
   try {
-    const needsSsl = /render\.com|neon\.tech/i.test(url) && !/[?&](ssl|sslmode)=/i.test(url);
+    const urlRegex = /render\.com|neon\.tech/i;
+    const sslRegex = /[?&](ssl|sslmode)=/i;
+    const needsSsl = urlRegex.test(url) && !sslRegex.test(url);
     if (!needsSsl) return url;
-    return url + (url.includes('?') ? '&' : '?') + 'sslmode=require';
+    return url + (url.indexOf('?') !== -1 ? '&' : '?') + 'sslmode=require';
   } catch {
     return url;
   }
