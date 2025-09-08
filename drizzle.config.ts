@@ -1,7 +1,7 @@
 import { defineConfig } from "drizzle-kit";
 
-// ใช้ PostgreSQL จาก Render เท่านั้น
-const DATABASE_URL = "postgresql://udnews_user:qRNlOyrnlVbrRH16AQJ5itOkjluEebXk@dpg-d2a2dp2dbo4c73at42ug-a.singapore-postgres.render.com/udnewsdb_8d2c";
+// ใช้ PostgreSQL จาก Neon
+const DATABASE_URL = "postgresql://neondb_owner:npg_pq2xNLg1BCJS@ep-soft-tooth-a1ppjto0-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
 
 export default defineConfig({
   out: "./migrations",
