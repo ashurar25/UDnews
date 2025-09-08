@@ -80,6 +80,12 @@ interface NewsItem {
 }
 
 const Index = () => {
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>
+      hello world (ทดสอบ React)
+    </div>
+  );
+}
   const [selectedDay, setSelectedDay] = useState<'yesterday' | 'today' | 'tomorrow'>('today');
   const [weatherData, setWeatherData] = useState<ForecastData | null>(null);
   const [isLoadingWeather, setIsLoadingWeather] = useState(true);
