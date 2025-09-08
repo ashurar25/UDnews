@@ -80,21 +80,17 @@ interface NewsItem {
 }
 
 const Index = () => {
-  return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>
-      hello world (ทดสอบ React)
-    </div>
-  );
-}
+  // --- State & Logic (ย้ายกลับเข้าฟังก์ชัน) ---
   const [selectedDay, setSelectedDay] = useState<'yesterday' | 'today' | 'tomorrow'>('today');
   const [weatherData, setWeatherData] = useState<ForecastData | null>(null);
   const [isLoadingWeather, setIsLoadingWeather] = useState(true);
-  const [hourly, setHourly] = useState<HourlyWeather[] | null>(null);
-  const [isLoadingHourly, setIsLoadingHourly] = useState(true);
-  const [hourly1h, setHourly1h] = useState<HourlyWeather[] | null>(null);
-  const [isLoadingHourly1h, setIsLoadingHourly1h] = useState(true);
 
-  // Load weather data when component mounts
+  // Mock hourly data states
+  const isLoadingHourly = false;
+  const hourly: any[] = [];
+  const isLoadingHourly1h = false;
+  const hourly1h: any[] = [];
+
   useEffect(() => {
     const loadWeather = async () => {
       try {
@@ -115,75 +111,19 @@ const Index = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Load hourly forecast (next 24h in 3-hour steps)
-  useEffect(() => {
-    let mounted = true;
-    const loadHourly = async () => {
-      try {
-        setIsLoadingHourly(true);
-        const data = await getHourlyForecast(24);
-        if (mounted) setHourly(data);
-      } catch (e) {
-        // ignore, API util logs and has fallback
-      } finally {
-        if (mounted) setIsLoadingHourly(false);
-      }
-    };
-    loadHourly();
-    const id = setInterval(loadHourly, 30 * 60 * 1000);
-    return () => { mounted = false; clearInterval(id); };
-  }, []);
-
-  // Load true hourly forecast (1-hour step) for Udon Thani
-  useEffect(() => {
-    let mounted = true;
-    const loadHourly1h = async () => {
-      try {
-        setIsLoadingHourly1h(true);
-        const data = await getHourlyForecastHourly(24);
-        if (mounted) setHourly1h(data);
-      } catch {}
-      finally {
-        if (mounted) setIsLoadingHourly1h(false);
-      }
-    };
-    loadHourly1h();
-    const id = setInterval(loadHourly1h, 30 * 60 * 1000);
-    return () => { mounted = false; clearInterval(id); };
-  }, []);
-
-  const currentWeather = weatherData?.[selectedDay] || {
+  // Get current weather for display
+  const currentWeather = weatherData ? weatherData[selectedDay] : {
     temp: 0,
     high: 0,
     low: 0,
-    condition: '',
-    conditionThai: 'กำลังโหลด...',
-    icon: '🌡️',
+    condition: 'clear',
+    conditionThai: 'แจ่มใส',
+    icon: '☀️',
     humidity: 0,
     wind: 0,
     city: 'อุดรธานี',
     rainChance: 0,
-    rainStatus: 'กำลังโหลด...'
-  };
-
-  // Background image mapping for weather conditions
-  const getWeatherBgByCondition = (desc: string) => {
-    const d = (desc || '').toLowerCase();
-    // External, high-quality images (Unsplash) with cropping params for performance
-    const SUNNY = 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1600&q=80&auto=format&fit=crop';
-    const PARTLY_CLOUDY = 'https://images.unsplash.com/photo-1499346030926-9a72daac6c63?w=1600&q=80&auto=format&fit=crop';
-    const CLOUDY = 'https://images.unsplash.com/photo-1499346030926-9a72daac6c63?w=1600&q=80&auto=format&fit=crop';
-    const RAIN = 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=1600&q=80&auto=format&fit=crop';
-    const STORM = 'https://images.unsplash.com/photo-1461511669078-d46bf351cd6e?w=1600&q=80&auto=format&fit=crop';
-    const FOG = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1600&q=80&auto=format&fit=crop';
-
-    if (d.includes('thunder') || d.includes('storm')) return STORM;
-    if (d.includes('rain') || d.includes('shower') || d.includes('drizzle')) return RAIN;
-    if (d.includes('overcast')) return CLOUDY;
-    if (d.includes('cloud')) return PARTLY_CLOUDY;
-    if (d.includes('mist') || d.includes('fog') || d.includes('haze')) return FOG;
-    // default clear
-    return SUNNY;
+    rainStatus: 'ไม่มีฝน'
   };
 
   // Fetch real news data from API with performance optimization - first 100 news items
@@ -661,17 +601,14 @@ const Index = () => {
           </div>
         </section>
       </main>
-
-      {/* Header Sponsor Banner Bar - Moved to bottom */}
-      <div className="bg-muted/30 py-3">
-        <div className="container mx-auto px-4">
-          <SponsorBannerBar position="header" className="justify-center" autoPlay={true} showNavigation={true} bannerCount={5} />
+        <div className="bg-muted/30 py-3">
+          <div className="container mx-auto px-4">
+            <SponsorBannerBar position="header" className="justify-center" autoPlay={true} showNavigation={true} bannerCount={5} />
+          </div>
         </div>
+        <Footer />
       </div>
-
-      <Footer />
-    </div>
-  );
+    );
 };
 
 export default Index;
