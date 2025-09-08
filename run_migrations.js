@@ -8,36 +8,27 @@ if (!process.env.DATABASE_URL) {
 }
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
 async function runMigrations() {
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-  });
-
   try {
-    await client.connect();
-    console.log('Connected to database');
-
-    // Read and execute the users table SQL
-    const usersSql = fs.readFileSync('create-users-table.sql', 'utf8');
-    await client.query(usersSql);
+    console.log('Running database migrations...');
     
-    console.log('✅ All tables created successfully');
+    const sqlContent = fs.readFileSync('create_tables.sql', 'utf8');
+    const statements = sqlContent
+      .split(';')
+      .map(stmt => stmt.trim())
+      .filter(stmt => stmt.length > 0);
     
-    // List existing tables
-    const tables = await client.query(`
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public'
-      ORDER BY table_name;
-    `);
+    for (const statement of statements) {
+      console.log(`Executing: ${statement.substring(0, 50)}...`);
+      await pool.query(statement);
+    }
     
-    console.log('📋 Existing tables:');
-    tables.rows.forEach(row => console.log(`  - ${row.table_name}`));
-    
+    console.log('✅ All database tables created successfully');
   } catch (error) {
     console.error('❌ Error running migrations:', error);
   } finally {
-    await client.end();
+    await pool.end();
   }
 }
 

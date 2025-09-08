@@ -20,32 +20,16 @@ import { sql } from 'drizzle-orm';
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { rssService } from "./rss-service";
-import { logMemoryUsage } from './utils/memoryMonitor';
 
 const app = express();
-
-// Log initial memory usage
-logMemoryUsage('Server startup');
-
-// Log memory usage on interval in production (default 60s, configurable via MEM_CHECK_INTERVAL_SEC)
-if (process.env.NODE_ENV === 'production') {
-  const intervalSec = Number.parseInt(process.env.MEM_CHECK_INTERVAL_SEC || '60', 10);
-  const intervalMs = Math.max(10, isFinite(intervalSec) ? intervalSec : 60) * 1000;
-  setInterval(() => logMemoryUsage('Production Memory Check'), intervalMs);
-}
 
 // Trust proxy if behind a reverse proxy/CDN
 app.set('trust proxy', 1);
 
-// Force HTTPS behind proxy/CDN using x-forwarded-proto
-// Safer: only enforce in production, allow opt-out via FORCE_HTTPS=false,
-// and only redirect when the header exists and is not https to avoid loops locally.
+// Force HTTPS behind Render/Proxy using x-forwarded-proto
 app.use((req, res, next) => {
-  const forceHttps = (process.env.FORCE_HTTPS ?? 'true') !== 'false';
-  const isProd = process.env.NODE_ENV === 'production';
-  const xfProto = req.headers['x-forwarded-proto'] as string | undefined;
-
-  if (forceHttps && isProd && xfProto && xfProto !== 'https') {
+  const xfProto = req.headers['x-forwarded-proto'];
+  if (xfProto !== 'https') {
     return res.redirect(301, `https://${req.headers.host}${req.url}`);
   }
   next();
@@ -231,64 +215,41 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // In development, use Vite middlewares to serve client without prebuild
-  // In production, serve prebuilt static files from dist/public
-  if (process.env.NODE_ENV === 'development') {
-    await setupVite(app, server);
-  } else {
-    // Serve built client
-    serveStatic(app);
-  }
+  // Serve built client
+  serveStatic(app);
 
   // Use environment port or default to 5000
   // this serves both the API and the client.
+  const port = parseInt(process.env.PORT || "5000", 10);
   const host = "0.0.0.0"; // Bind to all interfaces
-  // Force port 5000 in development for Replit workflow compatibility
-  const basePort = process.env.NODE_ENV === 'development' ? 5000 : parseInt(process.env.PORT || "5000", 10) || 5000;
-
-  const startServer = (p: number, retries = 10) => {
-    const onError = (e: any) => {
-      if ((e?.code === 'EADDRINUSE' || e?.code === 'EACCES') && retries > 0) {
-        console.warn(`Port ${p} unavailable (${e?.code}). Retrying on port ${p + 1}...`);
-        try { server.close?.(); } catch {}
-        // Try the next port
-        startServer(p + 1, retries - 1);
-      } else {
-        console.error('Failed to start server:', e);
-        process.exit(1);
+  
+  server.listen(port, host, (err?: Error) => {
+    if (err) {
+      console.error("Failed to start server:", err);
+      process.exit(1);
+    }
+    log(`serving on port ${port}`);
+    
+    // Start automatic RSS processing after server is ready
+    // Kick off schema preflight and then RSS processing in background
+    (async () => {
+      try {
+        // Ensure critical columns exist (idempotent)
+        await db.execute(sql`
+          ALTER TABLE IF EXISTS news_articles
+          ADD COLUMN IF NOT EXISTS image_urls TEXT[]
+        `);
+        log('DB schema preflight complete');
+      } catch (e) {
+        console.warn('DB schema preflight failed:', e);
       }
-    };
-
-    server.once('error', onError);
-    server.listen(p, host, () => {
-      // Remove the once error handler on successful listen
-      try { (server as any).off?.('error', onError); } catch {}
-
-      log(`serving on port ${p}`);
-
-      // Start automatic RSS processing after server is ready
-      // Kick off schema preflight and then RSS processing in background
-      (async () => {
-        try {
-          // Ensure critical columns exist (idempotent)
-          await db.execute(sql`
-            ALTER TABLE IF EXISTS news_articles
-            ADD COLUMN IF NOT EXISTS image_urls TEXT[]
-          `);
-          log('DB schema preflight complete');
-        } catch (e) {
-          console.warn('DB schema preflight failed:', e);
-        }
-        // Start automatic RSS processing after schema preflight
-        try {
-          rssService.startAutoProcessing();
-          log('RSS automatic processing started');
-        } catch (e) {
-          console.warn('Failed to start RSS processing:', e);
-        }
-      })();
-    });
-  };
-
-  startServer(basePort);
+      // Start automatic RSS processing after schema preflight
+      try {
+        rssService.startAutoProcessing();
+        log('RSS automatic processing started');
+      } catch (e) {
+        console.warn('Failed to start RSS processing:', e);
+      }
+    })();
+  });
 })();

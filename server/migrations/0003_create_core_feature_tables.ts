@@ -28,7 +28,7 @@ export async function up(db: DbType) {
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS news_views (
       id SERIAL PRIMARY KEY,
-      news_id INTEGER NOT NULL,
+      news_id INTEGER NOT NULL REFERENCES news_articles(id),
       ip_address VARCHAR(45),
       user_agent TEXT,
       referrer TEXT,
@@ -43,7 +43,7 @@ export async function up(db: DbType) {
       date DATE NOT NULL,
       total_views INTEGER NOT NULL DEFAULT 0,
       unique_visitors INTEGER NOT NULL DEFAULT 0,
-      popular_news_id INTEGER,
+      popular_news_id INTEGER REFERENCES news_articles(id),
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )
   `);
@@ -52,7 +52,7 @@ export async function up(db: DbType) {
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS comments (
       id SERIAL PRIMARY KEY,
-      news_id INTEGER NOT NULL,
+      news_id INTEGER NOT NULL REFERENCES news_articles(id),
       parent_id INTEGER,
       author_name VARCHAR(100) NOT NULL,
       author_email VARCHAR(255),
@@ -103,7 +103,7 @@ export async function up(db: DbType) {
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS news_ratings (
       id SERIAL PRIMARY KEY,
-      news_id INTEGER NOT NULL,
+      news_id INTEGER NOT NULL REFERENCES news_articles(id),
       rating VARCHAR(10) NOT NULL,
       ip_address VARCHAR(45) NOT NULL,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()

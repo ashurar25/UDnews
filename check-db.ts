@@ -4,13 +4,13 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 
-// Load .env first, then .env.local to override specific keys. Merge instead of exclusive.
+// Prefer .env.local over .env
 try {
   const rootDir = path.resolve(import.meta.dirname);
-  const defaultEnv = path.join(rootDir, '.env');
   const localEnv = path.join(rootDir, '.env.local');
-  if (fs.existsSync(defaultEnv)) dotenv.config({ path: defaultEnv });
+  const defaultEnv = path.join(rootDir, '.env');
   if (fs.existsSync(localEnv)) dotenv.config({ path: localEnv });
+  else if (fs.existsSync(defaultEnv)) dotenv.config({ path: defaultEnv });
 } catch {}
 
 async function checkDb() {

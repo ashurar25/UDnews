@@ -1,41 +1,67 @@
 
-// Service Worker for UD News (cleaned)
-// - Avoid duplicate declarations and simplify caching
-// - Version bump forces clients to update SW when changed
+// Service Worker for Push Notifications
+// UD News - Push Notification Service Worker
 
-const CACHE_NAME = 'ud-news-v4';
-const PRECACHE_URLS = ['/', '/logo.jpg', '/placeholder.svg'];
+const CACHE_NAME = 'ud-news-v1';
+const urlsToCache = [
+  '/',
+  '/logo.jpg',
+  '/placeholder.svg'
+];
 
-// Utility: safe fetch without caching APIs
-function shouldBypassCache(request) {
-  try {
-    // Only cache safe, same-origin GET requests over http(s)
-    if (request.method !== 'GET') return true;
-    const url = new URL(request.url);
-    const isHttp = url.protocol === 'http:' || url.protocol === 'https:';
-    if (!isHttp) return true; // e.g., chrome-extension:, data:, blob:
-    if (url.origin !== self.location.origin) return true; // third-party
-    if (url.pathname.startsWith('/api/')) return true; // never cache APIs
-    if (request.headers && request.headers.get && request.headers.get('range')) return true; // media range
-    // Workaround Chrome bug when only-if-cached with cross-origin
-    if (request.cache === 'only-if-cached' && request.mode !== 'same-origin') return true;
-    return false;
-  } catch {
-    return true;
-  }
-}
-
-// Install: pre-cache minimal shell
+// Install event
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE_URLS))
-      .then(() => self.skipWaiting())
-      .catch((err) => {
-        // don't fail install due to precache issues
-        console.warn('[SW] precache failed:', err);
+      .then((cache) => {
+        return cache.addAll(urlsToCache);
       })
   );
+});
+
+// Fetch event
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request)
+      .then((response) => {
+        if (response) {
+          return response;
+        }
+        return fetch(event.request);
+      }
+    )
+  );
+});
+
+// Push event
+self.addEventListener('push', (event) => {
+  if (event.data) {
+    const data = event.data.json();
+    const options = {
+      body: data.body,
+      icon: data.icon || '/logo.jpg',
+      badge: data.badge || '/logo.jpg',
+      tag: data.tag || 'default',
+      requireInteraction: data.requireInteraction || false,
+      data: {
+        url: data.url
+      },
+      actions: [
+        {
+          action: 'open',
+          title: 'อ่านข่าว'
+        },
+        {
+          action: 'close',
+          title: 'ปิด'
+        }
+      ]
+    };
+
+    event.waitUntil(
+      self.registration.showNotification(data.title, options)
+    );
+  }
 });
 
 // Notification click event
@@ -109,26 +135,44 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache when offline
 self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  if (shouldBypassCache(request)) return; // Let network handle
+  // Only cache GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
+  // Skip caching for API requests
+  if (event.request.url.includes('/api/')) {
+    return;
+  }
 
   event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request).then((resp) => {
-        // Only cache successful, same-origin basic responses
-        if (resp && resp.ok && resp.type === 'basic') {
-          const copy = resp.clone();
+    caches.match(event.request)
+      .then((response) => {
+        // Return cached version or fetch from network
+        return response || fetch(event.request).then((fetchResponse) => {
+          // Check if we received a valid response
+          if (!fetchResponse || fetchResponse.status !== 200 || fetchResponse.type !== 'basic') {
+            return fetchResponse;
+          }
+
+          // Clone the response
+          const responseToCache = fetchResponse.clone();
+
           caches.open(CACHE_NAME)
-            .then((cache) => cache.put(request, copy))
-            .catch(() => {});
+            .then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+
+          return fetchResponse;
+        });
+      })
+      .catch(() => {
+        // Return offline page or placeholder
+        if (event.request.destination === 'document') {
+          return caches.match('/');
         }
-        return resp;
-      }).catch(() => {
-        if (request.destination === 'document') return caches.match('/');
         return new Response('Offline', { status: 503 });
-      });
-    })
+      })
   );
 });
 

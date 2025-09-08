@@ -1,64 +1,51 @@
 const { Pool } = require('pg');
-const bcrypt = require('bcrypt');
 require('dotenv').config();
 
-async function setupDatabaseAndAdmin() {
+async function checkDb() {
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
   });
 
   try {
+    console.log('Connecting to database...');
     const client = await pool.connect();
-    console.log('✅ Database connection successful');
-
-    // Create users table if not exists
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        username TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        role TEXT NOT NULL DEFAULT 'editor',
-        email TEXT,
-        is_active BOOLEAN NOT NULL DEFAULT true,
-        last_login TIMESTAMP,
-        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-      )
+    console.log('Connected to database!');
+    
+    // Check if users table exists
+    const tableExists = await client.query(
+      "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users')"
+    );
+    
+    if (!tableExists.rows[0].exists) {
+      console.log('Users table does not exist!');
+      return;
+    }
+    
+    // Get users table columns
+    const columns = await client.query(`
+      SELECT column_name, data_type, is_nullable, column_default 
+      FROM information_schema.columns 
+      WHERE table_name = 'users';
     `);
-    console.log('✅ Users table ready');
-
-    // Create admin user
-    const adminUsername = 'admin';
-    const adminPassword = 'udnews2025secure';
-    const adminEmail = 'kenginol.ar@gmail.com';
     
-    const hashedPassword = await bcrypt.hash(adminPassword, 10);
+    console.log('\nUsers table columns:');
+    console.table(columns.rows);
     
-    // Delete existing admin and create new one
-    await client.query('DELETE FROM users WHERE username = $1', [adminUsername]);
+    // Get sample users
+    try {
+      const users = await client.query('SELECT * FROM users LIMIT 5');
+      console.log('\nSample users:');
+      console.table(users.rows);
+    } catch (err) {
+      console.log('\nError fetching users:', err.message);
+    }
     
-    await client.query(`
-      INSERT INTO users (username, password, role, email, is_active, created_at, updated_at)
-      VALUES ($1, $2, 'admin', $3, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-    `, [adminUsername, hashedPassword, adminEmail]);
-    
-    console.log('✅ Admin user created successfully');
-    
-    // Verify admin user
-    const admin = await client.query('SELECT username, role, is_active FROM users WHERE username = $1', [adminUsername]);
-    console.log('🔍 Admin verification:', admin.rows[0]);
-    
-    console.log('\n🔐 Login credentials:');
-    console.log(`Username: ${adminUsername}`);
-    console.log(`Password: ${adminPassword}`);
-    console.log('\n📱 Try logging in at: http://localhost:5000/admin');
-
-    client.release();
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error('Database error:', error.message);
   } finally {
     await pool.end();
   }
 }
 
-setupDatabaseAndAdmin().catch(console.error);
+checkDb().catch(console.error);

@@ -4,12 +4,6 @@ import { storage } from './storage';
 import { type InsertNews } from '@shared/schema';
 import { ImageOptimizer } from './image-optimizer';
 
-// Environment-based tuning knobs to control memory usage
-const RSS_MAX_CONCURRENT = Math.max(1, parseInt(process.env.RSS_MAX_CONCURRENT || '2'));
-const RSS_BATCH_DELAY_MS = Math.max(0, parseInt(process.env.RSS_BATCH_DELAY_MS || '1500'));
-const RSS_CONTENT_IMAGE_LIMIT = Math.max(0, parseInt(process.env.RSS_CONTENT_IMAGE_LIMIT || '1'));
-const RSS_GC_BETWEEN_ITEMS = (process.env.RSS_GC_BETWEEN_ITEMS || 'true').toLowerCase() !== 'false';
-
 const parser = new Parser({
   timeout: 8000,
   headers: {
@@ -186,77 +180,11 @@ export class RSSService {
 
   // Download image and store optimized copy to /uploads, returning local URL
   private async downloadAndStoreImage(imageUrl: string): Promise<string | null> {
-    let buffer: Buffer | null = null;
     try {
-      // Add size limit check via HEAD request first
-      try {
-        const headRes = await this.fetchWithRetry(imageUrl, { 
-          method: 'HEAD', 
-          headers: { 'User-Agent': 'UD-News-Image-Fetcher/1.0' } 
-        }, 1, 8000);
-        
-        if (headRes.ok) {
-          const contentLength = headRes.headers.get('content-length');
-          if (contentLength) {
-            const size = parseInt(contentLength);
-            // Reject images larger than 10MB to prevent memory issues
-            if (size > 10 * 1024 * 1024) {
-              console.warn(`Image too large (${Math.round(size/1024/1024)}MB), skipping:`, imageUrl);
-              return null;
-            }
-          }
-        }
-      } catch {
-        // HEAD request failed, continue with GET but be more cautious
-      }
-
-      const res = await this.fetchWithRetry(imageUrl, { 
-        headers: { 'User-Agent': 'UD-News-Image-Fetcher/1.0' } 
-      }, 2, 15000); // Reduced retries and timeout
-      
+      const res = await this.fetchWithRetry(imageUrl, { headers: { 'User-Agent': 'UD-News-Image-Fetcher/1.0' } }, 3, 20000);
       if (!res.ok) return null;
-      
       const contentType = res.headers.get('content-type') || '';
-      
-      // Validate content type
-      if (!contentType.startsWith('image/')) {
-        console.warn('Invalid content type for image:', contentType, imageUrl);
-        return null;
-      }
-
-      // Stream the response to avoid loading entire image into memory at once
-      const reader = res.body?.getReader();
-      if (!reader) {
-        console.warn('No readable stream for image:', imageUrl);
-        return null;
-      }
-
-      const chunks: Uint8Array[] = [];
-      let totalSize = 0;
-      const maxSize = 10 * 1024 * 1024; // 10MB limit
-
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          
-          totalSize += value.length;
-          if (totalSize > maxSize) {
-            console.warn(`Image stream exceeded size limit (${Math.round(totalSize/1024/1024)}MB), aborting:`, imageUrl);
-            return null;
-          }
-          
-          chunks.push(value);
-        }
-      } finally {
-        reader.releaseLock();
-      }
-
-      // Combine chunks into buffer
-      buffer = Buffer.concat(chunks.map(chunk => Buffer.from(chunk)));
-      
-      // Clear chunks array to free memory
-      chunks.length = 0;
+      const buffer = Buffer.from(await res.arrayBuffer());
 
       // Determine a filename and extension
       const urlObj = new URL(imageUrl, 'http://dummy');
@@ -272,16 +200,10 @@ export class RSSService {
 
       // Optimize to webp by default
       const localPath = await ImageOptimizer.optimizeImage(buffer, filename, { format: 'webp' });
-      
       return localPath; // e.g., /uploads/...
     } catch (e) {
       console.warn('Failed to download/store image:', imageUrl, e);
       return null;
-    } finally {
-      // Explicitly clear buffer to help GC
-      if (buffer) {
-        buffer = null;
-      }
     }
   }
 
@@ -436,29 +358,7 @@ export class RSSService {
   }
 
   // Process a single RSS feed with improved performance
-  async processFeed(feedId: string | number, feedUrl: string, category: string): Promise<number> {
-    // Convert feedId to number if it's a string, handle UUIDs and string IDs
-    let numericFeedId: number;
-    if (typeof feedId === 'string') {
-      // Try to extract numeric part or use hash for non-numeric strings
-      const numericMatch = feedId.match(/\d+/);
-      if (numericMatch) {
-        numericFeedId = parseInt(numericMatch[0], 10);
-      } else {
-        // For UUIDs or string IDs, create a consistent numeric hash
-        numericFeedId = Math.abs(feedId.split('').reduce((a, b) => {
-          a = ((a << 5) - a) + b.charCodeAt(0);
-          return a & a;
-        }, 0));
-      }
-    } else {
-      numericFeedId = feedId;
-    }
-    
-    if (isNaN(numericFeedId) || numericFeedId <= 0) {
-      console.error(`Invalid feedId: ${feedId}`);
-      return 0;
-    }
+  async processFeed(feedId: number, feedUrl: string, category: string): Promise<number> {
     let articlesProcessed = 0;
     let articlesAdded = 0;
     let success = true;
@@ -467,7 +367,7 @@ export class RSSService {
     try {
       console.log(`Processing RSS feed: ${feedUrl}`);
       // Mark feed as processing
-      this.feedStatus[numericFeedId] = { isProcessing: true, lastError: null };
+      this.feedStatus[feedId] = { isProcessing: true, lastError: null };
 
       console.log(`🔄 Fetching RSS from: ${feedUrl}`);
 
@@ -493,32 +393,13 @@ export class RSSService {
 
       console.log(`✅ RSS fetched successfully from ${feedUrl}: ${xml.length} characters`);
 
-      // Clean XML content before parsing to handle malformed entities and attributes
-      let cleanXml = xml;
-      try {
-        // Fix common XML entity issues
-        cleanXml = xml
-          .replace(/&(?![a-zA-Z0-9#]{1,7};)/g, '&amp;') // Fix unescaped ampersands
-          .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // Remove control characters
-          .replace(/&([^;]+)=([^;]*);/g, '&amp;$1=$2;') // Fix malformed entities with equals
-          // Fix unquoted attribute values (common in Thai PBS RSS)
-          .replace(/(\w+)=([^"\s>]+)(?=[\s>])/g, '$1="$2"') // Quote unquoted attributes
-          .replace(/(\w+)=([^"\s>]+)$/gm, '$1="$2"') // Quote unquoted attributes at end of line
-          // Fix malformed HTML entities in content
-          .replace(/&([a-zA-Z]+)(?![a-zA-Z0-9#;])/g, '&amp;$1')
-          // Remove or fix problematic characters that break XML parsing
-          .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '');
-      } catch (cleanError) {
-        console.warn(`XML cleaning failed for ${feedUrl}, using original:`, cleanError);
-      }
-
-      // Use the global parser instance with cleaned XML
-      const feed = await parser.parseString(cleanXml);
+      // Use the global parser instance
+      const feed = await parser.parseString(xml); // Use parseString with the fetched XML
 
       if (!feed || !feed.items || feed.items.length === 0) {
         console.log(`No items found in feed: ${feedUrl}`);
-        await this.recordProcessingHistory(numericFeedId, 0, 0, true, 'No items found in feed');
-        this.lastProcessed.set(numericFeedId, new Date()); // Update last processed time even if no items
+        await this.recordProcessingHistory(feedId, 0, 0, true, 'No items found in feed');
+        this.lastProcessed.set(feedId, new Date()); // Update last processed time even if no items
         return 0;
       }
 
@@ -527,7 +408,7 @@ export class RSSService {
       // Process each item in the feed
       for (const item of feed.items) {
         try {
-          const wasAdded = await this.processRSSItem(item as RSSItem, category, numericFeedId);
+          const wasAdded = await this.processRSSItem(item as RSSItem, category, feedId);
           if (wasAdded) articlesAdded++;
         } catch (error) {
           console.error(`Error processing RSS item from ${feedUrl}:`, error);
@@ -536,13 +417,13 @@ export class RSSService {
       }
 
       // Update feed last processed time
-      await storage.updateRssFeedLastProcessed(numericFeedId);
+      await storage.updateRssFeedLastProcessed(feedId);
 
       // Record processing history
-      await this.recordProcessingHistory(numericFeedId, articlesProcessed, articlesAdded, true, null);
+      await this.recordProcessingHistory(feedId, articlesProcessed, articlesAdded, true, null);
 
-      this.lastProcessed.set(numericFeedId, new Date());
-      this.feedStatus[numericFeedId] = { isProcessing: false, lastError: null, lastProcessed: new Date(), itemsProcessed: articlesAdded };
+      this.lastProcessed.set(feedId, new Date());
+      this.feedStatus[feedId] = { isProcessing: false, lastError: null, lastProcessed: new Date(), itemsProcessed: articlesAdded };
       console.log(`Successfully processed ${articlesAdded}/${articlesProcessed} items from ${feedUrl}`);
       return articlesAdded;
 
@@ -552,11 +433,11 @@ export class RSSService {
       console.error(`Error processing RSS feed ${feedUrl}:`, error);
 
       // Record failed processing
-      await this.recordProcessingHistory(numericFeedId, articlesProcessed, articlesAdded, success, errorMessage);
+      await this.recordProcessingHistory(feedId, articlesProcessed, articlesAdded, false, errorMessage);
 
       // Update last processed time even on error
-      this.lastProcessed.set(numericFeedId, new Date());
-      this.feedStatus[numericFeedId] = { isProcessing: false, lastError: errorMessage, lastProcessed: new Date(), itemsProcessed: articlesAdded };
+      this.lastProcessed.set(feedId, new Date());
+      this.feedStatus[feedId] = { isProcessing: false, lastError: errorMessage, lastProcessed: new Date(), itemsProcessed: articlesAdded };
 
       // Check if it's a parsing error and try alternative approach (consider if this is still needed or if timeout is sufficient)
       if (error instanceof Error && error.message && error.message.includes('Non-whitespace before first tag')) {
@@ -610,19 +491,20 @@ export class RSSService {
     // Generate content hash for deduplication
     const contentHash = this.generateContentHash(item.title, item.link);
 
-    // Check if this article already exists (prefer precise, then limited fuzzy)
-    // 1) Fast path: exact URL match via DB
-    const byUrl = await storage.getNewsByUrl(item.link);
-    let exists = !!byUrl;
-    // 2) If not found by URL, only fetch a LIMITED set of recent news to compare titles
-    if (!exists) {
-      const recent = await storage.getAllNews(200, 0); // Limit to latest 200 to keep memory low
-      exists = recent.some(news => {
-        if (!news.title) return false;
-        const similarity = this.calculateSimilarity(news.title.toLowerCase(), item.title!.toLowerCase());
+    // Check if this article already exists (by sourceUrl or similar title)
+    const existingNews = await storage.getAllNews(); // This might be inefficient for many news items
+    const exists = existingNews.some(news => {
+      // Check exact URL match
+      if (item.link && news.sourceUrl === item.link) return true;
+
+      // Check similar titles (fuzzy matching)
+      if (news.title && item.title) {
+        const similarity = this.calculateSimilarity(news.title.toLowerCase(), item.title.toLowerCase());
         return similarity > 0.85; // 85% similarity threshold
-      });
-    }
+      }
+
+      return false;
+    });
 
     if (exists) {
       return false; // Skip duplicate articles
@@ -695,13 +577,12 @@ export class RSSService {
     let processedContent = cleanedContent;
     let processedImageUrls: string[] = [];
     
-    // If we have content images, ensure they're properly hosted (limited by RSS_CONTENT_IMAGE_LIMIT)
-    if (contentImageUrls.length > 0 && RSS_CONTENT_IMAGE_LIMIT > 0) {
+    // If we have content images, ensure they're properly hosted
+    if (contentImageUrls.length > 0) {
       try {
         const root = parse(cleanedContent);
         const imgElements = root.querySelectorAll('img');
         
-        let downloaded = 0;
         for (const img of imgElements) {
           const src = img.getAttribute('src') || img.getAttribute('data-src');
           if (src) {
@@ -715,11 +596,6 @@ export class RSSService {
               img.setAttribute('loading', 'lazy');
               img.setAttribute('alt', item.title || 'News image');
               if (!processedImageUrls.includes(localUrl) && processedImageUrls.length < 5) processedImageUrls.push(localUrl);
-              downloaded++;
-              if (downloaded >= RSS_CONTENT_IMAGE_LIMIT) {
-                // Stop downloading more to limit memory/IO
-                break;
-              }
             }
           }
         }
@@ -797,50 +673,27 @@ export class RSSService {
 
       let totalProcessed = 0;
 
-      // Process feeds with controlled concurrency to prevent memory issues
-      const maxConcurrent = RSS_MAX_CONCURRENT; // Limit concurrent feed processing via env
-      const results: number[] = [];
-      
-      for (let i = 0; i < activeFeeds.length; i += maxConcurrent) {
-        const batch = activeFeeds.slice(i, i + maxConcurrent);
-        const batchPromises = batch.map(async (feed, batchIndex) => {
-          try {
-            // Stagger requests within batch to avoid overwhelming servers
-            await new Promise(resolve => setTimeout(resolve, batchIndex * 500));
-            const count = await this.processFeed(feed.id, feed.url, feed.category);
-            // Optionally GC between items
-            if (RSS_GC_BETWEEN_ITEMS && global.gc) {
-              try { global.gc(); } catch {}
-            }
-            return count;
-          } catch (error) {
-            console.error(`Failed to process feed ${feed.title}:`, error);
-            // Record the error in feed status if not already done by processFeed
-            if (!this.feedStatus[feed.id] || !this.feedStatus[feed.id].lastError) {
-               this.feedStatus[feed.id] = { isProcessing: false, lastError: error instanceof Error ? error.message : 'Unknown error' };
-            }
-            return 0;
+      // Process feeds in parallel for faster performance
+      const feedPromises = activeFeeds.map(async (feed, index) => {
+        try {
+          // Stagger requests to avoid overwhelming servers
+          await new Promise(resolve => setTimeout(resolve, index * 500));
+          const count = await this.processFeed(feed.id, feed.url, feed.category);
+          return count;
+        } catch (error) {
+          console.error(`Failed to process feed ${feed.title}:`, error);
+          // Record the error in feed status if not already done by processFeed
+          if (!this.feedStatus[feed.id] || !this.feedStatus[feed.id].lastError) {
+             this.feedStatus[feed.id] = { isProcessing: false, lastError: error instanceof Error ? error.message : 'Unknown error' };
           }
-        });
-        
-        const batchResults = await Promise.allSettled(batchPromises);
-        results.push(...batchResults.map(result => result.status === 'fulfilled' ? result.value : 0));
-        
-        // Force garbage collection between batches if available
-        if (global.gc) {
-          global.gc();
+          return 0;
         }
-        
-        // Small delay between batches to allow memory cleanup
-        if (i + maxConcurrent < activeFeeds.length) {
-          await new Promise(resolve => setTimeout(resolve, RSS_BATCH_DELAY_MS));
-        }
-      }
-      
-      const feedPromises = Promise.resolve(results);
+      });
 
-      const batchResults = await feedPromises;
-      totalProcessed = batchResults.reduce((sum, count) => sum + count, 0);
+      const results = await Promise.allSettled(feedPromises);
+      totalProcessed = results.reduce((sum, result) => {
+        return sum + (result.status === 'fulfilled' ? result.value : 0);
+      }, 0);
 
       console.log(`RSS processing complete. Total articles processed across all feeds: ${totalProcessed}`);
     } catch (error) {

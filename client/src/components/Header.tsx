@@ -94,7 +94,6 @@ const Header = () => {
     { name: "บันเทิง", href: "/category/entertainment" },
     { name: "สรุป 10 ข่าวล่าสุด", href: "/daily-summary" },
     { name: "ผลฉลากรัฐบาล", href: "/lottery" },
-    { name: "ดูดวง", href: "/fortune" },
     { name: "ติดต่อเรา", href: "/contact" }
   ];
 

@@ -521,6 +521,16 @@ function AdminDashboard() {
             </Suspense>
           </div>
         );
+
+      case 'system-health':
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold font-kanit text-orange-800 mb-4">สถานะระบบ</h3>
+            <Suspense fallback={<LoadingSpinner />}>
+              <SystemHealth />
+            </Suspense>
+          </div>
+        );
       
 
       default:
